@@ -92,8 +92,11 @@ window.HistoryManager = {
   },
 
   async syncToBackend(planRecord) {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return; // Offline / client-side storage active on deployed domains
+    }
     try {
-      await fetch("http://localhost:8000/api/projects", {
+      await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(planRecord)

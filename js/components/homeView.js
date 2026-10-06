@@ -956,7 +956,7 @@ window.HomeView = {
                 </div>
                 <div class="pt-2 border-t border-white/10">
                   <div class="text-[10px] text-stone-500 font-semibold uppercase tracking-wider mb-2">PC URL</div>
-                  <code class="text-xs text-emerald-300 bg-black/30 px-3 py-2 rounded-lg block font-mono">http://localhost:8000</code>
+                  <code id="homepage-pc-url" class="text-xs text-emerald-300 bg-black/30 px-3 py-2 rounded-lg block font-mono">http://localhost:8000</code>
                 </div>
               </div>
 
@@ -1140,6 +1140,10 @@ window.HomeView = {
           // LAN URL text
           const lanEl = document.getElementById('homepage-lan-url');
           if (lanEl) lanEl.textContent = info.lan_url;
+          const pcEl = document.getElementById('homepage-pc-url');
+          if (pcEl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            pcEl.textContent = window.location.origin;
+          }
         });
     }, 150);
   },
