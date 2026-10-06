@@ -2,6 +2,13 @@
 
 > **Academic Project Edition** — Computer Engineering & Environmental Science Interdisciplinary Decision Support System.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-eco--build--avishkar6.vercel.app-059669?style=for-the-badge&logo=vercel)](https://eco-build-avishkar6.vercel.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Eco__Build-1e293b?style=for-the-badge&logo=github)](https://github.com/avishkarshinde1209/Eco_Build)
+[![Status](https://img.shields.io/badge/Status-Online%20%26%20Active-10b981?style=for-the-badge)](https://eco-build-avishkar6.vercel.app)
+
+🌐 **Live Web Application (Vercel):** [https://eco-build-avishkar6.vercel.app](https://eco-build-avishkar6.vercel.app)  
+📁 **Official GitHub Repository:** [https://github.com/avishkarshinde1209/Eco_Build](https://github.com/avishkarshinde1209/Eco_Build)
+
 ---
 
 ## 🌿 Overview
@@ -149,7 +156,11 @@ To verify all mathematical calculations, standards, and persistence:
 python tests/test_suite.py
 ```
 *Current test suite status: 32 PASSED, 0 FAILED (100% pass rate).*
-#   E c o - B u i l d  
- #   E c o - B u i l d  
- #   E c o - B u i l d  
- 
+
+---
+
+## ☁️ Cloud Deployment (Vercel)
+The production application is continuously deployed to Vercel:
+- **Live Production URL:** [https://eco-build-avishkar6.vercel.app](https://eco-build-avishkar6.vercel.app)
+- **Deployment Platform:** Vercel Serverless & Static CDN
+- **Serverless API Routes:** /api/health.js, /api/network-info.js
