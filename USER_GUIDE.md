@@ -2,7 +2,7 @@
 
 Welcome to **EcoBuild Smart**, the Dynamic Environmental Impact Assessment & Green Infrastructure Planner.
 
-- 🌐 **Instant Online Access (No Installation Required):** [https://eco-build-avishkar6.vercel.app](https://eco-build-avishkar6.vercel.app)
+- 🌐 **Instant Online Access (No Installation Required):** [https://eco-build-avishkar1209-blush-sigma.vercel.app/](https://eco-build-avishkar1209-blush-sigma.vercel.app/)
 - 📁 **GitHub Repository:** [https://github.com/avishkarshinde1209/Eco_Build](https://github.com/avishkarshinde1209/Eco_Build)
 
 ---
