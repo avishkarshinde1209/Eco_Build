@@ -1,6 +1,6 @@
 import os, zipfile
 
-APP_DIR = r"C:\antigravity"
+APP_DIR = os.path.abspath(os.path.dirname(__file__))
 OUTPUT_ZIP = os.path.join(APP_DIR, "EcoBuildSmart_App.zip")
 
 EXCLUDE_DIRS = {".git", ".system_generated", "scratch", ".user_uploaded", "__pycache__", ".agents", "brain"}

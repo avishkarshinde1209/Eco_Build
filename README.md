@@ -68,7 +68,7 @@ The application operates as an offline-first **Progressive Web App (PWA)** and *
 ## 📂 Project Architecture & Directory Structure
 
 ```text
-c:\antigravity\
+Eco_Build/
 ├── index.html                    # Single-Page App shell with 8 views & navigation
 ├── server.py                     # Python HTTP REST API server with SQLite persistence
 ├── sw.js                         # Service Worker for offline PWA caching
