@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100 select-none">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoBuild Smart Eco Management System — Measure. Recover. Optimize. Build Better.</title>
+
+  <!-- PWA & Mobile App Metadata -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#064e3b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EcoBuild Smart">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet CSS & JS for Geospatial Mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Three.js CDN for Architectural 3D Site Model -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Google Fonts: Inter, Plus Jakarta Sans & Editorial Serif -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .font-serif { font-family: 'Newsreader', Georgia, serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    /* Native App Window Draggable Region for frameless desktop apps */
+    .app-drag-region { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      main { padding: 0 !important; }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col antialiased text-stone-800 bg-[#FBFBF9] font-sans selection:bg-emerald-800 selection:text-white">
+
+  <!-- TOP APP TITLEBAR / HEADER (For Workspace Views) -->
+  <header id="app-header" class="bg-[#0B1510] border-b border-stone-800 text-white sticky top-0 z-50 shadow-md no-print app-drag-region hidden select-none">
+    <div class="w-full px-3 sm:px-6">
+      <div class="flex items-center justify-between h-14 gap-3">
+        
+        <!-- Left: Logo & Project Switcher Dropdown & Status Pill -->
+        <div class="flex items-center gap-3 no-drag min-w-0">
+          <!-- Mobile Sidebar Toggle -->
+          <button onclick="window.App.toggleMobileSidebar()" class="md:hidden p-1.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-300 hover:text-white" title="Toggle Navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+
+          <!-- Monogram / Brand Icon -->
+          <div class="flex items-center gap-2.5 cursor-pointer group" onclick="window.App.switchView('home')" title="EcoBuild Smart Home">
+            <div class="w-8 h-8 rounded-lg bg-stone-900 border border-stone-700/80 flex items-center justify-center text-emerald-400 shadow-sm transition-transform group-hover:scale-105">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 20V10L12 4L20 10V20H4Z" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 4C12 4 16 7.5 16 12C16 14.5 14.2 16.5 12 16.5C9.8 16.5 8 14.5 8 12C8 7.5 12 4 12 4Z" fill="currentColor" fill-opacity="0.25"/>
+                <path d="M12 9V15M10 12L14 12" stroke="#10b981" stroke-width="1.6"/>
+              </svg>
+            </div>
+            <div class="hidden lg:block">
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-sm tracking-tight text-white font-serif">EcoBuild</span>
+                <span class="text-[9px] font-bold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">DECISION PLATFORM</span>
+              </div>
+            </div>
+          </div>
+
+          <span class="text-stone-700 hidden sm:inline">/</span>
+
+          <!-- Project Selector Dropdown Trigger -->
+          <button onclick="window.App.toggleProjectSwitcher()" id="top-project-selector-btn" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-stone-900/90 border border-stone-700/70 hover:border-emerald-600 transition text-xs font-semibold text-stone-200 hover:text-white max-w-[200px] sm:max-w-xs truncate" title="Switch Active Project">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+            <span id="top-project-name" class="truncate">Kolhapur Campus</span>
+            <span class="text-stone-400 text-[10px] shrink-0">▾</span>
+          </button>
+
+          <!-- Project Status Pill -->
+          <div id="top-project-status-pill" class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-800/60">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Recovery Plan Active</span>
+          </div>
+        </div>
+
+        <!-- Right Side: Score Dial, Freshness, Save Status, Notifications, Help, Profile, Exit -->
+        <div class="flex items-center gap-2 sm:gap-3 no-drag shrink-0">
+          
+          <!-- Environmental Recovery Score Indicator Pill -->
+          <div id="top-recovery-score-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 shadow-xs cursor-pointer hover:bg-emerald-900/80 transition" onclick="window.App.switchView('recovery')" title="Recovery Score">
+            <span class="text-[10px] font-normal text-emerald-400 uppercase tracking-wider hidden sm:inline">Recovery Score:</span>
+            <span id="top-score-value" class="font-mono font-black text-white">86</span>
+            <span class="text-[10px] text-emerald-400 font-normal">/100</span>
+          </div>
+
+          <!-- Data Freshness Badge -->
+          <div id="top-data-freshness" class="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-stone-900 text-stone-300 border border-stone-800">
+            <span class="text-emerald-400">●</span>
+            <span id="top-freshness-text">ERA5 & CAMS • Updated 04 Oct 2026</span>
+          </div>
+
+          <!-- Save Status Indicator -->
+          <div id="top-save-indicator" class="hidden lg:flex items-center gap-1 text-[11px] text-stone-400 font-medium">
+            <span class="text-emerald-400 font-bold">✓</span>
+            <span>Saved</span>
+          </div>
+
+          <!-- Notifications Trigger Button with Unread Badge -->
+          <button onclick="window.App.toggleNotificationsModal()" class="relative p-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/70 text-stone-300 hover:text-white transition" title="Environmental Notifications">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span id="top-notification-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center">3</span>
+          </button>
+
+          <!-- Contextual Help / Formula Inspector Trigger -->
+          <button onclick="window.ExplainModal && window.ExplainModal.open('composite_score')" class="px-2.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/70 text-stone-300 hover:text-white text-xs font-semibold transition hidden sm:flex items-center gap-1" title="Calculation Explainability">
+            <span>ℹ️</span> <span class="hidden md:inline">Formulas</span>
+          </button>
+
+          <!-- Engineer Profile Indicator -->
+          <div class="hidden md:flex items-center gap-2 pl-2 border-l border-stone-800 text-xs">
+            <div class="w-7 h-7 rounded-full bg-emerald-800 border border-emerald-600 flex items-center justify-center font-bold text-white text-[11px]">
+              AS
+            </div>
+            <div class="text-left leading-tight hidden lg:block">
+              <div class="font-bold text-stone-200 text-[11px]">Avishkar Shinde</div>
+              <div class="text-[9px] text-stone-400 font-medium">Lead Environmental Planner</div>
+            </div>
+          </div>
+
+          <!-- Download App Trigger -->
+          <button id="btn-header-install" onclick="window.InstallModal ? window.InstallModal.show() : window.downloadAppDirect()" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 text-white border border-emerald-500/70 shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0" title="Download EcoBuild App Package for any PC or Browser">
+            <span>⬇️</span> <span class="hidden sm:inline">Download App</span>
+          </button>
+
+          <!-- Exit to Homepage Button -->
+          <button onclick="window.App.switchView('home')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/80 transition flex items-center gap-1.5" title="Return to Landing Page">
+            <span>🏠</span> <span class="hidden sm:inline">Exit to Home</span>
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- INSTALL APP MODAL CONTAINER (globally mounted, z-index 9999) -->
+  <div id="install-modal-container"></div>
+
+  <!-- GLOBAL LOADING OVERLAY -->
+  <div id="global-loader" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-3">
+      <div class="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+      <h3 class="font-bold text-slate-800 text-sm">Processing Environmental Model</h3>
+      <p id="global-loader-text" class="text-xs text-slate-500">Querying Open-Meteo meteorological and atmospheric APIs...</p>
+    </div>
+  </div>
+
+  <!-- EXPLAINABILITY MODAL / DRAWER -->
+  <div id="explain-modal-backdrop" class="hidden fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh] font-sans">
+      <div class="bg-[#0D1912] text-white p-5 flex items-center justify-between border-b border-stone-800">
+        <div>
+          <span id="explain-category" class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Hydrology & Stormwater</span>
+          <h3 id="explain-title" class="text-lg font-bold font-serif text-white">Calculation Explainability</h3>
+        </div>
+        <button onclick="window.ExplainModal.close()" class="text-stone-400 hover:text-white text-xl font-bold leading-none p-1">
+          &times;
+        </button>
+      </div>
+
+      <div class="p-6 space-y-5 overflow-y-auto text-xs text-stone-600">
+        <div class="space-y-1.5">
+          <div class="font-bold text-stone-800 uppercase tracking-wider text-[10px]">Mathematical Formula</div>
+          <div id="explain-formula" class="bg-[#14281D] text-emerald-300 font-mono p-3.5 rounded-xl text-sm font-bold shadow-inner"></div>
+          <p id="explain-formula-desc" class="text-stone-600 leading-relaxed"></p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="font-bold text-stone-800 uppercase tracking-wider text-[10px]">Input Parameters & Origins</div>
+          <div id="explain-variables" class="space-y-1.5"></div>
+        </div>
+
+        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-stone-700">Data Source:</span>
+            <span id="explain-confidence-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold"></span>
+          </div>
+          <div id="explain-source" class="font-bold text-stone-800"></div>
+          <p id="explain-confidence-desc" class="text-stone-500 text-[11px]"></p>
+        </div>
+
+        <div class="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/80 space-y-1 text-amber-900">
+          <span class="font-bold text-[10px] uppercase tracking-wider block">Scientific Uncertainty & Assumptions</span>
+          <p id="explain-uncertainty" class="text-[11px] leading-relaxed"></p>
+        </div>
+      </div>
+
+      <div class="bg-stone-50 px-6 py-3.5 border-t border-stone-100 flex justify-end">
+        <button onclick="window.ExplainModal.close()" class="px-5 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition">
+          Close Inspector
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT SWITCHER MODAL -->
+  <div id="project-switcher-modal" class="hidden fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col font-sans">
+      <div class="bg-[#0D1912] text-white p-5 flex items-center justify-between border-b border-stone-800">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Workspace Management</span>
+          <h3 class="text-lg font-bold font-serif text-white">Select Active Engineering Project</h3>
+        </div>
+        <button onclick="window.App.toggleProjectSwitcher(false)" class="text-stone-400 hover:text-white text-xl font-bold leading-none p-1">
+          &times;
+        </button>
+      </div>
+
+      <div class="p-6 space-y-3.5 overflow-y-auto max-h-[60vh] text-xs">
+        <p class="text-slate-500 text-xs">Switching projects immediately recalculates all 8 environmental domains using authentic location and cadastre data.</p>
+        
+        <!-- Project 1: Kolhapur Campus -->
+        <div onclick="window.App.switchProject('kolhapur_academic')" class="p-4 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 hover:bg-emerald-50 cursor-pointer transition flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">Kolhapur Engineering Campus Expansion</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">ACTIVE</span>
+            </div>
+            <div class="text-slate-500 text-[11px]">Kolhapur, Maharashtra • 5,000 m² Plot • Institutional</div>
+            <div class="text-emerald-700 font-bold font-mono text-[11px]">Recovery Score: 86 / 100 • 30 Trees Mitigated</div>
+          </div>
+          <span class="text-emerald-600 text-lg">✓</span>
+        </div>
+
+        <!-- Project 2: Pune Tech Park -->
+        <div onclick="window.App.switchProject('pune_tech_park')" class="p-4 rounded-2xl border border-slate-200 hover:border-slate-400 bg-white cursor-pointer transition flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">Pune IT Innovation Park</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600">COMMERCIAL</span>
+            </div>
+            <div class="text-slate-500 text-[11px]">Hinjawadi, Pune • 8,000 m² Plot • Commercial Campus</div>
+            <div class="text-blue-700 font-bold font-mono text-[11px]">Recovery Score: 78 / 100 • 45 Trees Mitigated</div>
+          </div>
+          <span class="text-slate-400 text-xs font-semibold">Load &rarr;</span>
+        </div>
+      </div>
+
+      <div class="bg-stone-50 px-6 py-3.5 border-t border-stone-100 flex items-center justify-between">
+        <button onclick="window.App.toggleProjectSwitcher(false); window.App.switchView('wizard')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+          <span>+</span> <span>Assess New Site (Wizard)</span>
+        </button>
+        <button onclick="window.App.toggleProjectSwitcher(false)" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-semibold transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS MODAL -->
+  <div id="notifications-modal" class="hidden fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col font-sans">
+      <div class="bg-[#0D1912] text-white p-5 flex items-center justify-between border-b border-stone-800">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Engineering Compliance</span>
+          <h3 class="text-lg font-bold font-serif text-white">Site Notifications & Constraints</h3>
+        </div>
+        <button onclick="window.App.toggleNotificationsModal(false)" class="text-stone-400 hover:text-white text-xl font-bold leading-none p-1">
+          &times;
+        </button>
+      </div>
+
+      <div class="p-6 space-y-3 overflow-y-auto max-h-[60vh] text-xs">
+        <div class="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-900 flex items-center gap-1.5"><span>🌧️</span> Stormwater Runoff Surge</span>
+            <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px] font-bold">WARNING</span>
+          </div>
+          <p class="text-amber-800 text-[11px] leading-relaxed">
+            Unmitigated post-development peak runoff surges by +178% without SUDs. Permeable paving and bioretention active in current recovery plan.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-900 flex items-center gap-1.5"><span>🌳</span> Compensatory Tree Planting</span>
+            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold">STATUTORY</span>
+          </div>
+          <p class="text-emerald-800 text-[11px] leading-relaxed">
+            30 mature trees felled on site. Maharashtra Tree Authority statutory 3:1 replacement quota requires 90 native saplings.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-blue-900 flex items-center gap-1.5"><span>☀️</span> Solar Clean Power Feasibility</span>
+            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-bold">OPTIMIZED</span>
+          </div>
+          <p class="text-blue-800 text-[11px] leading-relaxed">
+            Rooftop Solar PV system sized at 126 kWp across 700 m² generates 172.5 MWh/yr, achieving 100% net electrical offset.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 flex items-center gap-1.5"><span>♻️</span> C&D Waste Circularity</span>
+            <span class="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-bold">CIRCULAR</span>
+          </div>
+          <p class="text-slate-600 text-[11px] leading-relaxed">
+            68% landfill diversion target active (157 tonnes diverted, yielding 98 m³ recycled aggregate for road base).
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-stone-50 px-6 py-3.5 border-t border-stone-100 flex justify-end">
+        <button onclick="window.App.toggleNotificationsModal(false)" class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition">
+          Dismiss All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTENT SHELL -->
+  <main id="app-main" class="flex-1 w-full flex flex-col">
+    <!-- View 0: World-Class Editorial Homepage -->
+    <div id="home-view" class="w-full"></div>
+
+    <!-- Workspace Shell for Application Views -->
+    <div id="workspace-container" class="hidden flex-1 w-full flex min-h-[calc(100vh-56px)] relative bg-[#F8FAFC]">
+      
+      <!-- Collapsible Left Navigation Sidebar (Desktop & Tablet) -->
+      <aside id="app-sidebar" class="w-64 bg-[#0D1912] border-r border-stone-800 text-stone-300 flex flex-col justify-between shrink-0 transition-all duration-200 z-30 select-none no-print">
+        <!-- Sidebar Navigation Sections -->
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-5 scrollbar-thin">
+          
+          <!-- Section Group 1: GENERAL & SITE SETUP -->
+          <div class="space-y-1">
+            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Overview & Setup</div>
+            <button onclick="window.App.switchView('dashboard')" data-nav="dashboard" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Overview">
+              <span class="text-base shrink-0">📊</span>
+              <span class="sidebar-label truncate">Overview</span>
+            </button>
+            <button onclick="window.App.switchView('wizard')" data-nav="wizard" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Site Assessment">
+              <span class="text-base shrink-0">📝</span>
+              <span class="sidebar-label truncate">Site Assessment</span>
+            </button>
+          </div>
+
+          <!-- Section Group 2: ENVIRONMENTAL DOMAINS -->
+          <div class="space-y-1">
+            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Environmental Domains</div>
+            <button onclick="window.App.switchView('recovery')" data-nav="recovery" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Nature Recovery">
+              <span class="text-base shrink-0">🌱</span>
+              <span class="sidebar-label truncate">Nature Recovery</span>
+            </button>
+            <button onclick="window.App.switchView('stormwater')" data-nav="stormwater" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Water & Stormwater">
+              <span class="text-base shrink-0">🌧️</span>
+              <span class="sidebar-label truncate">Water & Stormwater</span>
+            </button>
+            <button onclick="window.App.switchView('energy')" data-nav="energy" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Energy & Solar">
+              <span class="text-base shrink-0">☀️</span>
+              <span class="sidebar-label truncate">Energy & Solar</span>
+            </button>
+            <button onclick="window.App.switchView('materials')" data-nav="materials" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Carbon & Materials">
+              <span class="text-base shrink-0">🧱</span>
+              <span class="sidebar-label truncate">Carbon & Materials</span>
+            </button>
+            <button onclick="window.App.switchView('biodiversity')" data-nav="biodiversity" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Biodiversity">
+              <span class="text-base shrink-0">🦋</span>
+              <span class="sidebar-label truncate">Biodiversity</span>
+            </button>
+            <button onclick="window.App.switchView('waste')" data-nav="waste" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Waste Management">
+              <span class="text-base shrink-0">♻️</span>
+              <span class="sidebar-label truncate">Waste Management</span>
+            </button>
+          </div>
+
+          <!-- Section Group 3: PLANNING & SIMULATION -->
+          <div class="space-y-1">
+            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Planning & Simulation</div>
+            <button onclick="window.App.switchView('scenariostudio')" data-nav="scenariostudio" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="What-If Eco Studio">
+              <span class="text-base shrink-0">⚖️</span>
+              <span class="sidebar-label truncate">What-If Eco Studio</span>
+            </button>
+          </div>
+
+          <!-- Section Group 4: OPERATIONS & AUDIT -->
+          <div class="space-y-1">
+            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Operations & Audit</div>
+            <button onclick="window.App.switchView('monitoring')" data-nav="monitoring" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Monitoring">
+              <span class="text-base shrink-0">📈</span>
+              <span class="sidebar-label truncate">Monitoring</span>
+            </button>
+            <button onclick="window.App.switchView('report')" data-nav="report" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Audit Report">
+              <span class="text-base shrink-0">📄</span>
+              <span class="sidebar-label truncate">Audit Report</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="p-3 border-t border-stone-800 space-y-2">
+          <!-- Mini Site Summary Pill (hidden when collapsed) -->
+          <div id="sidebar-site-summary" class="bg-stone-900/80 p-2.5 rounded-xl border border-stone-800 text-[11px] space-y-1">
+            <div class="flex justify-between text-stone-400">
+              <span>Site Area:</span>
+              <strong id="sidebar-stat-area" class="text-stone-200">5,000 m²</strong>
+            </div>
+            <div class="flex justify-between text-stone-400">
+              <span>Recovery Score:</span>
+              <strong id="sidebar-stat-score" class="text-emerald-400 font-bold">86 / 100</strong>
+            </div>
+          </div>
+
+          <!-- Download App (.ZIP) Button -->
+          <button onclick="window.InstallModal ? window.InstallModal.show() : window.downloadAppDirect()" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-950 to-stone-900 hover:bg-emerald-900 text-emerald-300 hover:text-white text-xs font-bold transition border border-emerald-800/80 shadow-xs cursor-pointer" title="Download complete EcoBuild application package for any PC">
+            <span>⬇️</span>
+            <span class="sidebar-label">Download App (.ZIP)</span>
+          </button>
+
+          <!-- Collapse / Expand Toggle Button -->
+          <button onclick="window.App.toggleSidebar()" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white text-xs font-semibold transition border border-stone-800">
+            <span id="sidebar-toggle-icon">◀</span>
+            <span id="sidebar-toggle-text">Collapse Sidebar</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Workspace Canvas Area -->
+      <div id="app-workspace-content" class="flex-1 min-w-0 flex flex-col overflow-y-auto">
+        
+        <!-- Breadcrumb & Workspace Sub-bar -->
+        <div id="workspace-subbar" class="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-xs">
+          <!-- Hierarchical Breadcrumbs -->
+          <nav id="app-breadcrumbs" class="flex items-center gap-1.5 text-xs text-slate-500 font-medium overflow-x-auto whitespace-nowrap">
+            <!-- Populated dynamically: EcoBuild / Projects / Kolhapur Campus / Nature Recovery / Action Plan -->
+          </nav>
+
+          <!-- Contextual Quick Action Buttons -->
+          <div class="flex items-center gap-2 shrink-0 text-xs">
+            <button onclick="window.App.switchView('wizard')" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition flex items-center gap-1">
+              <span>+</span> <span>New Site</span>
+            </button>
+            <button onclick="window.App.switchView('report')" class="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold transition flex items-center gap-1">
+              <span>📄</span> <span>Export Report</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- View Containers -->
+        <div class="p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
+          <div id="dashboard-view" class="space-y-6"></div>
+          <div id="wizard-view" class="hidden">
+            <div id="wizard-container" class="max-w-4xl mx-auto"></div>
+          </div>
+          <div id="scenariostudio-view" class="hidden"></div>
+          <div id="technical-view" class="hidden"></div>
+          <div id="recovery-view" class="hidden"></div>
+          <div id="materials-view" class="hidden"></div>
+          <div id="monitoring-view" class="hidden"></div>
+          <div id="history-view" class="hidden"></div>
+          <div id="methodology-view" class="hidden"></div>
+          <div id="report-view" class="hidden"></div>
+          <div id="stormwater-view" class="hidden"></div>
+          <div id="energy-view" class="hidden"></div>
+          <div id="biodiversity-view" class="hidden"></div>
+          <div id="datasources-view" class="hidden"></div>
+          <div id="waste-view" class="hidden"></div>
+          <div id="plan-view" class="hidden"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MOBILE / TOUCH SCREEN BOTTOM APP BAR (For Workspace Views) -->
+  <div id="mobile-bottom-bar" class="hidden md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0D1912]/95 backdrop-blur-md border-t border-stone-800 px-2 py-2 flex items-center justify-around text-stone-400 no-print">
+    <button onclick="window.App.switchView('home')" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold text-emerald-400 hover:text-white">
+      <span class="text-base">🏠</span>
+      <span>Home</span>
+    </button>
+    <button onclick="window.App.switchView('dashboard')" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold hover:text-white">
+      <span class="text-base">📊</span>
+      <span>Dashboard</span>
+    </button>
+    <button onclick="window.App.switchView('wizard')" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold hover:text-white">
+      <span class="text-base">📝</span>
+      <span>Wizard</span>
+    </button>
+    <button onclick="window.App.switchView('recovery')" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold hover:text-white">
+      <span class="text-base">🌱</span>
+      <span>Recovery</span>
+    </button>
+    <button onclick="window.App.switchView('report')" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold hover:text-white">
+      <span class="text-base">📄</span>
+      <span>Report</span>
+    </button>
+    <button onclick="window.InstallModal ? window.InstallModal.show() : window.downloadAppDirect()" class="flex flex-col items-center gap-0.5 p-1 text-[10px] font-bold text-emerald-300 hover:text-white" title="Download EcoBuild App">
+      <span class="text-base">⬇️</span>
+      <span>Download</span>
+    </button>
+  </div>
+
+  <!-- WORKSPACE FOOTER -->
+  <footer id="app-footer" class="hidden bg-[#0D1912] border-t border-stone-800 py-6 text-xs text-stone-400 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <span class="font-bold text-white font-serif">EcoBuild Smart</span> — Site-Constrained Environmental Planning System
+      </div>
+      <div class="flex items-center gap-3 text-stone-400 text-[11px]">
+        <span>Designed & Developed by <strong class="text-emerald-400 font-bold">Avishkar Shinde</strong></span>
+        <span>•</span>
+        <span>NBC 2016 Standards</span>
+        <span>•</span>
+        <span>Rational Method (Q=CIA)</span>
+        <span>•</span>
+        <span>CPCB Norms</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT ARCHITECTURE -->
+  <script src="js/config.js"></script>
+  <script src="js/fallbackData.js"></script>
+  <script src="js/plantDatabase.js"></script>
+  <script src="js/models/sampleProjects.js"></script>
+  <script src="js/correlationEngine.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/calculations/runoffCalculator.js"></script>
+  <script src="js/calculations/waterCalculator.js"></script>
+  <script src="js/calculations/vegetationCalculator.js"></script>
+  <script src="js/calculations/carbonCalculator.js"></script>
+  <script src="js/calculations/energyCalculator.js"></script>
+  <script src="js/calculations/heatIslandCalculator.js"></script>
+  <script src="js/calculations/scoreCalculator.js"></script>
+  <script src="js/calculations/recoveryCalculator.js"></script>
+  <script src="js/calculations/environmentalCalculator.js"></script>
+  <script src="js/recommendations.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="js/components/explainModal.js"></script>
+  <script src="js/components/mapModule.js"></script>
+  <script src="js/components/wizard.js"></script>
+  <script src="js/components/dashboard.js"></script>
+  <script src="js/components/stormwater.js"></script>
+  <script src="js/components/greenInfra.js"></script>
+  <script src="js/components/energy.js"></script>
+  <script src="js/components/biodiversity.js"></script>
+  <script src="js/components/technicalAnalysis.js"></script>
+  <script src="js/components/natureRecovery.js"></script>
+  <script src="js/components/scenarioStudio.js"></script>
+  <script src="js/components/history.js"></script>
+  <script src="js/components/methodology.js"></script>
+  <script src="js/components/dataSources.js"></script>
+  <script src="js/components/report.js"></script>
+  <script src="js/components/materialsView.js"></script>
+  <script src="js/components/wasteView.js"></script>
+  <script src="js/components/monitoringView.js"></script>
+  <script src="js/components/hero3d.js"></script>
+  <script src="js/components/homeView.js"></script>
+  <script src="js/components/installModal.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- PWA Service Worker & Install Handler -->
+  <script>
+    // Register Service Worker for Offline Execution
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          console.log('[EcoBuild App] ServiceWorker registered with scope:', reg.scope);
+        }).catch((err) => {
+          console.log('[EcoBuild App] ServiceWorker registration failed:', err);
+        });
+      });
+    }
+
+    // Handle PWA Install Prompt
+    window.deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      console.log('[EcoBuild PWA] beforeinstallprompt event captured');
+    });
+
+    window.downloadAppDirect = function() {
+      // Instant direct download of the application package in any browser
+      const a = document.createElement('a');
+      a.href = '/api/download-app';
+      a.setAttribute('download', 'EcoBuildSmart_App.zip');
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a);
+      }, 200);
+    };
+
+    window.installPwaApp = async () => {
+      if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        const { outcome } = await window.deferredPrompt.userChoice;
+        console.log(`[EcoBuild App] User response to install prompt: ${outcome}`);
+        window.deferredPrompt = null;
+      } else if (window.InstallModal) {
+        window.InstallModal.show();
+      } else {
+        window.downloadAppDirect();
+      }
+    };
+
+    // Network connectivity monitoring
+    function updateOnlineStatus() {
+      const badge = document.getElementById('app-connectivity-badge');
+      if (!badge) return;
+      if (navigator.onLine) {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Online</span>';
+        badge.className = 'hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700';
+      } else {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Offline Mode (Cached)</span>';
+        badge.className = 'hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800';
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+  </script>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="app-toast-container" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full font-sans"></div>
+</body>
+</html>

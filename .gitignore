@@ -1,0 +1,26 @@
+# Executables and installers (exceed GitHub size limits)
+*.exe
+Antigravity IDE.exe
+Antigravity-x64.exe
+Docker Desktop Installer.exe
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary test/scratch artifacts
+scratch/
+
+# Environment and IDE files
+.env
+.venv
+env/
+venv/
+.idea/
+.vscode/
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store

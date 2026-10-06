@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test Recovery View</title>
+</head>
+<body>
+  <div id="recovery-view"></div>
+  <div id="result">Testing...</div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/fallbackData.js"></script>
+  <script src="js/plantDatabase.js"></script>
+  <script src="js/models/sampleProjects.js"></script>
+  <script src="js/correlationEngine.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/calculations/runoffCalculator.js"></script>
+  <script src="js/calculations/waterCalculator.js"></script>
+  <script src="js/calculations/vegetationCalculator.js"></script>
+  <script src="js/calculations/carbonCalculator.js"></script>
+  <script src="js/calculations/energyCalculator.js"></script>
+  <script src="js/calculations/heatIslandCalculator.js"></script>
+  <script src="js/calculations/scoreCalculator.js"></script>
+  <script src="js/calculations/recoveryCalculator.js"></script>
+  <script src="js/calculations/environmentalCalculator.js"></script>
+  <script src="js/recommendations.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="js/components/explainModal.js"></script>
+  <script src="js/components/natureRecovery.js"></script>
+
+  <script>
+    window.addEventListener('error', function(e) {
+      document.getElementById('result').innerText = 'ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno + ':' + e.colno;
+      console.error('Captured error:', e);
+    });
+
+    try {
+      const proj = window.ECO_SAMPLE_PROJECTS.kolhapur_academic;
+      const env = {
+        rainfall: { annual_rainfall_mm: 980, peak_intensity_mm_hr: 65 },
+        solar: { daily_peak_sun_hours: 5.4, annual_solar_radiation_kwh_m2: 1950 },
+        airQuality: { aqi: 78, category: "Satisfactory", pm25: 28 },
+        weather: { annual_rainfall_mm: 980 }
+      };
+      const calc = {
+        score: { composite_score: 86, tier: "Tier 1: Exemplary Sponge Campus" },
+        runoff: {
+          pre_development: { composite_c: 0.25 },
+          proposed_development: { composite_c: 0.82 },
+          impact_summary: { peak_runoff_increase_pct: 178, runoff_reduction_pct: 52 }
+        },
+        water_demand: { daily_demand_litres: 16200, daily_non_potable_litres: 5400, lpcd: 135 },
+        rwh: { annual_potential_litres: 1624000, demand_offset_percentage: 100 },
+        energy: { recommended_pv_capacity_kwp: 120, annual_generation_kwh: 174000 },
+        carbon: { embodied_emissions: { total_embodied_tonnes: 185 } }
+      };
+
+      window.App = {
+        currentProject: proj,
+        calculations: calc,
+        environmentalData: env,
+        switchView: function() {},
+        saveProject: function() {},
+        showNotification: function() {}
+      };
+
+      window.NatureRecoveryView.render(proj, calc, env);
+      const content = document.getElementById('recovery-view').innerHTML;
+      document.getElementById('result').innerText = 'SUCCESS: rendered length = ' + content.length;
+    } catch(err) {
+      document.getElementById('result').innerText = 'CATCH ERROR: ' + err.message + '\n' + err.stack;
+    }
+  </script>
+</body>
+</html>

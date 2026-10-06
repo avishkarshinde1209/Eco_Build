@@ -1,0 +1,68 @@
+{
+  "name": "EcoBuild Smart — Environmental Assessment & Recovery Planner",
+  "short_name": "EcoBuild Smart",
+  "description": "Dynamic Environmental Decision Support and Sustainable Nature Recovery Planning System",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B1510",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nature Recovery Plan",
+      "short_name": "Recovery",
+      "description": "View dynamic nature recovery and mitigation plan",
+      "url": "/#recovery",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Site Assessment Wizard",
+      "short_name": "New Assessment",
+      "description": "Start a new site environmental assessment",
+      "url": "/#wizard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Scenario Studio",
+      "short_name": "What-If",
+      "description": "Simulate green infrastructure sensitivity",
+      "url": "/#scenariostudio",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "EIA Audit Report",
+      "short_name": "Audit Report",
+      "description": "Generate comprehensive environmental impact report",
+      "url": "/#report",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["productivity", "education", "utilities", "business"]
+}

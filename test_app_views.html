@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test App Views</title>
+</head>
+<body>
+  <div id="status">Loading...</div>
+  <iframe id="app-frame" src="http://localhost:8000" style="width: 1200px; height: 900px;"></iframe>
+
+  <script>
+    const iframe = document.getElementById('app-frame');
+    iframe.onload = async function() {
+      try {
+        const iWin = iframe.contentWindow;
+        const iDoc = iframe.contentDocument;
+
+        // Poll until App is initialized
+        for (let i = 0; i < 50; i++) {
+          if (iWin.App && iWin.App.calculations) break;
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        const appState = {
+          hasApp: !!iWin.App,
+          hasProject: !!iWin.App?.currentProject,
+          hasCalc: !!iWin.App?.calculations,
+          hasEnv: !!iWin.App?.environmentalData
+        };
+
+        // Now test switchView to recovery
+        iWin.App.switchView('recovery');
+        const recEl = iDoc.getElementById('recovery-view');
+        
+        // Also test switchView to siteplanner
+        iWin.App.switchView('siteplanner');
+        const spEl = iDoc.getElementById('siteplanner-view');
+
+        document.getElementById('status').innerText = JSON.stringify({
+          appState: appState,
+          recoveryLen: recEl?.innerHTML?.length,
+          siteplannerLen: spEl?.innerHTML?.length
+        });
+      } catch (e) {
+        document.getElementById('status').innerText = 'ERROR: ' + e.message + ' at ' + e.stack;
+      }
+    };
+  </script>
+</body>
+</html>

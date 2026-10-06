@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192">
+  <defs>
+    <linearGradient id="bgGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="leafGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="solarGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="waterGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad192)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#10b981" stroke-width="6" stroke-opacity="0.3"/>
+  <path d="M128 384 V240 H208 V176 H288 V224 H352 V288 H384 V384 Z" fill="#0f2922" opacity="0.8"/>
+  <path d="M256 128 C336 128 384 192 384 272 C384 352 304 384 256 384 C208 384 128 352 128 272 C128 192 176 128 256 128 Z" fill="url(#leafGrad192)" opacity="0.95"/>
+  <path d="M256 144 C256 240 256 320 256 368" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+  <path d="M168 184 C168 160 200 120 200 120 C200 120 232 160 232 184 C232 201.6 217.6 216 200 216 C182.4 216 168 201.6 168 184 Z" fill="url(#waterGrad192)"/>
+  <circle cx="344" cy="168" r="28" fill="url(#solarGrad192)"/>
+</svg>
