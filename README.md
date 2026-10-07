@@ -1,6 +1,6 @@
 # EcoBuild Smart – Dynamic Environmental Impact Assessment & Green Infrastructure Planner
 
-> **Academic Project Edition** — Computer Engineering & Environmental Science Interdisciplinary Decision Support System.
+> **Academic Project Edition** — Computer Engineering(Environmental science)
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-eco--build--avishkar1209--blush--sigma.vercel.app-059669?style=for-the-badge&logo=vercel)](https://eco-build-avishkar1209-blush-sigma.vercel.app/)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Eco__Build-1e293b?style=for-the-badge&logo=github)](https://github.com/avishkarshinde1209/Eco_Build)
