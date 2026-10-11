@@ -185,3 +185,96 @@ window.ExplainModal = {
     if (modalEl) modalEl.classList.add("hidden");
   }
 };
+
+window.FormulaInspector = {
+  show(metricKey) {
+    const proj = window.App?.currentProject || {};
+    const calc = window.App?.calculations || {};
+    const site = proj.site || {};
+    const plotArea = site.plot_area || 5000;
+    const builtUp = site.built_up_area || 2200;
+    const roof = site.roof_area || builtUp;
+    const iv = proj.interventions || {};
+
+    let content = "";
+    if (metricKey === "runoff" || metricKey === "runoff_deficit") {
+      const C_pre = calc.runoff?.pre_development?.composite_c || 0.75;
+      const C_post = calc.runoff?.with_interventions?.composite_c || 0.28;
+      const I = 65;
+      const qPre = ((C_pre * I * plotArea) / 1000).toFixed(1);
+      const qPost = ((C_post * I * plotArea) / 1000).toFixed(1);
+
+      content = `
+        <div class="space-y-4 text-xs font-sans text-stone-800">
+          <div class="border-b border-stone-200 pb-2">
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[10px]">HYDROLOGY & STORMWATER</span>
+            <h3 class="text-base font-bold text-[#123C32] font-serif mt-1">Rational Method Runoff (Q = C × I × A)</h3>
+          </div>
+          <div class="p-3 bg-stone-100 rounded-xl font-mono text-xs">
+            <strong>Governing Formula:</strong><br>
+            Q (m³/hr) = [ Composite C × Rainfall Intensity I (mm/hr) × Area A (m²) ] / 1,000
+          </div>
+          <div class="space-y-2">
+            <strong class="text-stone-700 block text-[11px] uppercase">Step-by-Step Substitution:</strong>
+            <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+              <span class="font-bold text-rose-900 block">1. Baseline Peak Flow (Unmitigated):</span>
+              <code>Q_base = (${C_pre} × ${I} mm/hr × ${plotArea.toLocaleString()} m²) / 1000 = <strong class="text-rose-700">${qPre} m³/hr</strong></code>
+            </div>
+            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <span class="font-bold text-emerald-900 block">2. Mitigated Sponge Flow:</span>
+              <code>Q_sponge = (${C_post} × ${I} mm/hr × ${plotArea.toLocaleString()} m²) / 1000 = <strong class="text-emerald-700">${qPost} m³/hr</strong></code>
+            </div>
+          </div>
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950">
+            <strong>Statutory Reference:</strong> NBC 2016 Part 11 Cl 4.2; IRC:SP:63-2018 Guidelines for SuDS Pavements; CPWD Stormwater Drainage Manual.
+          </div>
+        </div>
+      `;
+    } else if (metricKey === "rwh" || metricKey === "rwh_potential") {
+      const rain = 1042.8;
+      const vAnnual = Math.round(roof * rain * 0.85 * 0.85);
+
+      content = `
+        <div class="space-y-4 text-xs font-sans text-stone-800">
+          <div class="border-b border-stone-200 pb-2">
+            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[10px]">WATER CONSERVATION</span>
+            <h3 class="text-base font-bold text-[#123C32] font-serif mt-1">Rainwater Harvesting Potential (V = P × A × C × η)</h3>
+          </div>
+          <div class="p-3 bg-stone-100 rounded-xl font-mono text-xs">
+            <strong>Governing Formula:</strong><br>
+            V (Litres/yr) = Annual Rainfall P (mm) × Catchment Area A (m²) × Runoff C × Filter Efficiency η
+          </div>
+          <div class="space-y-2">
+            <strong class="text-stone-700 block text-[11px] uppercase">Step-by-Step Substitution:</strong>
+            <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg font-mono text-xs">
+              V = ${rain} mm × ${roof.toLocaleString()} m² × 0.85 × 0.85 = <strong class="text-blue-700">${vAnnual.toLocaleString()} Litres</strong> (~${(vAnnual/1000).toFixed(0)} kL/year)
+            </div>
+          </div>
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950">
+            <strong>Statutory Reference:</strong> BIS IS 15797:2008 (Rooftop Rainwater Harvesting); Central Ground Water Board (CGWB) Model Bill; NBC 2016 Part 9 Section 1.
+          </div>
+        </div>
+      `;
+    } else {
+      window.ExplainModal.open(metricKey);
+      return;
+    }
+
+    // Modal display
+    let inspectorEl = document.getElementById("formula-inspector-modal");
+    if (!inspectorEl) {
+      inspectorEl = document.createElement("div");
+      inspectorEl.id = "formula-inspector-modal";
+      inspectorEl.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4";
+      inspectorEl.innerHTML = `
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative border border-stone-200 animate-fade-in">
+          <button onclick="document.getElementById('formula-inspector-modal').classList.add('hidden')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center font-bold">✕</button>
+          <div id="formula-inspector-content"></div>
+        </div>
+      `;
+      document.body.appendChild(inspectorEl);
+    }
+    document.getElementById("formula-inspector-content").innerHTML = content;
+    inspectorEl.classList.remove("hidden");
+  }
+};

@@ -25,8 +25,8 @@ window.GreenInfraView = {
               Decentralized low-impact development (LID) strategies: Extensive green roofs and permeable pavement systems.
             </p>
           </div>
-          <button onclick="window.App.switchView('simulator')" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition">
-            Adjust in Simulator &rarr;
+          <button onclick="window.App.switchView('site3d')" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition">
+            Explore in 3D Site Twin &rarr;
           </button>
         </div>
 

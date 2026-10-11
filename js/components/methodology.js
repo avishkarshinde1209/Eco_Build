@@ -42,7 +42,7 @@ window.MethodologyView = {
             <ul class="list-disc pl-5 space-y-1">
               <li>Formulate a responsive mathematical calculation engine that computes stormwater runoff ($Q=CIA$), rainwater harvesting potential, embodied carbon deficit, and tree loss replacement ratios without hardcoded lookup tables.</li>
               <li>Integrate live open scientific APIs (Open-Meteo, Copernicus CAMS, OpenStreetMap Nominatim) with zero client-side secret exposure and resilient offline fallback caching.</li>
-              <li>Develop an interactive tri-state scenario simulator (Pre-Development vs Proposed vs Green Interventions) and live What-If sensitivity sliders for decision support.</li>
+              <li>Develop a 1:1 metric 3D Environmental Digital Twin and 2D Cadastre Blueprint matching plot cadastre and building footprint for spatial decision support.</li>
               <li>Provide total scientific explainability ("What caused this result?") showing exact equations, variables, and data confidence ratings for every metric.</li>
             </ul>
           </div>
@@ -86,7 +86,7 @@ DYNAMIC IMPACT ASSESSMENT (Quantified Deficit & Ecological Indicators)
 RULE-BASED RECOMMENDATION ENGINE (Site-Specific Green Infrastructure Sizing)
         │
         ▼
-WHAT-IF SIMULATION ENGINE (Real-Time Reactive Sliders & Tri-State Modeling)
+SPATIAL 3D DIGITAL TWIN & CADASTRE ENGINE (1:1 Metric Modeling & Validation)
         │
         ▼
 ANALYTICS DASHBOARD (Cards, Donut/Bar/Radar Charts, Explainability Drawers)

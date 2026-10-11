@@ -69,7 +69,7 @@ window.ECO_SAMPLE_PROJECTS = {
       groundwater_condition: "Moderate (6-8m depth)",
       construction_material: "Concrete + TMT Steel + Burnt Red Clay Brick"
     },
-    // Interventions (for What-If and Recommended Plan)
+    // Recommended Ecological Recovery Interventions
     interventions: {
       trees_planted: 90,             // 3:1 replacement ratio for 30 removed
       green_roof_m2: 600,            // ~27% of roof area

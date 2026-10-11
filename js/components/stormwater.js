@@ -65,8 +65,8 @@ window.StormwaterView = {
             <button onclick="window.ExplainModal && window.ExplainModal.open('runoff_deficit')" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition flex items-center gap-1.5">
               <span>ℹ️</span> Inspect Rational Formula
             </button>
-            <button onclick="window.App.switchView('scenariostudio')" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5">
-              <span>⚖️</span> Simulate Storm Events &rarr;
+            <button onclick="window.App.switchView('site3d')" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition flex items-center gap-1.5">
+              <span>🌐</span> View in 3D Digital Twin &rarr;
             </button>
           </div>
         </div>

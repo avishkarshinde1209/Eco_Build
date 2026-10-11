@@ -18,7 +18,7 @@ The application features a clean, responsive navigation bar with 8 primary studi
   - Site Land-Cover Doughnut Chart
   - Monthly Rainwater Harvesting (RWH) Potential Bar Chart
   - 7-Dimension Multi-Criteria Radar Score
-- **Quick Action Bar**: One-click shortcuts to Nature Recovery, Save Snapshot, Scenario Studio, Technical Studio, Plan History, and Official EIA Report.
+- **Quick Action Bar**: One-click shortcuts to Nature Recovery, Save Snapshot, 3D Environmental Twin, Technical Studio, Plan History, and Official EIA Report.
 - **Showcase Banner**: Direct launch into the Two-Phase Nature Recovery & Circular Materials Action Plan.
 
 ---
@@ -67,13 +67,13 @@ Presents a quantified, two-phase ecological restoration roadmap:
 
 ---
 
-### 5. ⚖️ Scenario & What-If Studio
-Interactive sensitivity sliders allowing immediate real-time exploration:
-- Adjust Permeable Paving percentage ($0 - 100\%$)
-- Adjust Rooftop Green Roof allocation ($0 - 70\%$)
-- Adjust Rooftop Solar PV allocation ($0 - 70\%$)
-- Adjust Compensatory Tree planting numbers
-- Observe real-time changes in Composite Score, Peak Runoff, Carbon Payback, and UHI Cooling.
+### 5. 🌐 3D Environmental Digital Twin & 2D Cadastre Blueprint
+Photorealistic 1:1 metric spatial digital twin physically dimensioned to your site cadastre:
+- **1:1 Metric Geometric Scaling**: Total plot area, building footprint, and remaining area (permeable paving, living greenery, bioswales) are mathematically matched down to the exact square meter in both 2D and 3D views.
+- **Photorealistic Architectural 3D Rendering**: Authentic architectural precast limestone, double-glazed curtain walls, floor slabs, tilted solar PV arrays, permeable interlocking pavers, bioswales, and multi-tier 3D trees with dynamic shadows.
+- **Dynamic Sun Trajectory Dial**: Interactive sun dial (08:00 to 18:00) with real-time shadow casting and atmospheric daylight rendering.
+- **Rain Simulator**: Atmospheric rainfall particles with stormwater surge routing.
+- **2D Cadastre Blueprint**: Side-by-side and curtain-split Before vs After schematics with dimension callouts.
 
 ---
 

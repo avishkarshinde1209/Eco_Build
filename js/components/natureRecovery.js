@@ -180,6 +180,7 @@ window.NatureRecoveryView = {
 
       tank_litres: tankLitres,
       tank_cap_kl: Math.round(tankLitres / 1000),
+      cistern_capacity_kl: Math.round(tankLitres / 1000),
       tank_cost: tankCost,
       tank_maint: tankMaint,
       tank_offset_l: tankOffsetL,
@@ -188,6 +189,7 @@ window.NatureRecoveryView = {
       solar_m2: solarM2,
       solar_kwp: solarKwp,
       solar_annual_kwh: solarAnnualKwh,
+      solar_kwh_yr: solarAnnualKwh,
       solar_co2_tonnes: solarCO2Tonnes,
       solar_cost: solarCost,
       solar_maint: solarMaint,
@@ -251,8 +253,8 @@ window.NatureRecoveryView = {
           { label: "Permeable Ground", val: `${d.permeable_m2.toLocaleString()} m²`, sub: "Porous IRC:SP:63" }
         ],
         summary: `NBC 2016 Part 3 mandates a minimum 25% permeable open space factor for plots exceeding 1,000 m². On your ${d.plot_area.toLocaleString()} m² parcel with a ${d.built_up.toLocaleString()} m² footprint, unmitigated open ground is restricted by ${d.hardscape.toLocaleString()} m² of vehicular paving. By introducing ${d.green_roof_m2.toLocaleString()} m² of extensive Sedum bio-roof and converting ${d.permeable_m2.toLocaleString()} m² of hardscape to porous pavers, the site achieves a total multi-stratum green envelope of ${proposedGreenM2.toLocaleString()} m² (${greenCoverFactor}% of plot area), comfortably exceeding the 25% statutory threshold.`,
-        actionText: "Simulate in What-If Studio",
-        actionRoute: "scenariostudio",
+        actionText: "View in 3D Digital Twin",
+        actionRoute: "site3d",
         explainKey: "green_cover"
       },
       {
@@ -1181,6 +1183,195 @@ window.NatureRecoveryView = {
     ];
   },
 
+  getDetailedStatutoryRecoveryElements(proj, calc, env, dynamic) {
+    const d = dynamic;
+    const site = proj?.site || {};
+    const builtUp = d.built_up;
+    const gfa = d.gfa;
+    const openArea = d.open_area;
+    const roofArea = d.roof_area;
+    const hardscape = d.hardscape;
+    const treesRemoved = d.trees_removed || 25;
+    const occupants = d.occupants || 100;
+    const dailyWaterL = occupants * (proj?.water?.lpcd || 135);
+    const stpCapacityKLD = Math.max(10, Math.ceil((dailyWaterL * 0.8 * 1.2) / 1000));
+    const miyawakiArea = Math.round(openArea * 0.25);
+    const miyawakiSaplings = Math.round(miyawakiArea * 3.5);
+    const cdWasteTonnes = Math.round(gfa * 0.055);
+    const divertedWasteTonnes = Math.round(cdWasteTonnes * 0.685);
+    const topsoilM3 = Math.round(builtUp * 0.20);
+    const embodiedCO2Avoided = Math.round((gfa * 0.40 * 130) / 1000);
+    const exposedRoofM2 = Math.max(40, roofArea - d.green_roof_m2 - d.solar_m2);
+
+    return [
+      {
+        id: "el_topsoil",
+        number: "01",
+        name: "Topsoil Protection & Reuse",
+        domain: "Soil & Gardening",
+        icon: "🚜",
+        standard_code: "MoEF&CC 2006 / NBC 2016 Part 11",
+        status: "Statutory Mandatory",
+        status_color: "emerald",
+        badge_bg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        affects_nature: `Digging the ${builtUp.toLocaleString()} m² building foundation removes fertile topsoil, destroying natural earthworms and soil nutrients while leaving bare ground open to mud and wind erosion.`,
+        what_we_need_to_do: `Scrape off the top 20 cm of fertile soil (${topsoilM3.toLocaleString()} m³) before heavy excavation starts. Store it in neat piles under protective cover sheets, and spread it back over gardens once construction finishes.`,
+        to_reduce_affect: `Saves 100% of your site's natural rich soil so you do not need to buy outside garden soil, keeping trees and lawns healthy while stopping soil erosion.`,
+        net_metric: `${topsoilM3.toLocaleString()} m³ Rich Topsoil Saved & Reused`
+      },
+      {
+        id: "el_trees",
+        number: "02",
+        name: "Native Trees & 3:1 Replacement",
+        domain: "Trees & Greenery",
+        icon: "🌳",
+        standard_code: "Maharashtra Tree Act 1975 & FSI 2023",
+        status: "3:1 Quota Satisfied",
+        status_color: "emerald",
+        badge_bg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        affects_nature: `Cutting down ${treesRemoved} mature trees removes ${d.tree_canopy_m2.toLocaleString()} m² of cool shade, eliminates nesting spots for local birds and squirrels, and heats up the surrounding ground.`,
+        what_we_need_to_do: `Plant ${d.trees_planted} native Indian trees (such as Neem, Jamun, Peepal, and Karanj) along site edges and open areas, giving each tree at least 16 m² of root space.`,
+        to_reduce_affect: `Restores ${d.tree_canopy_m2.toLocaleString()} m² of natural tree shade, absorbs ${d.tree_co2_kg.toLocaleString()} kg of CO₂ from the air every year, and brings back songbirds and butterflies.`,
+        net_metric: `${d.trees_planted} Native Trees Planted (${d.tree_canopy_m2.toLocaleString()} m² Canopy Restored)`
+      },
+      {
+        id: "el_miyawaki",
+        number: "03",
+        name: "Dense Native Miyawaki Micro-Forest",
+        domain: "Wildlife & Micro-Forest",
+        icon: "🌲",
+        standard_code: "Biological Diversity Act 2002",
+        status: "+64% Net Gain",
+        status_color: "purple",
+        badge_bg: "bg-purple-50 text-purple-800 border-purple-200",
+        affects_nature: `Empty flat lawns or plain asphalt create bare spaces with almost no wildlife, dry dusty soil, and zero protection from street noise or dust.`,
+        what_we_need_to_do: `Plant a dense mini-forest of ${miyawakiSaplings.toLocaleString()} saplings across ${miyawakiArea.toLocaleString()} m² using the Miyawaki method (mixing canopy trees, fruit trees, shrubs, and flowering bushes with organic compost).`,
+        to_reduce_affect: `Grows 10 times faster than ordinary tree planting, cools nearby air by ~3.5°C, cuts road noise, and creates a living sanctuary for birds and pollinators.`,
+        net_metric: `${miyawakiSaplings.toLocaleString()} Saplings in ${miyawakiArea.toLocaleString()} m² Micro-Forest`
+      },
+      {
+        id: "el_permeable",
+        number: "04",
+        name: "Permeable Pavers for Driveways & Parking",
+        domain: "Rainwater Infiltration",
+        icon: "🛣️",
+        standard_code: "IRC:SP:63-2018 & CGWB Norms",
+        status: "Porous IRC:SP:63",
+        status_color: "blue",
+        badge_bg: "bg-blue-50 text-blue-800 border-blue-200",
+        affects_nature: `Paving ${hardscape.toLocaleString()} m² with solid concrete or asphalt blocks rain from soaking into the ground, causing sudden puddles and street flooding during monsoon downpours.`,
+        what_we_need_to_do: `Use interlocking porous concrete pavers across ${d.permeable_m2.toLocaleString()} m² of parking bays and driveways laid over crushed gravel so rainwater soaks straight through.`,
+        to_reduce_affect: `Stops 80% of rainwater from rushing into streets, naturally traps oil and road dust, and recharges ~${Math.round(d.recharged_litres / 1000).toLocaleString()} kL of clean water into the groundwater table every year.`,
+        net_metric: `${d.permeable_m2.toLocaleString()} m² Porous Ground (${Math.round(d.recharged_litres / 1000).toLocaleString()} kL/yr Recharged)`
+      },
+      {
+        id: "el_bioswale",
+        number: "05",
+        name: "Rain Garden & Natural Drainage Swale",
+        domain: "Storm Drainage & Nature Filters",
+        icon: "🌊",
+        standard_code: "CIRIA C753 & IRC:SP:13",
+        status: "85% Sediment Filtered",
+        status_color: "teal",
+        badge_bg: "bg-teal-50 text-teal-800 border-teal-200",
+        affects_nature: `Rain running off dirty driveways washes oil, vehicle soot, and dirt directly into municipal gutters and local streams without any cleaning.`,
+        what_we_need_to_do: `Shape a ${d.bioswale_m2.toLocaleString()} m² landscaped green rain garden with sand, compost, and native water-loving plants along the low edge of the site.`,
+        to_reduce_affect: `Slows down rushing rainwater during storms, naturally filters out 85% of road dust and mud, and recharges clean water into the soil.`,
+        net_metric: `${d.bioswale_m2.toLocaleString()} m² Rain Garden (85% Road Dirt Filtered)`
+      },
+      {
+        id: "el_rwh",
+        number: "06",
+        name: "Underground Rainwater Harvesting Tank",
+        domain: "Rainwater Storage",
+        icon: "💧",
+        standard_code: "IS 15797:2008 & CGWB Guidelines",
+        status: `${d.tank_cap_kl} kL Storage Sized`,
+        status_color: "blue",
+        badge_bg: "bg-blue-50 text-blue-800 border-blue-200",
+        affects_nature: `Rain falling on your ${roofArea.toLocaleString()} m² rooftop is lost down storm drains, while building occupants spend money on municipal or private water deliveries.`,
+        what_we_need_to_do: `Build an underground rainwater storage tank (${d.tank_cap_kl} kL capacity) with a self-cleaning first-flush leaf filter and sand filter.`,
+        to_reduce_affect: `Collects ~${Math.round((roofArea * d.annual_rain_m * 0.85 * 0.90) / 1000).toLocaleString()} kL of clean rainwater each year for toilet flushing and garden watering, saving ₹ ${d.tanker_savings.toLocaleString('en-IN')} in water tanker bills.`,
+        net_metric: `${d.tank_cap_kl} kL Storage Tank (~${Math.round((roofArea * d.annual_rain_m * 0.85 * 0.90) / 1000).toLocaleString()} kL/yr Rain Saved)`
+      },
+      {
+        id: "el_stp",
+        number: "07",
+        name: "On-Site Sewage Treatment & Water Recycling",
+        domain: "Clean Water Recycling",
+        icon: "🔄",
+        standard_code: "CPHEEO 2019 & NGT Guidelines",
+        status: "100% ZLD Compliant",
+        status_color: "emerald",
+        badge_bg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        affects_nature: `Letting untreated building sewage enter public drains pollutes local rivers, causes bad odors, and spreads disease.`,
+        what_we_need_to_do: `Install a modern on-site sewage treatment plant (${stpCapacityKLD} kLD) with fine filters and UV disinfection to purify all wastewater.`,
+        to_reduce_affect: `Recycles 100% of used building water on-site for flushing toilets and watering site gardens, meaning zero sewage enters public drains.`,
+        net_metric: `${stpCapacityKLD} kLD Treatment (100% Zero Sewage Discharge)`
+      },
+      {
+        id: "el_solar",
+        number: "08",
+        name: "Rooftop Clean Solar Panels",
+        domain: "Clean Energy & Lower Bills",
+        icon: "☀️",
+        standard_code: "ECBC 2017 & CEA v20 Baseline",
+        status: "100% RE Quota Met",
+        status_color: "amber",
+        badge_bg: "bg-amber-50 text-amber-800 border-amber-200",
+        affects_nature: `Using coal grid electricity produces ~${Math.round((gfa * 75 * 0.82) / 1000)} tonnes of air pollution and carbon dioxide every year.`,
+        what_we_need_to_do: `Mount ${d.solar_kwp} kWp of high-efficiency solar panels across ${d.solar_m2.toLocaleString()} m² of your rooftop connected to your electrical meter.`,
+        to_reduce_affect: `Generates ~${Math.round(d.solar_annual_kwh / 1000)} MWh of clean electricity every year, cuts ₹ ${d.solar_savings.toLocaleString('en-IN')} from electricity bills, and avoids ${d.solar_co2_tonnes} tonnes of carbon emissions.`,
+        net_metric: `${d.solar_kwp} kWp Solar (${Math.round(d.solar_annual_kwh / 1000)} MWh/yr Clean Power)`
+      },
+      {
+        id: "el_green_concrete",
+        number: "09",
+        name: "Low-Carbon Eco Concrete",
+        domain: "Clean Building Materials",
+        icon: "🧱",
+        standard_code: "IS 456:2000 & CPWD Low-Carbon Norms",
+        status: "28.6% Carbon Reduction",
+        status_color: "stone",
+        badge_bg: "bg-stone-100 text-stone-800 border-stone-300",
+        affects_nature: `Traditional cement manufacturing creates massive smoke and carbon pollution, accounting for over half of a building's initial carbon footprint.`,
+        what_we_need_to_do: `Mix 35% industrial slag (GGBS) or fly-ash into concrete foundations and beams to replace carbon-intensive cement.`,
+        to_reduce_affect: `Cuts ${embodiedCO2Avoided} tonnes of carbon emissions and actually makes the concrete stronger and more resistant to moisture damage.`,
+        net_metric: `${embodiedCO2Avoided} tonnes Carbon Cut (-28.6% Cement Emissions)`
+      },
+      {
+        id: "el_cd_waste",
+        number: "10",
+        name: "Construction Rubble & Debris Recycling",
+        domain: "Waste Reduction",
+        icon: "♻️",
+        standard_code: "CPCB C&D Waste Rules 2016",
+        status: "68.5% Landfill Diversion",
+        status_color: "emerald",
+        badge_bg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        affects_nature: `Dumping ${cdWasteTonnes.toLocaleString()} tonnes of construction rubble fills up landfills and forces companies to quarry fresh river sand and rock.`,
+        what_we_need_to_do: `Sort waste into separate bins on-site, crush clean broken concrete and brick, and use it as gravel base under driveways.`,
+        to_reduce_affect: `Diverts ${divertedWasteTonnes.toLocaleString()} tonnes of debris away from city dumps and reuses it right on site for paving bases.`,
+        net_metric: `${divertedWasteTonnes.toLocaleString()} tonnes Rubble Recycled (68.5% Kept Out of Landfill)`
+      },
+      {
+        id: "el_cool_roof",
+        number: "11",
+        name: "Cool Reflective Roof & Green Bio-Roof",
+        domain: "Rooftop Cooling & Comfort",
+        icon: "🌿",
+        standard_code: "NBC 2016 Part 11 & Cool Roof Rating",
+        status: "16°C Surface Cooling",
+        status_color: "amber",
+        badge_bg: "bg-amber-50 text-amber-800 border-amber-200",
+        affects_nature: `Bare concrete rooftops heat up to 60°C under the sun, turning top-floor rooms into ovens and driving up air conditioning electricity bills.`,
+        what_we_need_to_do: `Plant ${d.green_roof_m2.toLocaleString()} m² of low-maintenance Sedum green roof and coat the rest with white sun-reflective coating.`,
+        to_reduce_affect: `Lowers rooftop surface temperature by 16°C, keeps top-floor rooms cooler, cuts air conditioning costs by ~10%, and helps rooftop solar panels generate more power.`,
+        net_metric: `${d.green_roof_m2.toLocaleString()} m² Green Roof + Cool Coating (16°C Cooler Surface)`
+      }
+    ];
+  },
+
   render(project, calculations, environmentalData) {
     const container = document.getElementById("recovery-view") || document.getElementById("plan-view");
     if (!container) return;
@@ -1196,6 +1387,7 @@ window.NatureRecoveryView = {
     // Execute dynamic calculations from user's site
     const dynamic = this.getDynamicInterventions(proj, calc, env);
     const eightDomains = this.getEightDomainsData(proj, calc, env, dynamic);
+    const recoveryElements = this.getDetailedStatutoryRecoveryElements(proj, calc, env, dynamic);
     const plans = this.getDynamicPlans(dynamic);
     const actionCards = this.getActionCardsData(proj, calc, env, dynamic);
     const recovery = calc?.recovery || window.NatureRecoveryCalculator.calculateRecoveryPlan(proj, calc, env);
@@ -1238,600 +1430,171 @@ window.NatureRecoveryView = {
     container.innerHTML = `
       <div class="space-y-8 max-w-7xl mx-auto pb-16 font-sans text-stone-800 animate-fade-in">
         
-        <!-- HEADER HERO (DYNAMIC TO SITE AREA) -->
+        <!-- HEADER (CLEAN & SIMPLE) -->
         <div class="bg-[#0D1912] text-white rounded-3xl p-6 sm:p-8 border border-stone-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div class="space-y-2">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-mono">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-mono">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>DYNAMIC SITE-SIZED RECOVERY ENGINE</span>
+                <span>Active Recovery Plan</span>
               </span>
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-stone-800 text-stone-300 border border-stone-700 font-mono">
                 Plot: ${dynamic.plot_area.toLocaleString()} m²
               </span>
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-stone-800 text-stone-300 border border-stone-700 font-mono">
-                Roof: ${dynamic.roof_area.toLocaleString()} m²
+                Footprint: ${dynamic.built_up.toLocaleString()} m²
               </span>
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-950 text-blue-300 border border-blue-800 font-mono">
-                Rainfall: ${dynamic.annual_rain_mm} mm
+                Roof: ${dynamic.roof_area.toLocaleString()} m²
               </span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-black font-serif text-white tracking-tight">
-              Nature Recovery & Ecological Mitigation Engine
+              Nature Recovery Plan
             </h1>
-            <p class="text-xs sm:text-sm text-stone-300 max-w-3xl leading-relaxed">
-              Every intervention below is dynamically generated from your site's physical cadastre: <strong>${dynamic.plot_area.toLocaleString()} m²</strong> plot size, <strong>${dynamic.built_up.toLocaleString()} m²</strong> footprint, <strong>${dynamic.hardscape.toLocaleString()} m²</strong> hardscape, and <strong>${dynamic.trees_removed}</strong> felled trees. No static or boilerplate estimates.
+            <p class="text-xs sm:text-sm text-stone-300 max-w-2xl leading-relaxed">
+              Clear, practical steps to protect nature, save rainwater, add trees, and reduce pollution on your site.
             </p>
           </div>
 
-          <div class="flex items-center gap-2.5 self-start lg:self-center">
-            <button onclick="window.App.switchView('scenariostudio')" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1.5">
-              <span>⚖️</span> <span>What-If Studio</span>
+          <div class="flex items-center gap-2.5 self-start lg:self-center flex-wrap">
+            <button onclick="window.NatureRecoveryView.printRecoveryPlan()" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-[#14281D] hover:bg-emerald-950 text-emerald-200 border border-emerald-700/60 shadow transition flex items-center gap-1.5" title="Print plan on A4 paper">
+              <span>🖨️</span> <span>Print Plan (A4)</span>
             </button>
-            <button onclick="window.App.switchView('report')" class="px-4 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 transition flex items-center gap-1.5">
-              <span>📄</span> <span>EIA Audit</span>
+            <button onclick="window.App.switchView('site3d')" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1.5">
+              <span>🌐</span> <span>3D View</span>
             </button>
           </div>
         </div>
 
-        <!-- VISUAL ENVIRONMENTAL SUMMARY (8 STATUTORY DOMAINS) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-stone-100 pb-5">
-            <div>
-              <div class="flex items-center gap-2 flex-wrap mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Statutory & Engineering Benchmarks</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600">8 Core Domains</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">100% Site Dynamic</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Visual Environmental Recovery Summary (8 Domains)
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                Quantitative environmental performance and nature-recovery deficits across all 8 statutory engineering domains, evaluated against NBC 2016, FSI 2023, IS 15797, IRC:SP:13, ECBC 2017, ISO 14044, BDA 2002, and CPCB 2016.
-              </p>
-            </div>
-
-            <!-- Top Summary Health Metric -->
-            <div class="flex items-center gap-4 bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80 self-start lg:self-auto shrink-0">
-              <div class="w-12 h-12 rounded-xl bg-[#0D1912] flex items-center justify-center text-emerald-400 font-mono font-black text-lg shadow-sm">
-                8/8
-              </div>
-              <div class="text-left leading-tight">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Statutory Clearance</span>
-                <strong class="text-stone-900 text-xs font-bold block">100% Mitigated Quota</strong>
-                <span class="text-[10px] text-emerald-700 font-medium">All 8 Codes Satisfied</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- High-Level Aggregated KPI Ribbon -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 to-cyan-50/40 border border-blue-200/80 space-y-1">
-              <span class="text-[10px] font-bold uppercase text-blue-900 tracking-wider block">💧 Water Cycle Restored</span>
-              <strong class="text-xl font-black font-serif text-blue-950 block">${dynamic.total_water_saved_kl.toLocaleString()} kL / yr</strong>
-              <span class="text-[10px] text-blue-700 font-medium block">RWH Cistern + Porous Pavers + Swale</span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-teal-50/40 border border-emerald-200/80 space-y-1">
-              <span class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider block">🌱 Carbon Abated / Year</span>
-              <strong class="text-xl font-black font-serif text-emerald-950 block">${dynamic.total_co2_tonnes.toFixed(1)} t CO₂e / yr</strong>
-              <span class="text-[10px] text-emerald-700 font-medium block">Solar Clean Power + Tree Sequestration</span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-green-50/70 to-emerald-50/40 border border-green-200/80 space-y-1">
-              <span class="text-[10px] font-bold uppercase text-green-900 tracking-wider block">🌳 Restored Sponge Surface</span>
-              <strong class="text-xl font-black font-serif text-green-950 block">${(dynamic.tree_canopy_m2 + dynamic.permeable_m2 + dynamic.green_roof_m2).toLocaleString()} m²</strong>
-              <span class="text-[10px] text-green-700 font-medium block">Tree Canopy + Green Roof + Porous Ground</span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-stone-50/90 to-amber-50/40 border border-stone-200/90 space-y-1">
-              <span class="text-[10px] font-bold uppercase text-stone-700 tracking-wider block">♻️ Circular Materials Salvaged</span>
-              <strong class="text-xl font-black font-serif text-stone-900 block">${Math.round(dynamic.built_up * 0.20).toLocaleString()} m³ Topsoil</strong>
-              <span class="text-[10px] text-stone-600 font-medium block">+ ${Math.round((dynamic.gfa * 0.055) * 0.685).toLocaleString()} t C&D Rubble Diverted</span>
-            </div>
-          </div>
-
-          <!-- Interactive Category Filter Chips -->
-          <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-stone-100">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button onclick="window.NatureRecoveryView.filterDomainCategory('all')" data-category="all" class="domain-filter-pill px-3 py-1 rounded-xl text-xs font-bold transition ${this.activeDomainFilter === 'all' ? 'bg-[#14281D] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
-                All 8 Domains (8)
-              </button>
-              <button onclick="window.NatureRecoveryView.filterDomainCategory('vegetation')" data-category="vegetation" class="domain-filter-pill px-3 py-1 rounded-xl text-xs font-bold transition ${this.activeDomainFilter === 'vegetation' ? 'bg-[#14281D] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
-                🌿 Vegetation & Canopy (3)
-              </button>
-              <button onclick="window.NatureRecoveryView.filterDomainCategory('water')" data-category="water" class="domain-filter-pill px-3 py-1 rounded-xl text-xs font-bold transition ${this.activeDomainFilter === 'water' ? 'bg-[#14281D] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
-                💧 Water & Hydrology (2)
-              </button>
-              <button onclick="window.NatureRecoveryView.filterDomainCategory('energy')" data-category="energy" class="domain-filter-pill px-3 py-1 rounded-xl text-xs font-bold transition ${this.activeDomainFilter === 'energy' ? 'bg-[#14281D] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
-                ☀️ Energy & Solar (1)
-              </button>
-              <button onclick="window.NatureRecoveryView.filterDomainCategory('circularity')" data-category="circularity" class="domain-filter-pill px-3 py-1 rounded-xl text-xs font-bold transition ${this.activeDomainFilter === 'circularity' ? 'bg-[#14281D] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
-                🔄 Circularity & Materials (2)
-              </button>
-            </div>
-
-            <div class="text-[11px] text-stone-400 font-medium">
-              Click any card to inspect calculations or navigate to dedicated module
-            </div>
-          </div>
-
-          <!-- 8 DOMAIN CARDS GRID -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
-            ${eightDomains.map(dom => {
-              const isHidden = this.activeDomainFilter !== 'all' && this.activeDomainFilter !== dom.category;
-              return `
-                <div class="domain-summary-card bg-stone-50/70 hover:bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 hover:border-emerald-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 ${isHidden ? 'hidden' : ''}" data-category="${dom.category}">
-                  
-                  <div class="space-y-3.5">
-                    <!-- Top Bar: Number, Category, Standard Code, Status Badge -->
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-[#0D1912] text-emerald-400 font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
-                          ${dom.number}
-                        </div>
-                        <div class="min-w-0">
-                          <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 font-mono">${dom.category.toUpperCase()}</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${dom.badgeBg}">${dom.code}</span>
-                          </div>
-                          <h3 class="text-sm sm:text-base font-black font-serif text-stone-900 leading-tight mt-0.5 truncate" title="${dom.title}">${dom.title}</h3>
-                        </div>
-                      </div>
-
-                      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${dom.badgeBg} shrink-0">
-                        <span class="w-1.5 h-1.5 rounded-full bg-${dom.statusColor}-500 animate-pulse"></span>
-                        <span class="whitespace-nowrap">${dom.status}</span>
-                      </div>
-                    </div>
-
-                    <!-- Baseline Deficit vs Proposed Target Visual Progress Meter -->
-                    <div class="bg-white p-3.5 rounded-2xl border border-stone-200/80 space-y-1.5 shadow-xs">
-                      <div class="flex items-center justify-between text-[11px] gap-2">
-                        <span class="text-stone-500 font-medium truncate">${dom.baselineLabel}</span>
-                        <span class="font-bold text-stone-900 font-mono text-right shrink-0">${dom.targetLabel}</span>
-                      </div>
-                      <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden p-0.5 border border-stone-200/60">
-                        <div class="h-full ${dom.progressColor} rounded-full transition-all duration-700" style="width: ${Math.min(100, Math.max(12, dom.progressPct))}%"></div>
-                      </div>
-                      <div class="flex items-center justify-between text-[10px] text-stone-500 pt-0.5">
-                        <span>Pre-Development / Unmitigated Deficit</span>
-                        <span class="font-mono font-bold text-emerald-700">${dom.progressPct}% Target Attainment</span>
-                      </div>
-                    </div>
-
-                    <!-- 3 Quantitative Metric Badges -->
-                    <div class="grid grid-cols-3 gap-2">
-                      ${dom.kpis.map(k => `
-                        <div class="p-2.5 bg-white rounded-xl border border-stone-200/70 text-center">
-                          <span class="text-[9px] uppercase font-bold text-stone-400 block truncate" title="${k.label}">${k.label}</span>
-                          <strong class="text-xs font-black font-mono text-stone-900 block truncate my-0.5">${k.val}</strong>
-                          <span class="text-[9px] text-stone-500 block truncate">${k.sub}</span>
-                        </div>
-                      `).join('')}
-                    </div>
-
-                    <!-- Site-Tailored Architectural & Scientific Explanation -->
-                    <div class="bg-white/80 p-3.5 rounded-2xl border border-stone-200/70 text-xs text-stone-700 leading-relaxed font-normal">
-                      ${dom.summary}
-                    </div>
-                  </div>
-
-                  <!-- Footer Actions: Mathematical Formula Modal & Direct Module Navigation -->
-                  <div class="pt-3 border-t border-stone-200/80 flex items-center justify-between gap-2">
-                    <button onclick="window.ExplainModal && window.ExplainModal.open('${dom.explainKey}')" class="px-3 py-1.5 rounded-xl text-[11px] font-semibold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 transition flex items-center gap-1.5" title="View formulas and scientific basis">
-                      <span>ℹ️</span> <span>Formula & Math</span>
-                    </button>
-                    <button onclick="window.App.switchView('${dom.actionRoute}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition flex items-center gap-1">
-                      <span>${dom.actionText}</span> <span>&rarr;</span>
-                    </button>
-                  </div>
-
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-        <!-- AVOIDANCE & SOURCE REDUCTION ENGINE (AVOID -> REDUCE -> RECOVER -> COMPENSATE) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Mitigation Hierarchy Tier 1 & 2</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600">Source Prevention</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Avoidance Engine & Upstream Impact Prevention
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                Before applying engineering recovery or compensatory spending, EcoBuild tests architectural modifications to <strong>avoid</strong> and <strong>reduce</strong> environmental harm at the source.
-              </p>
-            </div>
-            <div class="flex items-center gap-1.5 text-[11px] font-mono font-bold bg-[#0D1912] text-emerald-400 px-3.5 py-2 rounded-2xl shrink-0 shadow-sm">
-              <span class="text-emerald-300">AVOID</span> &rarr; <span class="text-emerald-300">REDUCE</span> &rarr; <span>RECOVER</span> &rarr; <span>COMPENSATE</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <!-- 1. Tree Preservation -->
-            <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 hover:border-emerald-300 transition space-y-3 flex flex-col justify-between">
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Tier 1: Avoidance</span>
-                  <span class="text-xs">🌳</span>
-                </div>
-                <h3 class="text-sm font-bold text-stone-900 font-serif">${avoidance.tree_preservation.title}</h3>
-                <p class="text-xs text-stone-700 leading-relaxed">${avoidance.tree_preservation.action}</p>
-                <div class="p-2.5 bg-white rounded-xl border border-stone-200/80 text-[11px] space-y-1">
-                  <div class="font-bold text-emerald-800">${avoidance.tree_preservation.potential}</div>
-                  <div class="text-stone-600">${avoidance.tree_preservation.effect}</div>
-                </div>
-              </div>
-              <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-500 font-medium">
-                ${avoidance.tree_preservation.status}
-              </div>
-            </div>
-
-            <!-- 2. Hardscape Minimization -->
-            <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 hover:border-emerald-300 transition space-y-3 flex flex-col justify-between">
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">Tier 2: Reduction</span>
-                  <span class="text-xs">🛣️</span>
-                </div>
-                <h3 class="text-sm font-bold text-stone-900 font-serif">${avoidance.hardscape_reduction.title}</h3>
-                <p class="text-xs text-stone-700 leading-relaxed">${avoidance.hardscape_reduction.action}</p>
-                <div class="p-2.5 bg-white rounded-xl border border-stone-200/80 text-[11px] space-y-1">
-                  <div class="font-bold text-blue-800">${avoidance.hardscape_reduction.potential}</div>
-                  <div class="text-stone-600">${avoidance.hardscape_reduction.effect}</div>
-                </div>
-              </div>
-              <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-500 font-medium">
-                ${avoidance.hardscape_reduction.status}
-              </div>
-            </div>
-
-            <!-- 3. Drainage Swale Conservation -->
-            <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 hover:border-emerald-300 transition space-y-3 flex flex-col justify-between">
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800">Tier 1: Avoidance</span>
-                  <span class="text-xs">🌊</span>
-                </div>
-                <h3 class="text-sm font-bold text-stone-900 font-serif">${avoidance.drainage_conservation.title}</h3>
-                <p class="text-xs text-stone-700 leading-relaxed">${avoidance.drainage_conservation.action}</p>
-                <div class="p-2.5 bg-white rounded-xl border border-stone-200/80 text-[11px] space-y-1">
-                  <div class="font-bold text-amber-900">${avoidance.drainage_conservation.potential}</div>
-                  <div class="text-stone-600">${avoidance.drainage_conservation.effect}</div>
-                </div>
-              </div>
-              <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-500 font-medium">
-                ${avoidance.drainage_conservation.status}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SIX ALTERNATIVE SITE DESIGN STRATEGIES COMPARISON (SECTIONS 33-40) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Formal Alternatives Assessment</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600">Sections 33–40 EIA Requirement</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Six Alternative Site Design Strategies Comparison
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                Statutory evaluation of 6 distinct architectural configurations tested against your site boundary, balancing civil costs, tree conservation, stormwater hydrology, and energy generation.
-              </p>
-            </div>
-            <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 self-start sm:self-auto font-mono">
-              6 Layouts Analyzed
+        <!-- 4 KEY NUMBERS RIBBON -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1">
+            <span class="text-xs font-bold uppercase text-blue-900 tracking-wider flex items-center gap-1.5">
+              <span>💧</span> <span>Water Saved</span>
             </span>
+            <strong class="text-xl sm:text-2xl font-black font-serif text-blue-950 block">${dynamic.total_water_saved_kl.toLocaleString()} kL / yr</strong>
+            <p class="text-xs text-blue-800 font-medium leading-snug">Harvested rainwater reused for toilets, gardens, and ground wells.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            ${alternatives.map(alt => {
-              const isRecommended = alt.id === 'alt_6';
-              return `
-                <div class="p-5 rounded-2xl border ${isRecommended ? 'border-2 border-emerald-500 bg-emerald-50/30 shadow-md ring-1 ring-emerald-500/20' : 'border-stone-200 bg-stone-50/70 hover:bg-white'} transition flex flex-col justify-between space-y-4">
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isRecommended ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-700'}">${alt.tag}</span>
-                      <div class="text-right">
-                        <span class="text-[10px] font-bold uppercase text-stone-400 block leading-none">Score</span>
-                        <strong class="font-mono text-sm font-black ${isRecommended ? 'text-emerald-800' : 'text-stone-800'}">${alt.score}/100</strong>
-                      </div>
-                    </div>
-                    <h3 class="text-sm font-black font-serif text-stone-900 leading-tight">${alt.name}</h3>
-                    
-                    <div class="p-3 bg-white rounded-xl border border-stone-200/80 space-y-1.5 text-[11px]">
-                      <div class="flex justify-between"><span class="text-stone-500">CapEx Outlay:</span> <strong class="text-stone-900 font-mono">${alt.capex}</strong></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Trees Impact:</span> <span class="font-medium text-stone-800">${alt.trees_removed}</span></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Green Surface:</span> <span class="font-medium text-stone-800">${alt.green_area}</span></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Runoff Factor:</span> <span class="font-medium text-blue-800 font-mono">${alt.runoff_c}</span></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Water Offset:</span> <span class="font-medium text-blue-900 font-mono">${alt.water_saved}</span></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Clean Energy:</span> <span class="font-medium text-emerald-800 font-mono">${alt.solar_gen}</span></div>
-                      <div class="flex justify-between"><span class="text-stone-500">Biodiversity Net Gain:</span> <span class="font-medium text-emerald-900 font-mono">${alt.bng_score}</span></div>
-                    </div>
-                  </div>
-
-                  <div class="pt-3 border-t border-stone-200/80 space-y-2 text-[11px] leading-snug">
-                    <p class="text-stone-600">${alt.verdict}</p>
-                    <div class="text-[10px] font-semibold text-stone-500">Feasibility: <span class="text-stone-800">${alt.feasibility}</span></div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-        <!-- 1. MULTI-OBJECTIVE OPTIMIZER: 3 PLANS SELECTOR & PRIORITY WEIGHT SLIDERS -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Decision-Support Optimizer</span>
-              <h2 class="text-xl font-black text-stone-900 font-serif mt-1">Multi-Objective Recovery Plans for Your Site</h2>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="window.NatureRecoveryView.selectPlan('low_cost')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${this.activePlan === 'low_cost' ? 'bg-[#14281D] text-white border-stone-900 shadow-sm' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'}">
-                Plan A (Low Cost)
-              </button>
-              <button onclick="window.NatureRecoveryView.selectPlan('balanced')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition ${this.activePlan === 'balanced' ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'}">
-                Plan B (Balanced ★)
-              </button>
-              <button onclick="window.NatureRecoveryView.selectPlan('max_recovery')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${this.activePlan === 'max_recovery' ? 'bg-purple-900 text-white border-purple-800 shadow-sm' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'}">
-                Plan C (Max Recovery)
-              </button>
-            </div>
-          </div>
-
-          <!-- Active Selected Plan Summary Banner -->
-          <div class="p-6 rounded-2xl ${this.activePlan === 'balanced' ? 'bg-emerald-50/80 border-2 border-emerald-500/60' : this.activePlan === 'low_cost' ? 'bg-amber-50/80 border-2 border-amber-500/60' : 'bg-purple-50/80 border-2 border-purple-500/60'} space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider ${this.activePlan === 'balanced' ? 'text-emerald-800' : this.activePlan === 'low_cost' ? 'text-amber-800' : 'text-purple-800'}">${currentPlan.badge}</span>
-                <h3 class="text-lg font-black text-stone-900 font-serif">${currentPlan.name}</h3>
-                <p class="text-xs text-stone-600 mt-1">${currentPlan.desc}</p>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="text-right">
-                  <span class="text-[10px] font-bold uppercase text-stone-400 block">EcoBuild Score</span>
-                  <span class="text-2xl font-black font-serif text-emerald-800">${currentPlan.score} / 100</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Key Indicators Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 text-xs">
-              <div class="p-3 bg-white/90 rounded-xl border border-stone-200/80">
-                <span class="text-stone-400 block text-[10px] font-bold uppercase">Estimated CapEx</span>
-                <strong class="text-stone-900 font-serif text-sm">${currentPlan.capex}</strong>
-              </div>
-              <div class="p-3 bg-white/90 rounded-xl border border-stone-200/80">
-                <span class="text-stone-400 block text-[10px] font-bold uppercase">Annual Maintenance</span>
-                <strong class="text-stone-900 font-serif text-sm">${currentPlan.annual_maint}</strong>
-              </div>
-              <div class="p-3 bg-white/90 rounded-xl border border-stone-200/80">
-                <span class="text-stone-400 block text-[10px] font-bold uppercase">Water Yield</span>
-                <strong class="text-blue-700 font-serif text-sm">${currentPlan.water_saved}</strong>
-              </div>
-              <div class="p-3 bg-white/90 rounded-xl border border-stone-200/80">
-                <span class="text-stone-400 block text-[10px] font-bold uppercase">Runoff Relief</span>
-                <strong class="text-emerald-700 font-serif text-sm">-${currentPlan.runoff_reduction}</strong>
-              </div>
-              <div class="p-3 bg-white/90 rounded-xl border border-stone-200/80">
-                <span class="text-stone-400 block text-[10px] font-bold uppercase">Carbon Abatement</span>
-                <strong class="text-emerald-700 font-serif text-sm">${currentPlan.carbon_abated}</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- USER-DEFINED PRIORITY WEIGHT CONTROLS -->
-          <div class="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-stone-800">Customize Multi-Objective Optimization Weights</span>
-              <span class="text-[11px] text-stone-500">Total Weight: 100% (Adjust to change portfolio priorities)</span>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Environmental:</span>
-                  <span class="font-mono font-bold">${this.weights.environmental}%</span>
-                </div>
-                <input type="range" min="10" max="60" value="${this.weights.environmental}" oninput="window.NatureRecoveryView.updateWeight('environmental', this.value)" class="w-full accent-emerald-600">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Cost / CapEx:</span>
-                  <span class="font-mono font-bold">${this.weights.cost}%</span>
-                </div>
-                <input type="range" min="10" max="50" value="${this.weights.cost}" oninput="window.NatureRecoveryView.updateWeight('cost', this.value)" class="w-full accent-amber-600">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Water Offset:</span>
-                  <span class="font-mono font-bold">${this.weights.water}%</span>
-                </div>
-                <input type="range" min="5" max="40" value="${this.weights.water}" oninput="window.NatureRecoveryView.updateWeight('water', this.value)" class="w-full accent-blue-600">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Area Efficiency:</span>
-                  <span class="font-mono font-bold">${this.weights.area}%</span>
-                </div>
-                <input type="range" min="5" max="30" value="${this.weights.area}" oninput="window.NatureRecoveryView.updateWeight('area', this.value)" class="w-full accent-stone-600">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Maintenance:</span>
-                  <span class="font-mono font-bold">${this.weights.maintenance}%</span>
-                </div>
-                <input type="range" min="5" max="30" value="${this.weights.maintenance}" oninput="window.NatureRecoveryView.updateWeight('maintenance', this.value)" class="w-full accent-purple-600">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="font-bold text-stone-600">Biodiversity:</span>
-                  <span class="font-mono font-bold">${this.weights.biodiversity}%</span>
-                </div>
-                <input type="range" min="5" max="25" value="${this.weights.biodiversity}" oninput="window.NatureRecoveryView.updateWeight('biodiversity', this.value)" class="w-full accent-teal-600">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. "WHY THIS PLAN?" DYNAMIC ARCHITECTURAL JUSTIFICATION -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-4">
-          <div class="border-b border-stone-100 pb-3 flex items-center gap-2">
-            <span class="text-lg">💡</span>
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">Engineering Rationale</span>
-              <h2 class="text-xl font-black text-stone-900 font-serif">Why This Specific Recovery Plan for Your Site?</h2>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-stone-700 leading-relaxed">
-            <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-              <div class="font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🛣️</span> <span>Permeable Paving (${dynamic.permeable_m2.toLocaleString()} m² Selected from ${dynamic.hardscape.toLocaleString()} m² Hardscape)</span>
-              </div>
-              <p class="text-[11px]">
-                Permeable paving was prioritized because your site features <strong>${dynamic.hardscape.toLocaleString()} m²</strong> of conventional hardscape (driveways and parking). Converting <strong>${dynamic.permeable_m2.toLocaleString()} m² (${Math.round(dynamic.permeable_m2 / dynamic.hardscape * 100)}%)</strong> preserves vehicular structural capacity under IRC:SP:63 while infiltrating <strong>~${dynamic.recharged_litres.toLocaleString()} L/yr</strong> of stormwater directly into shallow aquifers.
-              </p>
-            </div>
-
-            <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-              <div class="font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🌳</span> <span>Native Trees (${dynamic.trees_planted} Specimens Sized for ${dynamic.open_area.toLocaleString()} m² Open Zone)</span>
-              </div>
-              <p class="text-[11px]">
-                Compensatory trees were sized to <strong>${dynamic.trees_planted} specimens</strong> to fulfill the mandatory 3:1 statutory replacement quota for <strong>${dynamic.trees_removed} felled trees</strong>. Each mature tree is allocated 16 m² (4x4m) of root zone within your available <strong>${dynamic.open_area.toLocaleString()} m²</strong> unbuilt ground, preventing footing damage while restoring <strong>${dynamic.tree_canopy_m2.toLocaleString()} m²</strong> of mature canopy.
-              </p>
-            </div>
-
-            <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-              <div class="font-bold text-stone-900 flex items-center gap-1.5">
-                <span>🌊</span> <span>Bioswale (${dynamic.bioswale_m2.toLocaleString()} m² Sized for ${dynamic.swale_catchment.toLocaleString()} m² Catchment)</span>
-              </div>
-              <p class="text-[11px]">
-                A <strong>${dynamic.bioswale_m2.toLocaleString()} m²</strong> bioretention bioswale was sized to treat runoff from <strong>${dynamic.swale_catchment.toLocaleString()} m²</strong> of contributing hardscape. Sized at ~6% of catchment per CIRIA C753 standards, it filters 85% of suspended road sediments and recharges <strong>~${dynamic.bioswale_recharge_l.toLocaleString()} L/day</strong> before perimeter discharge.
-              </p>
-            </div>
-
-            <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-              <div class="font-bold text-stone-900 flex items-center gap-1.5">
-                <span>☀️🌱</span> <span>Roof Integration (${dynamic.green_roof_m2.toLocaleString()} m² Green Roof + ${dynamic.solar_m2.toLocaleString()} m² Solar PV)</span>
-              </div>
-              <p class="text-[11px]">
-                Your <strong>${dynamic.roof_area.toLocaleString()} m²</strong> terrace slab is partitioned into <strong>${dynamic.green_roof_m2.toLocaleString()} m²</strong> Sedum green roof and <strong>${dynamic.solar_m2.toLocaleString()} m² (${dynamic.solar_kwp} kWp)</strong> solar PV, reserving ${Math.round(dynamic.roof_area - dynamic.green_roof_m2 - dynamic.solar_m2).toLocaleString()} m² for service access. The vegetation cools panels by ~2.8°C, boosting annual solar yield by +4.5%.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- PHYSICAL SITE FEASIBILITY & "WHY NOT?" REJECTIONS ENGINE -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Physical Feasibility & Constraints</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">"Why Not?" Engine</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Spatial Capacity & Explicitly Rejected Options
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                EcoBuild proves why recommended interventions physically fit on site, and explains transparently why unfeasible options were rejected.
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-1.5 rounded-xl text-xs font-bold ${feasibility.ground.is_feasible && feasibility.roof.is_feasible ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                ${feasibility.ground.is_feasible && feasibility.roof.is_feasible ? '✓ Spatial Envelope Verified' : '⚠ Spatial Constraint Alert'}
-              </span>
-            </div>
-          </div>
-
-          <!-- Spatial Allocation Capacity Bars -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- Ground Space Allocation -->
-            <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-stone-700">Ground Space Allocation (Open Area: ${feasibility.ground.available.toLocaleString()} m²)</h3>
-                <span class="text-xs font-mono font-bold text-emerald-800">${Math.round(feasibility.ground.required / feasibility.ground.available * 100)}% Used</span>
-              </div>
-              <div class="space-y-1.5">
-                <div class="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex">
-                  <div style="width: ${Math.round((feasibility.ground.usable_after_circulation * 0.7) / feasibility.ground.available * 100)}%" class="bg-emerald-600" title="Green Interventions"></div>
-                  <div style="width: ${Math.round((feasibility.ground.available - feasibility.ground.usable_after_circulation) / feasibility.ground.available * 100)}%" class="bg-stone-400" title="Mandatory Vehicular Circulation / Fire Setbacks"></div>
-                </div>
-                <div class="flex justify-between text-[11px] text-stone-500 pt-0.5">
-                  <span>Interventions: ${feasibility.ground.required.toLocaleString()} m²</span>
-                  <span>Vehicular / Fire Buffer: ${(feasibility.ground.available - feasibility.ground.usable_after_circulation).toLocaleString()} m²</span>
-                </div>
-              </div>
-              <p class="text-[11px] text-stone-600 leading-relaxed">
-                Leaves <strong>${Math.max(0, feasibility.ground.usable_after_circulation - feasibility.ground.required).toLocaleString()} m²</strong> of open buffer space for emergency fire access corridors and pedestrian circulation.
-              </p>
-            </div>
-
-            <!-- Roof Terrace Allocation -->
-            <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-stone-700">Terrace Slab Allocation (Roof Area: ${feasibility.roof.total.toLocaleString()} m²)</h3>
-                <span class="text-xs font-mono font-bold text-blue-800">${Math.round((feasibility.roof.solar + feasibility.roof.green_roof) / feasibility.roof.total * 100)}% Utilized</span>
-              </div>
-              <div class="space-y-1.5">
-                <div class="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex">
-                  <div style="width: ${Math.round(feasibility.roof.solar / feasibility.roof.total * 100)}%" class="bg-blue-600" title="Solar PV"></div>
-                  <div style="width: ${Math.round(feasibility.roof.green_roof / feasibility.roof.total * 100)}%" class="bg-emerald-500" title="Green Roof"></div>
-                  <div style="width: ${Math.round(feasibility.roof.walkways / feasibility.roof.total * 100)}%" class="bg-stone-300" title="Service Walkways"></div>
-                </div>
-                <div class="flex justify-between text-[11px] text-stone-500 pt-0.5">
-                  <span>Solar PV: ${feasibility.roof.solar.toLocaleString()} m²</span>
-                  <span>Green Roof: ${feasibility.roof.green_roof.toLocaleString()} m²</span>
-                  <span>Walkways: ${feasibility.roof.walkways.toLocaleString()} m²</span>
-                </div>
-              </div>
-              <p class="text-[11px] text-stone-600 leading-relaxed">
-                Reserves a mandatory <strong>${feasibility.roof.walkways.toLocaleString()} m²</strong> perimeter service corridor for solar inverter inspection, drainage gutters, and parapet maintenance.
-              </p>
-            </div>
-          </div>
-
-          <!-- Explicit "Why Not?" Rejections Table -->
-          <div class="space-y-3 pt-2 border-t border-stone-100">
-            <span class="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-              <span>🚫</span> <span>Explicit "Why Not?" Engineering Rejections</span>
+          <div class="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+            <span class="text-xs font-bold uppercase text-emerald-900 tracking-wider flex items-center gap-1.5">
+              <span>🌳</span> <span>Trees & Greenery</span>
             </span>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              ${feasibility.rejections.map(rej => `
-                <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800">${rej.category}</span>
-                    <span class="text-[10px] font-bold text-rose-700">REJECTED</span>
-                  </div>
-                  <h4 class="text-xs font-bold text-stone-900">${rej.name}</h4>
-                  <div class="text-[11px] font-semibold text-rose-900">Constraint: ${rej.reason}</div>
-                  <p class="text-[11px] text-stone-600 leading-relaxed">${rej.explanation}</p>
-                  <div class="pt-1.5 border-t border-stone-200 text-[10px] font-mono font-bold text-stone-500">${rej.verdict}</div>
-                </div>
-              `).join('')}
-            </div>
+            <strong class="text-xl sm:text-2xl font-black font-serif text-emerald-950 block">${dynamic.trees_planted} Trees</strong>
+            <p class="text-xs text-emerald-800 font-medium leading-snug">+ ${(dynamic.tree_canopy_m2 + dynamic.permeable_m2 + dynamic.green_roof_m2).toLocaleString()} m² green & porous surface to keep the site cool.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1">
+            <span class="text-xs font-bold uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
+              <span>☀️</span> <span>Clean Solar Energy</span>
+            </span>
+            <strong class="text-xl sm:text-2xl font-black font-serif text-amber-950 block">${dynamic.solar_kwp} kWp Solar</strong>
+            <p class="text-xs text-amber-800 font-medium leading-snug">Generates ${dynamic.solar_kwh_yr.toLocaleString()} kWh/yr clean power and cuts power bills.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-stone-50/90 border border-stone-200/90 space-y-1">
+            <span class="text-xs font-bold uppercase text-stone-800 tracking-wider flex items-center gap-1.5">
+              <span>♻️</span> <span>Soil Saved & Reused</span>
+            </span>
+            <strong class="text-xl sm:text-2xl font-black font-serif text-stone-900 block">${Math.round(dynamic.built_up * 0.20).toLocaleString()} m³ Topsoil</strong>
+            <p class="text-xs text-stone-600 font-medium leading-snug">Fertile topsoil saved before digging and reused for landscaping.</p>
           </div>
         </div>
 
-        <!-- 3. DETAILED SIZED ACTION CARDS (DYNAMICALLY COMPUTED FROM SITE) -->
-        <div class="space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-2">
+        <!-- ========================================================================= -->
+        <!-- 1. 11-STEP NATURE RECOVERY ACTION PLAN -->
+        <!-- ========================================================================= -->
+        <div class="crystal-glass-card p-6 sm:p-8 space-y-6 avoid-page-break print-card" id="eia-statutory-nature-recovery-plan">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Intervention Portfolio</span>
-              <h2 class="text-xl font-black text-stone-900 font-serif mt-1">Sized Recovery Action Cards</h2>
+              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
+                1. 11-Step Nature Recovery Action Plan
+              </h2>
+              <p class="text-xs sm:text-sm text-stone-600 mt-1 max-w-3xl leading-relaxed">
+                What the construction affects, what practical steps we take, and how nature recovers on your site.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2.5 self-start sm:self-center shrink-0 no-print">
+              <button onclick="window.NatureRecoveryView.printRecoveryPlan()" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#14281D] hover:bg-stone-900 text-white shadow transition flex items-center gap-1.5" title="Print plan on A4 paper">
+                <span>🖨️</span> <span>Print Plan (A4)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Master 11-Step Schedule Table -->
+          <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="bg-[#14281D] text-white font-bold text-xs">
+                <tr>
+                  <th class="p-3.5 w-[18%]">Action Item</th>
+                  <th class="p-3.5 w-[26%] bg-rose-950/60 text-rose-200">What It Affects</th>
+                  <th class="p-3.5 w-[26%] bg-stone-900/50">What We Need To Do</th>
+                  <th class="p-3.5 w-[20%] bg-emerald-950/60 text-emerald-200">How Nature Recovers</th>
+                  <th class="p-3.5 text-right whitespace-nowrap">Target Result</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-200 text-stone-800 bg-white">
+                ${recoveryElements.map(el => `
+                  <tr class="hover:bg-stone-50/80 transition-colors avoid-page-break">
+                    <!-- Column 1: Action Item -->
+                    <td class="p-3.5 align-top space-y-1 bg-stone-50/50 border-r border-stone-200">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-6 h-6 rounded-lg bg-[#14281D] text-emerald-300 font-mono font-bold text-[10px] flex items-center justify-center shrink-0">${el.number}</span>
+                        <span class="text-xs font-black text-stone-900">${el.name}</span>
+                      </div>
+                      <div class="text-[10px] text-stone-500 font-medium">${el.domain}</div>
+                    </td>
+
+                    <!-- Column 2: What It Affects -->
+                    <td class="p-3.5 align-top text-stone-700 bg-rose-50/20 text-xs leading-relaxed border-r border-stone-200">
+                      ${el.affects_nature}
+                    </td>
+
+                    <!-- Column 3: What We Need To Do -->
+                    <td class="p-3.5 align-top text-stone-800 text-xs leading-relaxed border-r border-stone-200 bg-white font-medium">
+                      ${el.what_we_need_to_do}
+                    </td>
+
+                    <!-- Column 4: How Nature Recovers -->
+                    <td class="p-3.5 align-top text-emerald-950 bg-emerald-50/30 text-xs leading-relaxed border-r border-stone-200">
+                      ${el.to_reduce_affect}
+                    </td>
+
+                    <!-- Column 5: Target Result -->
+                    <td class="p-3.5 align-top text-right space-y-1 bg-stone-50/30">
+                      <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${el.badge_bg} border whitespace-nowrap">${el.status}</span>
+                      <div class="font-mono text-xs font-bold text-emerald-900 text-right leading-tight">
+                        ${el.net_metric}
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
+
+
+        <!-- ========================================================================= -->
+        <!-- 2. RECOMMENDED GREEN SOLUTIONS FOR YOUR SITE -->
+        <!-- ========================================================================= -->
+        <div class="crystal-glass-card p-6 sm:p-8 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-4">
+            <div>
+              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
+                2. Recommended Green Solutions for Your Site
+              </h2>
+              <p class="text-xs sm:text-sm text-stone-600 mt-1 max-w-2xl leading-relaxed">
+                Practical eco-friendly features sized for your land. Click 'Details' to view specifications or toggle items to customize your plan.
+              </p>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-xs text-stone-500 font-medium">${this.activeActions.length} of ${actionCards.length} Interventions Active in Plan</span>
-              <button onclick="window.NatureRecoveryView.resetAllActions()" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+              <span class="text-xs text-stone-500 font-medium">${this.activeActions.length} of ${actionCards.length} Active in Plan</span>
+              <button onclick="window.NatureRecoveryView.resetAllActions()" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline">
                 Select All
               </button>
             </div>
@@ -1840,120 +1603,320 @@ window.NatureRecoveryView = {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             ${actionCards.map((a, idx) => {
               const isInPlan = this.activeActions.includes(a.id);
+              const iconMap = {
+                trees: "🌳",
+                permeable: "🛣️",
+                green_roof: "🌿",
+                rwh: "💧",
+                solar: "☀️",
+                bioswale: "🌊"
+              };
               return `
-              <div class="bg-white rounded-3xl p-5 border ${isInPlan ? 'border-emerald-300 shadow-sm' : 'border-stone-200 opacity-75'} transition-all space-y-3 flex flex-col justify-between hover:shadow-md">
-                <div class="space-y-2.5">
+              <div class="p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${isInPlan ? 'border-emerald-600/70 bg-white ring-1 ring-emerald-500/20 shadow-md' : 'border-stone-200 bg-stone-50/80 opacity-75'}">
+                <div class="space-y-3">
                   <div class="flex items-center justify-between">
-                    <span class="w-6 h-6 rounded-full ${isInPlan ? 'bg-emerald-950 text-emerald-300' : 'bg-stone-200 text-stone-600'} font-bold text-xs flex items-center justify-center">${a.priority}</span>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isInPlan ? 'bg-emerald-100 text-emerald-900' : 'bg-stone-100 text-stone-500'}">
-                        ${isInPlan ? 'In Plan' : 'Excluded'}
-                      </span>
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                        ${a.feasibility.split(' ')[0]}
-                      </span>
-                    </div>
+                    <span class="text-2xl">${iconMap[a.id] || "🌱"}</span>
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isInPlan ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-stone-200 text-stone-600'}">
+                      ${isInPlan ? '✓ Included' : 'Excluded'}
+                    </span>
                   </div>
 
-                  <h3 class="text-sm font-bold text-stone-900 font-serif leading-snug">${a.title}</h3>
-                  
-                  <div class="text-[11px] text-stone-600 leading-relaxed font-medium">
-                    <strong class="text-stone-900">Action:</strong> ${a.action}
-                  </div>
-                  
-                  <div class="text-[11px] text-stone-600 leading-relaxed">
-                    <strong class="text-stone-900">Placement:</strong> ${a.where}
+                  <div>
+                    <h3 class="text-sm font-bold text-stone-900 font-serif leading-snug">${a.title}</h3>
+                    <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">${a.action}</p>
                   </div>
 
-                  <!-- Physical Constraints Check Visualizer -->
-                  <div class="bg-stone-50 p-2.5 rounded-xl border border-stone-200/80 space-y-1">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-stone-500 block">Engineering Limits & Constraints</span>
-                    <div class="space-y-1 text-[10px]">
-                      ${a.constraints.map(c => `
-                        <div class="flex items-center justify-between text-stone-600">
-                          <span class="truncate pr-1">${c.name}:</span>
-                          <span class="font-mono font-semibold ${c.status === 'Pass' ? 'text-emerald-700' : 'text-amber-700'}">${c.value}</span>
-                        </div>
-                      `).join('')}
-                    </div>
+                  <div class="p-3 bg-stone-50 rounded-xl border border-stone-200/80 text-xs space-y-1">
+                    <div class="flex justify-between"><span class="text-stone-500">Quantity:</span> <strong class="text-stone-900">${a.quantity.split('(')[0]}</strong></div>
+                    <div class="flex justify-between"><span class="text-stone-500">Setup Cost:</span> <strong class="text-stone-900">${a.cost.split('(')[0]}</strong></div>
+                    <div class="flex justify-between"><span class="text-stone-500">Yearly Upkeep:</span> <strong class="text-stone-900">${a.maintenance.split('(')[0]}</strong></div>
                   </div>
 
-                  <!-- Quantitative Metric Strip -->
-                  <div class="p-2.5 bg-stone-50 rounded-xl border border-stone-200/60 text-[11px] space-y-1">
-                    <div class="flex justify-between"><span>Quantity:</span> <strong class="text-stone-900">${a.quantity.split('(')[0]}</strong></div>
-                    <div class="flex justify-between"><span>CapEx:</span> <strong class="text-stone-900">${a.cost.split('(')[0]}</strong></div>
-                    <div class="flex justify-between"><span>OpEx:</span> <strong class="text-stone-900">${a.maintenance.split('(')[0]}</strong></div>
-                  </div>
-
-                  <div class="text-[11px] text-emerald-800 font-semibold leading-snug">
+                  <div class="text-xs text-emerald-800 font-semibold leading-snug">
                     ${a.effect.split(';')[0]}
                   </div>
                 </div>
 
-                <!-- 4 ACTION BUTTONS PER SPECIFICATION -->
-                <div class="pt-3 border-t border-stone-100 space-y-2">
-                  <div class="grid grid-cols-2 gap-2">
-                    <button onclick="window.NatureRecoveryView.openModal(${idx})" class="px-2.5 py-1.5 text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl transition flex items-center justify-center gap-1" title="View complete technical spec">
-                      <span>🔍</span> <span>Details</span>
-                    </button>
-                    <button onclick="window.NatureRecoveryView.openCompareModal(${idx})" class="px-2.5 py-1.5 text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl transition flex items-center justify-center gap-1" title="Compare against alternatives">
-                      <span>⚖️</span> <span>Compare</span>
-                    </button>
-                  </div>
-
-                  <div>
-                    <button onclick="window.NatureRecoveryView.togglePlanAction('${a.id}')" class="w-full px-3 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${isInPlan ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200' : 'bg-[#14281D] text-white hover:bg-stone-900'}">
-                      <span>${isInPlan ? '✓ Active in Recovery Portfolio' : '+ Add to Recovery Portfolio'}</span>
-                    </button>
-                  </div>
+                <div class="pt-3 border-t border-stone-100 flex items-center gap-2">
+                  <button onclick="window.NatureRecoveryView.openModal(${idx})" class="w-1/3 px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl transition flex items-center justify-center gap-1">
+                    <span>🔍</span> <span>Details</span>
+                  </button>
+                  <button onclick="window.NatureRecoveryView.togglePlanAction('${a.id}')" class="w-2/3 px-3 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${isInPlan ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200' : 'bg-[#14281D] text-white hover:bg-stone-900'}">
+                    <span>${isInPlan ? '✓ In Plan' : '+ Add to Plan'}</span>
+                  </button>
                 </div>
-
               </div>
             `;}).join('')}
           </div>
         </div>
 
-        <!-- 4. ACTION CARD DETAILS MODAL (IF SELECTED) -->
+        <!-- 3. LAND & ROOFTOP SPACE CHECK -->
+        <div class="crystal-glass-card p-6 sm:p-8 space-y-6">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
+              3. Land & Rooftop Space Check
+            </h2>
+            <p class="text-xs text-stone-500 mt-1">
+              Confirming that green features fit on your site without overcrowding your plot or roof.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Open Ground Check -->
+            <div class="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-4 flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🏡</span>
+                    <div>
+                      <h3 class="font-bold text-stone-900 text-sm">Ground Open Space</h3>
+                      <span class="text-[11px] text-stone-500">Unbuilt ground outside the building footprint</span>
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-full text-xs font-bold ${feasibility.ground.is_feasible ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                    ${feasibility.ground.is_feasible ? '✓ Fits Comfortably' : 'Adjusted'}
+                  </span>
+                </div>
+
+                <!-- Visual Progress Bar -->
+                <div class="space-y-1.5 pt-1">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span class="text-stone-600">Greenery & Swales Needed</span>
+                    <span class="text-emerald-900 font-mono">${feasibility.ground.required.toLocaleString()} m² of ${dynamic.open_area.toLocaleString()} m²</span>
+                  </div>
+                  <div class="w-full h-3 bg-stone-200/80 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-500 to-green-600 rounded-full" style="width: ${Math.min(100, Math.round((feasibility.ground.required / (dynamic.open_area || 1)) * 100))}%"></div>
+                  </div>
+                  <div class="flex justify-between text-[11px] text-stone-500">
+                    <span>${Math.round((feasibility.ground.required / (dynamic.open_area || 1)) * 100)}% allocated</span>
+                    <span>${Math.max(0, dynamic.open_area - feasibility.ground.required).toLocaleString()} m² free open space</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-emerald-200/60">
+                  <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+                    <span class="text-[10px] text-stone-400 block font-semibold">Native Trees</span>
+                    <strong class="text-stone-900 font-mono">${dynamic.trees_planted} Trees</strong>
+                    <span class="text-[10px] text-stone-500 block">4x4m grid on setbacks</span>
+                  </div>
+                  <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+                    <span class="text-[10px] text-stone-400 block font-semibold">Rainwater Bioswale</span>
+                    <strong class="text-stone-900 font-mono">${dynamic.bioswale_m2.toLocaleString()} m²</strong>
+                    <span class="text-[10px] text-stone-500 block">Natural edge swale</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-stone-600 leading-relaxed bg-white/80 p-3 rounded-xl border border-emerald-100">
+                💡 <strong>Site Note:</strong> Trees are planted along boundary borders to keep a clear 6-meter driveway open for emergency fire trucks and regular vehicle traffic.
+              </p>
+            </div>
+
+            <!-- Rooftop Allocation Check -->
+            <div class="p-5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-4 flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🏢</span>
+                    <div>
+                      <h3 class="font-bold text-stone-900 text-sm">Rooftop Space Allocation</h3>
+                      <span class="text-[11px] text-stone-500">Terrace slab area utilization</span>
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-full text-xs font-bold ${feasibility.roof.is_feasible ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">
+                    ${feasibility.roof.is_feasible ? '✓ Safe & Feasible' : 'Adjusted'}
+                  </span>
+                </div>
+
+                <!-- Visual Stacked Bar -->
+                <div class="space-y-1.5 pt-1">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span class="text-stone-600">Solar + Green Roof Allocation</span>
+                    <span class="text-blue-950 font-mono">${(dynamic.solar_m2 + dynamic.green_roof_m2).toLocaleString()} m² of ${dynamic.roof_area.toLocaleString()} m²</span>
+                  </div>
+                  <div class="w-full h-3 bg-stone-200/80 rounded-full overflow-hidden flex">
+                    <div class="h-full bg-amber-500" style="width: ${Math.round((dynamic.solar_m2 / (dynamic.roof_area || 1)) * 100)}%" title="Solar Panels"></div>
+                    <div class="h-full bg-emerald-500" style="width: ${Math.round((dynamic.green_roof_m2 / (dynamic.roof_area || 1)) * 100)}%" title="Green Roof"></div>
+                  </div>
+                  <div class="flex justify-between text-[11px] text-stone-500">
+                    <span class="flex items-center gap-3">
+                      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Solar (${Math.round((dynamic.solar_m2 / (dynamic.roof_area || 1)) * 100)}%)</span>
+                      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Green Roof (${Math.round((dynamic.green_roof_m2 / (dynamic.roof_area || 1)) * 100)}%)</span>
+                    </span>
+                    <span>${feasibility.roof.walkways.toLocaleString()} m² walkways</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-blue-200/60">
+                  <div class="p-2.5 bg-white rounded-xl border border-blue-100">
+                    <span class="text-[10px] text-stone-400 block font-semibold">Solar Power</span>
+                    <strong class="text-stone-900 font-mono">${dynamic.solar_kwp} kWp</strong>
+                    <span class="text-[10px] text-stone-500 block">${dynamic.solar_m2.toLocaleString()} m² panels</span>
+                  </div>
+                  <div class="p-2.5 bg-white rounded-xl border border-blue-100">
+                    <span class="text-[10px] text-stone-400 block font-semibold">Sedum Green Roof</span>
+                    <strong class="text-stone-900 font-mono">${dynamic.green_roof_m2.toLocaleString()} m²</strong>
+                    <span class="text-[10px] text-stone-500 block">75mm light substrate</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-stone-600 leading-relaxed bg-white/80 p-3 rounded-xl border border-blue-100">
+                💡 <strong>Weight Note:</strong> Uses lightweight 75mm plant mats (85 kg/m²), easily supported by your terrace slab with zero risk of structural strain.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. STEP-BY-STEP IMPLEMENTATION -->
+        <div class="crystal-glass-card p-6 sm:p-8 space-y-6">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
+              4. Step-by-Step Implementation
+            </h2>
+            <p class="text-xs text-stone-500 mt-1">
+              Clear actions to carry out during construction and once the building is completed.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Phase 1: During Construction -->
+            <div class="p-5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-amber-600 text-white font-bold flex items-center justify-center text-sm">1</div>
+                <div>
+                  <h3 class="font-bold text-stone-900 text-base">During Construction</h3>
+                  <span class="text-xs text-amber-800 font-medium">Protect the site and reduce pollution</span>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div class="p-3.5 bg-white rounded-xl border border-amber-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                    <span>🚜</span> <span>Save & Protect Fertile Topsoil</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Before digging foundations, gently scrape off and store <strong>${p1.topsoil.salvage_volume_m3.toLocaleString()} m³</strong> of fertile topsoil. Keep piles under 2 meters so living soil microbes stay healthy, ready to spread back on gardens once construction is done.
+                  </p>
+                </div>
+
+                <div class="p-3.5 bg-white rounded-xl border border-amber-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-stone-900">
+                    <span>💨</span> <span>Keep Dust & Air Clean</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Put up 6-meter barrier sheets along borders and use water-mist sprayers to capture ~72% of airborne dust, keeping neighbors and workers breathing clean air.
+                  </p>
+                </div>
+
+                <div class="p-3.5 bg-white rounded-xl border border-amber-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-stone-900">
+                    <span>🧱</span> <span>Cleaner Cement & Recycled Crushed Stone</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Use blended cement (fly ash / slag) to prevent <strong>${p1.green_concrete.co2_avoided_tonnes} tonnes</strong> of carbon emissions, and crush clean concrete rubble to use under driveways and pathways.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase 2: Once the Building is Ready -->
+            <div class="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">2</div>
+                <div>
+                  <h3 class="font-bold text-stone-900 text-base">Once Building is Ready</h3>
+                  <span class="text-xs text-emerald-800 font-medium">Long-term greenery, clean water & energy</span>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div class="p-3.5 bg-white rounded-xl border border-emerald-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-emerald-950">
+                    <span>🌳</span> <span>Plant Native Trees & Greenery</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Plant <strong>${dynamic.trees_planted} native shade trees</strong> and native plants across open grounds to bring back birds and butterflies, cool the air, and capture ~${p2.miyawaki_forest.carbon_sequestration_tonnes_yr} tonnes of carbon every year.
+                  </p>
+                </div>
+
+                <div class="p-3.5 bg-white rounded-xl border border-emerald-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-blue-950">
+                    <span>💧</span> <span>Collect Rainwater & Recharge Ground</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Channel roof rain into the <strong>${dynamic.cistern_capacity_kl.toLocaleString()} kL storage tank</strong> for reuse, and let garden overflow soak into the <strong>${dynamic.bioswale_m2.toLocaleString()} m² swale</strong> to recharge natural underground water.
+                  </p>
+                </div>
+
+                <div class="p-3.5 bg-white rounded-xl border border-emerald-200/60 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-stone-900">
+                    <span>☀️</span> <span>Clean Solar Energy & Garden Compost</span>
+                  </div>
+                  <p class="text-stone-600 leading-relaxed text-[11px]">
+                    Generate <strong>${Math.round(dynamic.solar_annual_kwh / 1000)} MWh/year</strong> of solar power on the roof, and turn cafeteria food scraps into <strong>${p2.organic_composting.annual_bio_fertilizer_tonnes} tonnes/year</strong> of rich natural fertilizer for your gardens.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION DETAILS MODAL -->
         ${this.selectedActionIndex !== null ? `
           <div class="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]">
               <div class="bg-[#0D1912] text-white p-5 flex items-center justify-between">
                 <div>
-                  <span class="text-[10px] uppercase font-bold text-emerald-400">Engineering Action Specification</span>
+                  <span class="text-[10px] uppercase font-bold text-emerald-400">Green Solution Details</span>
                   <h3 class="text-lg font-bold font-serif text-white">${actionCards[this.selectedActionIndex].title}</h3>
                 </div>
-                <button onclick="window.NatureRecoveryView.closeModal()" class="text-stone-400 hover:text-white text-xl font-bold leading-none p-1">&times;</button>
+                <button onclick="window.NatureRecoveryView.closeModal()" class="text-stone-400 hover:text-white text-2xl font-bold leading-none p-1">&times;</button>
               </div>
+
               <div class="p-6 space-y-4 overflow-y-auto text-xs text-stone-700">
-                <div><span class="font-bold text-stone-900 block uppercase text-[10px]">Action Statement</span><p class="text-stone-700">${actionCards[this.selectedActionIndex].action}</p></div>
-                <div><span class="font-bold text-stone-900 block uppercase text-[10px]">Scientific Justification (Why)</span><p class="text-stone-700">${actionCards[this.selectedActionIndex].why}</p></div>
-                <div><span class="font-bold text-stone-900 block uppercase text-[10px]">Spatial Placement (Where)</span><p class="text-stone-700">${actionCards[this.selectedActionIndex].where}</p></div>
-                
-                <div class="space-y-1.5">
-                  <span class="font-bold text-stone-900 block uppercase text-[10px]">Physical Feasibility & Constraints</span>
-                  <div class="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1.5">
-                    ${actionCards[this.selectedActionIndex].constraints.map(c => `
-                      <div class="flex items-center justify-between text-xs">
-                        <span class="font-semibold text-stone-700">${c.name}:</span>
-                        <span class="font-mono text-emerald-800 font-bold">${c.value}</span>
-                      </div>
-                    `).join('')}
+                <div>
+                  <span class="font-bold text-stone-900 block uppercase text-[10px]">What It Does</span>
+                  <p class="text-stone-700 leading-relaxed mt-0.5">${actionCards[this.selectedActionIndex].action}</p>
+                </div>
+
+                <div>
+                  <span class="font-bold text-stone-900 block uppercase text-[10px]">Why It Helps Nature</span>
+                  <p class="text-stone-700 leading-relaxed mt-0.5">${actionCards[this.selectedActionIndex].why}</p>
+                </div>
+
+                <div>
+                  <span class="font-bold text-stone-900 block uppercase text-[10px]">Where It Goes On Site</span>
+                  <p class="text-stone-700 leading-relaxed mt-0.5">${actionCards[this.selectedActionIndex].where}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+                  <div>
+                    <span class="text-[10px] text-stone-400 uppercase font-bold">Planned Quantity</span>
+                    <div class="font-bold text-stone-900 text-xs mt-0.5">${actionCards[this.selectedActionIndex].quantity}</div>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-stone-400 uppercase font-bold">Estimated Cost</span>
+                    <div class="font-bold text-stone-900 text-xs mt-0.5">${actionCards[this.selectedActionIndex].cost}</div>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-stone-400 uppercase font-bold">Annual Upkeep</span>
+                    <div class="font-bold text-stone-900 text-xs mt-0.5">${actionCards[this.selectedActionIndex].maintenance}</div>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-stone-400 uppercase font-bold">Environmental Benefit</span>
+                    <div class="font-bold text-emerald-800 text-xs mt-0.5">${actionCards[this.selectedActionIndex].effect.split(';')[0]}</div>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 p-3 bg-stone-50 rounded-xl border border-stone-200">
-                  <div><span class="text-[10px] text-stone-400 uppercase font-bold">Quantity</span><div class="font-bold text-stone-900">${actionCards[this.selectedActionIndex].quantity}</div></div>
-                  <div><span class="text-[10px] text-stone-400 uppercase font-bold">Footprint</span><div class="font-bold text-stone-900">${actionCards[this.selectedActionIndex].area}</div></div>
-                  <div><span class="text-[10px] text-stone-400 uppercase font-bold">Capital Outlay</span><div class="font-bold text-stone-900">${actionCards[this.selectedActionIndex].cost}</div></div>
-                  <div><span class="text-[10px] text-stone-400 uppercase font-bold">Annual Maintenance</span><div class="font-bold text-stone-900">${actionCards[this.selectedActionIndex].maintenance}</div></div>
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 text-[11px] leading-relaxed">
+                  <strong>💡 Practical Tip:</strong> ${actionCards[this.selectedActionIndex].note}
                 </div>
-                <div><span class="font-bold text-stone-900 block uppercase text-[10px]">Quantified Environmental Effect</span><p class="text-stone-700">${actionCards[this.selectedActionIndex].effect}</p></div>
-                <div><span class="font-bold text-stone-900 block uppercase text-[10px]">Data Provenance & Confidence</span><p class="text-stone-700">${actionCards[this.selectedActionIndex].data_confidence}</p></div>
-                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200"><span class="font-bold text-amber-900 block uppercase text-[10px]">Field Implementation Note</span><p class="text-amber-900 text-[11px]">${actionCards[this.selectedActionIndex].note}</p></div>
               </div>
+
               <div class="bg-stone-50 px-6 py-3.5 border-t border-stone-100 flex justify-between items-center">
-                <button onclick="window.App.switchView('scenariostudio'); window.NatureRecoveryView.closeModal();" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
-                  <span>⚖️</span> <span>Simulate in What-If Studio</span>
+                <button onclick="window.App.switchView('site3d'); window.NatureRecoveryView.closeModal();" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+                  <span>🌐</span> <span>View in 3D Site</span>
                 </button>
                 <button onclick="window.NatureRecoveryView.closeModal()" class="px-5 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition">Close</button>
               </div>
@@ -1961,42 +1924,41 @@ window.NatureRecoveryView = {
           </div>
         ` : ''}
 
-        <!-- 5. 3-WAY ENGINEERING ALTERNATIVE COMPARISON MODAL -->
+        <!-- 3-WAY COMPARISON MODAL -->
         ${this.compareActionIndex !== null ? `
           <div class="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]">
               <div class="bg-[#0D1912] text-white p-5 flex items-center justify-between border-b border-stone-800">
                 <div>
-                  <span class="text-[10px] uppercase font-bold text-emerald-400">Engineering Trade-Off Assessment</span>
+                  <span class="text-[10px] uppercase font-bold text-emerald-400">Green Solutions Comparison</span>
                   <h3 class="text-lg font-bold font-serif text-white">${actionCards[this.compareActionIndex].comparison.title}</h3>
                 </div>
-                <button onclick="window.NatureRecoveryView.closeCompareModal()" class="text-stone-400 hover:text-white text-xl font-bold leading-none p-1">&times;</button>
+                <button onclick="window.NatureRecoveryView.closeCompareModal()" class="text-stone-400 hover:text-white text-2xl font-bold leading-none p-1">&times;</button>
               </div>
 
-              <div class="p-6 space-y-6 overflow-y-auto text-xs text-stone-700">
+              <div class="p-6 space-y-4 overflow-y-auto text-xs text-stone-700">
                 <p class="text-stone-600 leading-relaxed text-xs">
-                  Compare the recommended condition-responsive intervention against conventional business-as-usual and low-cost alternatives scaled dynamically to your site footprint.
+                  Here is how the recommended green solution compares against conventional and budget options:
                 </p>
 
-                <!-- Comparison Cards Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   ${actionCards[this.compareActionIndex].comparison.options.map(opt => `
                     <div class="p-4 rounded-2xl border ${opt.type === 'Proposed' ? 'border-2 border-emerald-500 bg-emerald-50/40 shadow-sm' : 'border-stone-200 bg-stone-50'} space-y-3 flex flex-col justify-between">
                       <div class="space-y-2">
                         <div class="flex items-center justify-between">
                           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${opt.type === 'Proposed' ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-700'}">
-                            ${opt.type}
+                            ${opt.type === 'Proposed' ? '⭐ Recommended' : opt.type}
                           </span>
                         </div>
                         <h4 class="font-bold text-stone-900 font-serif text-sm">${opt.name}</h4>
                         
                         <div class="space-y-1.5 pt-2 text-[11px] border-t border-stone-200/80">
                           <div class="flex justify-between">
-                            <span class="text-stone-500">CapEx:</span>
+                            <span class="text-stone-500">Initial Cost:</span>
                             <span class="font-bold text-stone-900">${opt.capex}</span>
                           </div>
                           <div class="flex justify-between">
-                            <span class="text-stone-500">OpEx:</span>
+                            <span class="text-stone-500">Yearly Upkeep:</span>
                             <span class="font-semibold text-stone-800">${opt.opex}</span>
                           </div>
                           ${opt.carbon ? `
@@ -2005,38 +1967,21 @@ window.NatureRecoveryView = {
                               <span class="font-semibold text-emerald-800">${opt.carbon}</span>
                             </div>
                           ` : ''}
-                          ${opt.runoff ? `
-                            <div class="flex justify-between">
-                              <span class="text-stone-500">Runoff:</span>
-                              <span class="font-semibold text-blue-800">${opt.runoff}</span>
-                            </div>
-                          ` : ''}
                           ${opt.water ? `
                             <div class="flex justify-between">
-                              <span class="text-stone-500">Water:</span>
+                              <span class="text-stone-500">Water Impact:</span>
                               <span class="font-semibold text-stone-800">${opt.water}</span>
                             </div>
                           ` : ''}
-                          <div class="flex justify-between">
-                            <span class="text-stone-500">Design Life:</span>
-                            <span class="font-semibold text-stone-800">${opt.lifespan || opt.durability || '25 yrs'}</span>
-                          </div>
                         </div>
                       </div>
 
                       <div class="pt-3 border-t border-stone-200/80 text-[11px] leading-snug">
-                        <strong class="text-stone-900 block text-[10px] uppercase">Engineering Verdict:</strong>
+                        <strong class="text-stone-900 block text-[10px] uppercase">Summary:</strong>
                         <p class="${opt.type === 'Proposed' ? 'text-emerald-900 font-medium' : 'text-stone-600'} mt-0.5">${opt.verdict}</p>
                       </div>
                     </div>
                   `).join('')}
-                </div>
-
-                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-start gap-3">
-                  <span class="text-lg">🌿</span>
-                  <div class="leading-relaxed">
-                    <strong>Recommended Strategy Selection:</strong> EcoBuild multi-objective solver verified that the proposed intervention provides the optimal 25-year lifecycle net present value (NPV) based on your site's specific geometry and regional climatic conditions.
-                  </div>
                 </div>
               </div>
 
@@ -2046,300 +1991,6 @@ window.NatureRecoveryView = {
             </div>
           </div>
         ` : ''}
-
-        <!-- ENVIRONMENTAL LOSSES VS. RECOVERY BALANCE & REMAINING DEFICITS -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Net Ecological Balance Sheet</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">Honest Disclosure</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Environmental Losses vs. Recovery Balance
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                Direct accounting of unavoidable civil development impacts contrasted against EcoBuild mitigation, with explicit disclosure of residual deficits.
-              </p>
-            </div>
-            <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-900 font-mono">
-              Net Positive on 6 of 8 Domains
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Losses Side -->
-            <div class="p-5 rounded-2xl bg-rose-50/50 border border-rose-200 space-y-3">
-              <h3 class="text-xs font-black uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
-                <span>📉</span> <span>Unmitigated Development Losses</span>
-              </h3>
-              <div class="grid grid-cols-2 gap-3">
-                ${balance.losses.map(l => `
-                  <div class="p-3 bg-white rounded-xl border border-rose-200/80 space-y-0.5">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">${l.name}</span>
-                    <strong class="text-xs font-mono font-black text-rose-950 block">${l.val}</strong>
-                    <span class="text-[10px] text-stone-500 block">${l.sub}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-
-            <!-- Recovery Side -->
-            <div class="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-200 space-y-3">
-              <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
-                <span>📈</span> <span>EcoBuild Recovery Countermeasures</span>
-              </h3>
-              <div class="grid grid-cols-2 gap-3">
-                ${balance.recovery.map(r => `
-                  <div class="p-3 bg-white rounded-xl border border-emerald-200/80 space-y-0.5">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">${r.name}</span>
-                    <strong class="text-xs font-mono font-black text-emerald-950 block">${r.val}</strong>
-                    <span class="text-[10px] text-stone-500 block">${r.sub}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-
-          <!-- Honest Remaining Deficits Callout -->
-          <div class="p-5 rounded-2xl bg-amber-50/70 border border-amber-300 space-y-3">
-            <div class="flex items-center gap-2">
-              <span class="text-base">⚠️</span>
-              <h3 class="text-xs font-black uppercase tracking-wider text-amber-950">
-                Statutory Disclosure: Remaining Environmental Deficits
-              </h3>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-stone-700 leading-relaxed">
-              ${balance.remaining_deficits.map(def => `
-                <div class="p-3.5 bg-white/90 rounded-xl border border-amber-200 space-y-1.5">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-stone-900">${def.domain}</span>
-                    <span class="font-mono font-bold text-amber-800 text-[11px]">${def.pct}</span>
-                  </div>
-                  <p class="text-[11px] text-stone-600">${def.detail}</p>
-                  <div class="pt-1 border-t border-stone-100 text-[10px] text-emerald-800 font-semibold">
-                    Compensatory Step: ${def.action}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-
-        <!-- RECOVERY PRIORITY MATRIX (★ RATING TABLE) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900">Decision Matrix</span>
-              <h2 class="text-xl font-black text-stone-900 font-serif">Recovery Priority Matrix & Star Ratings</h2>
-            </div>
-            <span class="text-xs text-stone-500">Ranked by Ecological Return on Investment (eROI)</span>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-left">
-              <thead class="bg-stone-50 text-stone-700 font-bold border-b border-stone-200 uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th class="p-3">Rank</th>
-                  <th class="p-3">Intervention Action</th>
-                  <th class="p-3">Domain</th>
-                  <th class="p-3">Ecological Benefit</th>
-                  <th class="p-3">Estimated CapEx</th>
-                  <th class="p-3">Site Feasibility</th>
-                  <th class="p-3">Maintenance</th>
-                  <th class="p-3">Priority Rating</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-stone-100 font-medium text-stone-700">
-                ${priorityMatrix.map(row => `
-                  <tr class="hover:bg-stone-50/60 transition">
-                    <td class="p-3 font-mono font-bold text-stone-900">#${row.rank}</td>
-                    <td class="p-3 font-bold text-stone-900">${row.name}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-700">${row.category}</span></td>
-                    <td class="p-3 text-emerald-700 font-semibold">${row.benefit}</td>
-                    <td class="p-3 font-mono">${row.capex}</td>
-                    <td class="p-3 text-stone-600">${row.feasibility}</td>
-                    <td class="p-3 text-stone-600">${row.maintenance}</td>
-                    <td class="p-3 font-mono text-amber-500 font-bold tracking-widest">${row.stars}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 6. TWO-PHASE MITIGATION PROTOCOL (DYNAMIC SIZING) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Phase 1 -->
-          <div class="bg-white rounded-2xl border-2 border-amber-500/40 shadow-sm overflow-hidden flex flex-col">
-            <div class="bg-gradient-to-r from-amber-600 to-amber-700 text-white p-5 flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black">1</div>
-                <div>
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-200 block">Phase 1: Construction Mitigation</span>
-                  <h2 class="text-sm font-bold text-white">Impact Mitigation While Creating the Building</h2>
-                </div>
-              </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-800/60 text-amber-100 border border-amber-400/40">Civil Execution</span>
-            </div>
-            <div class="p-6 space-y-4 text-xs">
-              <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 space-y-1">
-                <strong class="text-amber-950 font-bold block">🚜 Topsoil Stripping & Stockpiling</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  Strip 20 cm fertile topsoil (<strong>${p1.topsoil.salvage_volume_m3.toLocaleString()} m³</strong> from ${dynamic.built_up.toLocaleString()} m² footprint) and stockpile at ≤2m height to preserve mycorrhizal bacteria for post-construction re-spreading.
-                </p>
-              </div>
-              <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-                <strong class="text-stone-900 font-bold block">💨 CPCB Fugitive Dust Control</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  Continuous 6m GI sheeting along boundary with atomized misting cannons achieving ~${p1.dust_control.pm10_capture_efficiency_pct}% PM10 dust capture across ${Math.round(4 * Math.sqrt(dynamic.plot_area))}m perimeter.
-                </p>
-              </div>
-              <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-                <strong class="text-stone-900 font-bold block">🧱 35% GGBS / Fly Ash Concrete & Aggregate Recycling</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  Abating <strong>${p1.green_concrete.co2_avoided_tonnes} t CO₂e</strong> in structural clinker; diverting <strong>${p1.rubble_circularity.reusable_subbase_m3} m³</strong> crushed rubble into sub-base.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Phase 2 -->
-          <div class="bg-white rounded-2xl border-2 border-emerald-500/40 shadow-sm overflow-hidden flex flex-col">
-            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5 flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black">2</div>
-                <div>
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">Phase 2: Post-Occupancy</span>
-                  <h2 class="text-sm font-bold text-white">Permanent Ecological Nature Recovery</h2>
-                </div>
-              </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-800/60 text-emerald-100 border border-emerald-400/40">Operational Phase</span>
-            </div>
-            <div class="p-6 space-y-4 text-xs">
-              <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1">
-                <strong class="text-emerald-950 font-bold block">🌳 Akira Miyawaki Dense Native Micro-Forest</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  Planting <strong>${p2.miyawaki_forest.total_saplings.toLocaleString()}</strong> multi-tier saplings over <strong>${p2.miyawaki_forest.designated_area_m2.toLocaleString()} m²</strong> open ground, yielding 10x faster growth and absorbing ~${p2.miyawaki_forest.carbon_sequestration_tonnes_yr} t CO₂/yr.
-                </p>
-              </div>
-              <div class="p-3.5 bg-blue-50 rounded-xl border border-blue-200 space-y-1">
-                <strong class="text-blue-950 font-bold block">🌊 Sponge City Infiltration Swales</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  <strong>${dynamic.bioswale_m2.toLocaleString()} m²</strong> bioswale corridor storing <strong>${p2.sponge_city_bioswales.storage_sump_m3} m³</strong> runoff and recharging <strong>${p2.sponge_city_bioswales.daily_infiltration_litres.toLocaleString()} L/day</strong> into ground aquifers.
-                </p>
-              </div>
-              <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
-                <strong class="text-stone-900 font-bold block">☀️🌱 Bio-Solar Roof Synergy & Food Composting</strong>
-                <p class="text-stone-600 text-[11px] leading-relaxed">
-                  Green roof evapotranspiration cools solar panels by ~2.8°C; cafeteria organic composting returns <strong>${p2.organic_composting.annual_bio_fertilizer_tonnes} t/yr</strong> organic humus to site soils.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 7. 4-TIER NATIVE MIYAWAKI SPECIES MATRIX -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900">Arboricultural Flora Composition</span>
-              <h3 class="text-base font-bold text-stone-900 font-serif">4-Tier Native Tropical Species Composition for Miyawaki Micro-Forest</h3>
-            </div>
-            <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              Total Sized Saplings: ${p2.miyawaki_forest.total_saplings.toLocaleString()} on ${p2.miyawaki_forest.designated_area_m2.toLocaleString()} m²
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            ${p2.miyawaki_forest.species_tiers.map(tier => `
-              <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-bold uppercase text-stone-500 tracking-wider">${tier.tier}</span>
-                  <span class="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">${tier.pct}%</span>
-                </div>
-                <ul class="space-y-1.5 text-xs text-stone-700">
-                  ${tier.species.map(s => `
-                    <li class="flex items-center gap-1.5">
-                      <span class="text-emerald-600 text-xs">🌿</span>
-                      <span>${s}</span>
-                    </li>
-                  `).join('')}
-                </ul>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- MULTI-YEAR RECOVERY FORECAST (1, 5, 10 YEAR PROJECTIONS) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Temporal Ecology</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">Decadal Lifecycle Model</span>
-              </div>
-              <h2 class="text-xl sm:text-2xl font-black text-stone-900 font-serif">
-                Multi-Year Ecological & Financial Forecast
-              </h2>
-              <p class="text-xs text-stone-500 mt-1 max-w-3xl leading-relaxed">
-                Modeled environmental maturation and utility cost amortization over 1-year, 5-year, and 10-year operational timeframes.
-              </p>
-            </div>
-            <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0D1912] text-emerald-400 font-mono">
-              10-Year Climax Model
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            ${forecasts.map(fc => `
-              <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3 flex flex-col justify-between">
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-black font-serif text-stone-900 bg-white px-3 py-1 rounded-xl border border-stone-200 shadow-xs">${fc.year}</span>
-                    <span class="text-xs font-mono font-bold text-emerald-800">Score: ${fc.score}</span>
-                  </div>
-                  <div>
-                    <h3 class="text-xs font-bold text-stone-900">${fc.stage}</h3>
-                    <p class="text-[11px] text-stone-500 mt-0.5">${fc.notes}</p>
-                  </div>
-                  <div class="p-3 bg-white rounded-xl border border-stone-200/80 space-y-1.5 text-[11px]">
-                    <div class="flex justify-between"><span class="text-stone-500">Tree Canopy:</span> <strong class="text-stone-900">${fc.canopy}</strong></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Water Offset:</span> <strong class="text-blue-800">${fc.water}</strong></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Solar Power:</span> <strong class="text-emerald-800">${fc.solar}</strong></div>
-                    <div class="flex justify-between pt-1 border-t border-stone-100"><span class="text-stone-600 font-bold">Cumulative Utility Savings:</span> <strong class="text-stone-900 font-mono font-bold">${fc.cumulative_savings}</strong></div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- BOTTOM PERSISTENT ACTION TOOLBAR (SECTION 48 SPECIFICATION) -->
-        <div class="bg-[#0D1912] text-white rounded-3xl p-5 border border-stone-800 shadow-xl flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-xs font-bold text-stone-200 font-serif">Recovery Portfolio Ready</span>
-          </div>
-
-          <div class="flex items-center gap-2 flex-wrap">
-            <button onclick="window.App.switchView('scenariostudio')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition flex items-center gap-1.5">
-              <span>⚖️</span> <span>What-If Studio</span>
-            </button>
-            <button onclick="window.App.switchView('report')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition flex items-center gap-1.5">
-              <span>📄</span> <span>Export Statutory EIA</span>
-            </button>
-            <button onclick="window.ExplainModal && window.ExplainModal.open('stormwater')" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition flex items-center gap-1.5">
-              <span>📊</span> <span>Formulas & Math</span>
-            </button>
-            <button onclick="window.App.saveProject()" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition flex items-center gap-1.5">
-              <span>💾</span> <span>Save Plan</span>
-            </button>
-            <button onclick="window.NatureRecoveryView.resetAllActions()" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 transition flex items-center gap-1.5">
-              <span>🔄</span> <span>Reset Optimum</span>
-            </button>
-          </div>
-        </div>
 
       </div>
     `;
@@ -2457,14 +2108,21 @@ window.NatureRecoveryView = {
   },
 
   placeOnSite(actionId) {
-    window.App?.switchView('scenariostudio');
+    window.App?.switchView('site3d');
 
     if (window.App?.showNotification) {
       window.App.showNotification(
-        "What-If Studio",
-        "Simulating intervention trade-offs in What-If Sensitivity Studio.",
+        "3D Digital Twin",
+        "Visualizing intervention in 3D Environmental Digital Twin.",
         "info"
       );
     }
+  },
+
+  printRecoveryPlan() {
+    window.App?.showNotification?.("Preparing A4 Print Layout for Nature Recovery Action Plan...", "info");
+    setTimeout(() => {
+      window.print();
+    }, 250);
   }
 };

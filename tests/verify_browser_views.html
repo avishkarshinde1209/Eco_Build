@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Automated View Verification Test</title>
+</head>
+<body style="background: #111; color: #eee; font-family: sans-serif; padding: 20px;">
+  <h2>Automated 18-View Verification Test</h2>
+  <div id="test-results">RUNNING</div>
+  <iframe id="app-frame" src="http://localhost:8000" style="width: 1200px; height: 900px; border: 1px solid #444; margin-top: 10px;"></iframe>
+
+  <script>
+    const iframe = document.getElementById('app-frame');
+    const resultsEl = document.getElementById('test-results');
+
+    const viewsToTest = [
+      "home", "dashboard", "wizard", "recovery",
+      "stormwater", "energy", "materials", "biodiversity", "waste",
+      "monitoring", "report", "site3d", "technical", "cost",
+      "history", "methodology", "datasources"
+    ];
+
+    const logs = [];
+    const errors = [];
+
+    window.addEventListener('message', (event) => {
+      // could capture messages if needed
+    });
+
+    iframe.onload = async function() {
+      try {
+        const iWin = iframe.contentWindow;
+        const iDoc = iframe.contentDocument;
+
+        // Capture iframe errors
+        iWin.addEventListener('error', (e) => {
+          errors.push({ type: 'error', message: e.message, filename: e.filename, lineno: e.lineno });
+        });
+        const origConsoleError = iWin.console.error;
+        iWin.console.error = function(...args) {
+          errors.push({ type: 'console.error', text: args.map(a => String(a)).join(' ') });
+          origConsoleError.apply(iWin.console, args);
+        };
+
+        // Wait for App to initialize
+        for (let i = 0; i < 60; i++) {
+          if (iWin.App && iWin.App.calculations && iWin.App.currentProject) break;
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        if (!iWin.App) {
+          resultsEl.innerText = JSON.stringify({ status: 'FAILED', error: 'App did not initialize' });
+          return;
+        }
+
+        const viewResults = [];
+
+        for (const view of viewsToTest) {
+          try {
+            iWin.App.switchView(view);
+            await new Promise(r => setTimeout(r, 25));
+
+            let containerId = view + '-view';
+            if (view === 'cost') containerId = 'materials-view';
+            if (view === 'technical') containerId = 'dashboard-view';
+            if (view === 'datasources') containerId = 'report-view';
+            if (view === 'history') containerId = 'history-view';
+            if (view === 'siteplanner') containerId = 'site3d-view';
+            if (view === 'optimization') containerId = 'recovery-view';
+
+            const container = iDoc.getElementById(containerId);
+            const isVisible = container ? !container.classList.contains('hidden') : false;
+            const contentLen = container ? container.innerHTML.length : 0;
+
+            viewResults.push({
+              view,
+              containerId,
+              found: !!container,
+              visible: isVisible,
+              contentLength: contentLen,
+              pass: !!container && isVisible && contentLen > 100
+            });
+          } catch (viewErr) {
+            viewResults.push({
+              view,
+              pass: false,
+              error: viewErr.message
+            });
+          }
+        }
+
+        const allPassed = viewResults.every(r => r.pass) && errors.length === 0;
+
+        resultsEl.innerText = JSON.stringify({
+          status: allPassed ? 'PASSED' : (viewResults.every(r => r.pass) ? 'PASSED_WITH_LOGS' : 'FAILED'),
+          totalViewsTested: viewResults.length,
+          allPassed: viewResults.every(r => r.pass),
+          errorsCount: errors.length,
+          errors: errors,
+          viewResults: viewResults
+        }, null, 2);
+
+      } catch (err) {
+        resultsEl.innerText = JSON.stringify({ status: 'EXCEPTION', error: err.message, stack: err.stack });
+      }
+    };
+  </script>
+</body>
+</html>

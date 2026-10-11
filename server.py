@@ -57,6 +57,21 @@ class EcoBuildRequestHandler(SimpleHTTPRequestHandler):
         self.send_cors_headers()
         self.end_headers()
 
+    def do_HEAD(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        path = parsed_url.path
+        if path in ("/download", "/download-app", "/api/download-app", "/EcoBuildSmart_App.zip"):
+            zip_path = os.path.join(os.path.dirname(__file__), "EcoBuildSmart_App.zip")
+            if os.path.exists(zip_path):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Disposition", 'attachment; filename="EcoBuildSmart_App.zip"')
+                self.send_header("Content-Length", str(os.path.getsize(zip_path)))
+                self.send_cors_headers()
+                self.end_headers()
+                return
+        super().do_HEAD()
+
     def do_GET(self):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path

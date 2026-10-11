@@ -50,10 +50,10 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Scenario Studio",
-      "short_name": "What-If",
-      "description": "Simulate green infrastructure sensitivity",
-      "url": "/#scenariostudio",
+      "name": "3D Environmental Twin",
+      "short_name": "3D Twin",
+      "description": "Explore 1:1 metric 3D environmental digital twin & cadastre",
+      "url": "/#site3d",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {

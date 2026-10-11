@@ -32,13 +32,53 @@
       theme: {
         extend: {
           colors: {
+            forest: {
+              DEFAULT: '#123C32',
+              dark: '#0B241E',
+              deep: '#071814'
+            },
+            emerald: {
+              DEFAULT: '#237A57',
+              deep: '#185E42',
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              600: '#237A57',
+              700: '#185E42',
+              800: '#123C32',
+              900: '#0B241E',
+              950: '#071814'
+            },
+            ivory: {
+              DEFAULT: '#F6F6F0',
+              warm: '#F6F6F0'
+            },
+            sage: {
+              DEFAULT: '#E7EEE7',
+              soft: '#E7EEE7',
+              border: '#D5E0D7',
+              charcoal: '#20362D',
+              muted: '#607067'
+            },
+            champagne: {
+              DEFAULT: '#C7A66A',
+              gold: '#C7A66A'
+            },
+            teal: {
+              soft: '#8CCBC0'
+            },
+            amber: {
+              muted: '#D99A36'
+            },
+            red: {
+              muted: '#B94D4D'
+            },
             brand: {
               50: '#ecfdf5',
               100: '#d1fae5',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b'
+              600: '#237A57',
+              700: '#185E42',
+              800: '#123C32',
+              900: '#0B241E'
             }
           }
         }
@@ -63,109 +103,467 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --color-forest: #123C32;
+      --color-emerald: #237A57;
+      --color-deep-emerald: #185E42;
+      --color-warm-ivory: #F6F6F0;
+      --color-pure-white: #FFFFFF;
+      --color-soft-sage: #E7EEE7;
+      --color-sage-border: #D5E0D7;
+      --color-charcoal-green: #20362D;
+      --color-muted-sage: #607067;
+      --color-champagne-gold: #C7A66A;
+      --color-soft-teal: #8CCBC0;
+      --color-muted-amber: #D99A36;
+      --color-muted-red: #B94D4D;
+    }
+
     body { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
     .font-serif { font-family: 'Newsreader', Georgia, serif; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    /* 3D Crystalline Design System - Precision Lighting & Dimensionality */
+    .perspective-1000 { perspective: 1000px; }
+    .preserve-3d { transform-style: preserve-3d; }
+    
+    @keyframes float3d {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(0.4deg); }
+    }
+    @keyframes prismShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(35, 122, 87, 0.25); }
+      50% { box-shadow: 0 0 35px rgba(45, 212, 191, 0.55), 0 0 15px rgba(167, 243, 208, 0.35); }
+    }
+    @keyframes bevelShine {
+      0% { transform: translateX(-150%) skewX(-25deg); }
+      50%, 100% { transform: translateX(250%) skewX(-25deg); }
+    }
+    
+    .animate-float-3d { animation: float3d 5s ease-in-out infinite; }
+    .animate-prism-pulse { animation: pulseGlow 3s ease-in-out infinite; }
+
+    /* Ultra 3D Crystalline Card */
+    .crystal-3d-card {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 248, 0.88) 100%);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-top: 1.5px solid #FFFFFF;
+      border-left: 1.5px solid rgba(255, 255, 255, 0.9);
+      border-bottom: 1.5px solid rgba(213, 224, 215, 0.85);
+      border-right: 1.5px solid rgba(213, 224, 215, 0.7);
+      border-radius: 1.5rem;
+      box-shadow: 
+        0 4px 6px -1px rgba(18, 60, 50, 0.04),
+        0 20px 40px -12px rgba(18, 60, 50, 0.12),
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 2px 0 rgba(18, 60, 50, 0.03);
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease;
+      position: relative;
+    }
+    .crystal-3d-card:hover {
+      transform: translateY(-5px) scale(1.008);
+      box-shadow: 
+        0 12px 28px -6px rgba(18, 60, 50, 0.12),
+        0 32px 64px -16px rgba(18, 60, 50, 0.22),
+        inset 0 1.5px 3px 0 #FFFFFF,
+        0 0 0 1px rgba(35, 122, 87, 0.30);
+    }
+
+    /* 3D Emerald Crystal (Headers, Hero Highlights, Key Badges) */
+    .crystal-3d-emerald {
+      background: linear-gradient(135deg, rgba(18, 60, 50, 0.96) 0%, rgba(11, 36, 30, 0.98) 55%, rgba(6, 22, 18, 0.99) 100%);
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      border: 1px solid rgba(140, 203, 192, 0.40);
+      border-top: 1.5px solid rgba(200, 245, 235, 0.85);
+      border-left: 1.2px solid rgba(140, 203, 192, 0.55);
+      border-bottom: 1.2px solid rgba(7, 24, 20, 0.85);
+      box-shadow: 
+        0 14px 40px 0 rgba(7, 24, 20, 0.50),
+        0 2px 8px 0 rgba(35, 122, 87, 0.25),
+        inset 0 1.5px 2px rgba(255, 255, 255, 0.45),
+        inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+      transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .crystal-3d-emerald:hover {
+      transform: translateY(-2px);
+      border-color: rgba(140, 203, 192, 0.80);
+      box-shadow: 
+        0 20px 50px 0 rgba(7, 24, 20, 0.65),
+        0 0 30px rgba(45, 212, 191, 0.35),
+        inset 0 1.5px 3px rgba(255, 255, 255, 0.65);
+    }
+
+    /* 3D Tactile Push-Button */
+    .crystal-3d-button {
+      background: linear-gradient(135deg, #185E42 0%, #123C32 50%, #0B241E 100%);
+      border: 1px solid rgba(140, 203, 192, 0.5);
+      border-top: 1.5px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 
+        0 4px 14px rgba(18, 60, 50, 0.28),
+        0 1px 3px rgba(18, 60, 50, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.45);
+      color: #FFFFFF;
+      font-weight: 800;
+      transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .crystal-3d-button::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -120%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: skewX(-20deg);
+      transition: left 650ms ease;
+    }
+    .crystal-3d-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 10px 28px rgba(18, 60, 50, 0.38),
+        0 2px 8px rgba(18, 60, 50, 0.25),
+        inset 0 1px 2px rgba(255, 255, 255, 0.65),
+        0 0 20px rgba(45, 212, 191, 0.4);
+    }
+    .crystal-3d-button:hover::after {
+      left: 150%;
+    }
+    .crystal-3d-button:active {
+      transform: translateY(1.5px);
+      box-shadow: 
+        0 2px 4px rgba(18, 60, 50, 0.25),
+        inset 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    /* 3D Optical Pill */
+    .crystal-3d-pill {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 246, 240, 0.90) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-bottom: 1.5px solid rgba(213, 224, 215, 0.9);
+      box-shadow: 
+        0 2px 8px rgba(18, 60, 50, 0.06),
+        0 8px 18px -4px rgba(18, 60, 50, 0.08),
+        inset 0 1px 1px #FFFFFF;
+      transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .crystal-3d-pill:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 
+        0 4px 14px rgba(18, 60, 50, 0.12),
+        0 14px 28px -6px rgba(18, 60, 50, 0.14),
+        inset 0 1px 2px #FFFFFF;
+    }
+
+    /* 3D Stat Box with Volumetric Numbers */
+    .crystal-stat-box {
+      background: linear-gradient(135deg, #FFFFFF 0%, #F8FAF8 100%);
+      border: 1px solid #D5E0D7;
+      border-top: 1.5px solid #FFFFFF;
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 16px -4px rgba(18, 60, 50, 0.08), inset 0 1px 0 #FFFFFF;
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .crystal-stat-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px -6px rgba(18, 60, 50, 0.14), inset 0 1px 1px #FFFFFF;
+    }
+
+    /* Crystal Glass Precision Styling (Part 3) */
+    .crystal-glass-emerald {
+      background: rgba(18, 60, 50, 0.90);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(140, 203, 192, 0.30);
+      box-shadow: 0 12px 36px 0 rgba(7, 24, 20, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    .crystal-glass-pill {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(213, 224, 215, 0.85);
+      box-shadow: 0 2px 8px rgba(18, 60, 50, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .crystal-glass-optical {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 32px 0 rgba(18, 60, 50, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .crystal-glass-frosted {
+      background: rgba(231, 238, 231, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(213, 224, 215, 0.75);
+      box-shadow: 0 4px 20px 0 rgba(18, 60, 50, 0.05);
+    }
+    .surface-matte-ivory {
+      background: #F6F6F0;
+      border: 1px solid #D5E0D7;
+    }
+    .detail-satin-metal {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border: 1px solid #cbd5e1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .crystal-glass-card {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 250, 248, 0.90) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-top: 1.5px solid #FFFFFF;
+      border-left: 1.5px solid rgba(255, 255, 255, 0.9);
+      border-bottom: 1.5px solid rgba(213, 224, 215, 0.85);
+      border-right: 1.5px solid rgba(213, 224, 215, 0.7);
+      border-radius: 1.25rem;
+      box-shadow: 
+        0 4px 6px -1px rgba(18, 60, 50, 0.04),
+        0 16px 36px -10px rgba(18, 60, 50, 0.10),
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 2px 0 rgba(18, 60, 50, 0.03);
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease;
+    }
+    .crystal-glass-card:hover {
+      transform: translateY(-3px) scale(1.004);
+      box-shadow: 
+        0 10px 24px -4px rgba(18, 60, 50, 0.12),
+        0 26px 52px -12px rgba(18, 60, 50, 0.18),
+        inset 0 1.5px 3px 0 #FFFFFF,
+        0 0 0 1px rgba(35, 122, 87, 0.25);
+    }
+
+    /* 3D Crystalline Form Controls */
+    input[type="text"], input[type="number"], select, textarea {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FAFCFA 100%) !important;
+      border: 1px solid #D5E0D7 !important;
+      border-top: 1.5px solid #CBD5E1 !important;
+      border-bottom: 1.5px solid #E2E8F0 !important;
+      box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+      transition: all 180ms ease !important;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: #237A57 !important;
+      box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.02), 0 0 0 3px rgba(35, 122, 87, 0.22), 0 4px 12px rgba(35, 122, 87, 0.1) !important;
+      transform: translateY(-0.5px) !important;
+    }
+
+    /* 3D Gemstone Badges */
+    .crystal-gem-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.6875rem;
+      font-weight: 800;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    .crystal-gem-badge.emerald {
+      background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+    }
+    .crystal-gem-badge.amber {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+    .crystal-gem-badge.blue {
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+      color: #1E40AF;
+      border: 1px solid #BFDBFE;
+    }
+
     /* Native App Window Draggable Region for frameless desktop apps */
     .app-drag-region { -webkit-app-region: drag; }
     .no-drag { -webkit-app-region: no-drag; }
+
+    /* Microinteraction & Button Elevation */
+    button, a {
+      transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-elevated:hover {
+      transform: translateY(-1px);
+    }
+    .btn-elevated:active {
+      transform: translateY(0.5px);
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 12mm 10mm 14mm 10mm;
+    }
+
     @media print {
       .no-print { display: none !important; }
-      body { background: white !important; }
-      main { padding: 0 !important; }
+      body { 
+        background: white !important; 
+        color: #1c1917 !important;
+        font-size: 10.5pt !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #app-header, #app-sidebar, #workspace-subbar, #mobile-bottom-bar, #app-footer {
+        display: none !important;
+      }
+      #app-workspace-content {
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+      }
+      main, #workspace-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        background: white !important;
+      }
+      #report-view, #recovery-view, #plan-view, #printable-report-card, .print-container, #eia-statutory-nature-recovery-plan {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+      }
+      .crystal-glass-card, .crystal-3d-card {
+        background: white !important;
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .page-break-before {
+        page-break-before: always !important;
+        break-before: page !important;
+      }
+      .page-break-after {
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+      .avoid-page-break, tr, .print-card, table, .border {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border-color: #cbd5e1 !important;
+      }
+    }
+
+    /* Accessibility - Respect Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body class="h-full flex flex-col antialiased text-stone-800 bg-[#FBFBF9] font-sans selection:bg-emerald-800 selection:text-white">
 
   <!-- TOP APP TITLEBAR / HEADER (For Workspace Views) -->
-  <header id="app-header" class="bg-[#0B1510] border-b border-stone-800 text-white sticky top-0 z-50 shadow-md no-print app-drag-region hidden select-none">
+  <header id="app-header" class="bg-gradient-to-r from-[#071A13] via-[#0D261C] to-[#071A13] backdrop-blur-xl border-b border-emerald-900/60 text-white sticky top-0 z-50 shadow-lg no-print app-drag-region hidden select-none">
     <div class="w-full px-3 sm:px-6">
       <div class="flex items-center justify-between h-14 gap-3">
         
         <!-- Left: Logo & Project Switcher Dropdown & Status Pill -->
         <div class="flex items-center gap-3 no-drag min-w-0">
           <!-- Mobile Sidebar Toggle -->
-          <button onclick="window.App.toggleMobileSidebar()" class="md:hidden p-1.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-300 hover:text-white" title="Toggle Navigation">
+          <button onclick="window.App.toggleMobileSidebar()" class="md:hidden p-1.5 rounded-lg bg-[#0B241E] border border-emerald-800/80 text-emerald-300 hover:text-white" title="Toggle Navigation">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
 
-          <!-- Monogram / Brand Icon -->
+          <!-- 3D Crystalline Brand Logo -->
           <div class="flex items-center gap-2.5 cursor-pointer group" onclick="window.App.switchView('home')" title="EcoBuild Smart Home">
-            <div class="w-8 h-8 rounded-lg bg-stone-900 border border-stone-700/80 flex items-center justify-center text-emerald-400 shadow-sm transition-transform group-hover:scale-105">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M4 20V10L12 4L20 10V20H4Z" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 4C12 4 16 7.5 16 12C16 14.5 14.2 16.5 12 16.5C9.8 16.5 8 14.5 8 12C8 7.5 12 4 12 4Z" fill="currentColor" fill-opacity="0.25"/>
-                <path d="M12 9V15M10 12L14 12" stroke="#10b981" stroke-width="1.6"/>
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0B241E] to-[#04100D] border border-emerald-500/50 flex items-center justify-center shadow-lg shadow-emerald-950/40 transition-transform group-hover:scale-105 relative overflow-hidden">
+              <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                <defs>
+                  <linearGradient id="hdrFacetTop" x1="24" y1="4" x2="38" y2="16" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#A7F3D0"/>
+                    <stop offset="100%" stop-color="#34D399"/>
+                  </linearGradient>
+                  <linearGradient id="hdrFacetLeft" x1="10" y1="16" x2="24" y2="34" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#10B981"/>
+                    <stop offset="100%" stop-color="#047857"/>
+                  </linearGradient>
+                  <linearGradient id="hdrFacetRight" x1="38" y1="16" x2="24" y2="34" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#059669"/>
+                    <stop offset="100%" stop-color="#064E3B"/>
+                  </linearGradient>
+                  <linearGradient id="hdrFacetBottom" x1="24" y1="34" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#047857"/>
+                    <stop offset="100%" stop-color="#022C22"/>
+                  </linearGradient>
+                  <linearGradient id="hdrFacetCore" x1="24" y1="14" x2="24" y2="30" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+                    <stop offset="100%" stop-color="#6EE7B7" stop-opacity="0.3"/>
+                  </linearGradient>
+                </defs>
+                <polygon points="24,4 38,15 24,20 10,15" fill="url(#hdrFacetTop)" stroke="#ECFDF5" stroke-width="0.8" stroke-linejoin="round"/>
+                <polygon points="10,15 24,20 24,36 10,31" fill="url(#hdrFacetLeft)" stroke="#34D399" stroke-width="0.6" stroke-linejoin="round"/>
+                <polygon points="38,15 24,20 24,36 38,31" fill="url(#hdrFacetRight)" stroke="#10B981" stroke-width="0.6" stroke-linejoin="round"/>
+                <polygon points="10,31 24,36 38,31 24,44" fill="url(#hdrFacetBottom)" stroke="#064E3B" stroke-width="0.6" stroke-linejoin="round"/>
+                <path d="M24 10 L30 18 L24 23 L18 18 Z" fill="url(#hdrFacetCore)" opacity="0.9"/>
+                <path d="M24 12 V38 M18 24 L24 18 L30 24 M19 30 L24 25 L29 30" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="24" cy="5" r="1.5" fill="#FFFFFF"/>
+                <circle cx="38" cy="15" r="1.2" fill="#E0F2FE"/>
               </svg>
             </div>
             <div class="hidden lg:block">
-              <div class="flex items-center gap-1.5">
-                <span class="font-extrabold text-sm tracking-tight text-white font-serif">EcoBuild</span>
-                <span class="text-[9px] font-bold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">DECISION PLATFORM</span>
+              <div class="flex items-center gap-2">
+                <span class="font-black text-sm tracking-tight text-white font-serif">EcoBuild</span>
+                <span class="text-[9px] font-bold text-emerald-400 uppercase tracking-wider font-mono bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-800/60">Smart Eco Management</span>
               </div>
             </div>
           </div>
 
-          <span class="text-stone-700 hidden sm:inline">/</span>
+          <span class="text-emerald-800/80 hidden sm:inline">/</span>
 
           <!-- Project Selector Dropdown Trigger -->
-          <button onclick="window.App.toggleProjectSwitcher()" id="top-project-selector-btn" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-stone-900/90 border border-stone-700/70 hover:border-emerald-600 transition text-xs font-semibold text-stone-200 hover:text-white max-w-[200px] sm:max-w-xs truncate" title="Switch Active Project">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
-            <span id="top-project-name" class="truncate">Kolhapur Campus</span>
+          <button onclick="window.App.toggleProjectSwitcher()" id="top-project-selector-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl crystal-3d-pill text-[#20362D] hover:bg-white transition text-xs font-bold max-w-[200px] sm:max-w-xs truncate shadow-xs" title="Switch Active Project">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
+            <span id="top-project-name" class="truncate font-sans">Kolhapur Campus</span>
             <span class="text-stone-400 text-[10px] shrink-0">▾</span>
           </button>
 
           <!-- Project Status Pill -->
-          <div id="top-project-status-pill" class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/70 text-emerald-300 border border-emerald-800/60">
+          <div id="top-project-status-pill" class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#0B241E]/90 text-emerald-300 border border-emerald-700/60 shadow-inner">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span>Recovery Plan Active</span>
           </div>
         </div>
 
-        <!-- Right Side: Score Dial, Freshness, Save Status, Notifications, Help, Profile, Exit -->
-        <div class="flex items-center gap-2 sm:gap-3 no-drag shrink-0">
+        <!-- Right Side: Score Dial, Save Status, Formulas, Project Files, Exit -->
+        <div class="flex items-center gap-2 sm:gap-2.5 no-drag shrink-0">
           
           <!-- Environmental Recovery Score Indicator Pill -->
-          <div id="top-recovery-score-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 shadow-xs cursor-pointer hover:bg-emerald-900/80 transition" onclick="window.App.switchView('recovery')" title="Recovery Score">
+          <div id="top-recovery-score-pill" class="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold crystal-3d-emerald text-emerald-300 shadow-md cursor-pointer hover:border-emerald-400 transition" onclick="window.App.switchView('recovery')" title="Recovery Score">
             <span class="text-[10px] font-normal text-emerald-400 uppercase tracking-wider hidden sm:inline">Recovery Score:</span>
             <span id="top-score-value" class="font-mono font-black text-white">86</span>
             <span class="text-[10px] text-emerald-400 font-normal">/100</span>
           </div>
 
-          <!-- Data Freshness Badge -->
-          <div id="top-data-freshness" class="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-stone-900 text-stone-300 border border-stone-800">
-            <span class="text-emerald-400">●</span>
-            <span id="top-freshness-text">ERA5 & CAMS • Updated 04 Oct 2026</span>
-          </div>
-
-          <!-- Save Status Indicator -->
-          <div id="top-save-indicator" class="hidden lg:flex items-center gap-1 text-[11px] text-stone-400 font-medium">
-            <span class="text-emerald-400 font-bold">✓</span>
-            <span>Saved</span>
-          </div>
-
-          <!-- Notifications Trigger Button with Unread Badge -->
-          <button onclick="window.App.toggleNotificationsModal()" class="relative p-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/70 text-stone-300 hover:text-white transition" title="Environmental Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span id="top-notification-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center">3</span>
+          <!-- Plan History & Assessment Archive Trigger -->
+          <button id="btn-top-plan-history" onclick="window.App.switchView('history')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0D1F17] hover:bg-[#153326] text-emerald-300 hover:text-white border border-emerald-700/70 shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0" title="View Plan History & Past Assessments">
+            <span>📜</span> <span>Plan History</span>
           </button>
-
-          <!-- Contextual Help / Formula Inspector Trigger -->
-          <button onclick="window.ExplainModal && window.ExplainModal.open('composite_score')" class="px-2.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700/70 text-stone-300 hover:text-white text-xs font-semibold transition hidden sm:flex items-center gap-1" title="Calculation Explainability">
-            <span>ℹ️</span> <span class="hidden md:inline">Formulas</span>
-          </button>
-
-          <!-- Engineer Profile Indicator -->
-          <div class="hidden md:flex items-center gap-2 pl-2 border-l border-stone-800 text-xs">
-            <div class="w-7 h-7 rounded-full bg-emerald-800 border border-emerald-600 flex items-center justify-center font-bold text-white text-[11px]">
-              AS
-            </div>
-            <div class="text-left leading-tight hidden lg:block">
-              <div class="font-bold text-stone-200 text-[11px]">Avishkar Shinde</div>
-              <div class="text-[9px] text-stone-400 font-medium">Lead Environmental Planner</div>
-            </div>
-          </div>
 
           <!-- Download App Trigger -->
           <button id="btn-header-install" onclick="window.InstallModal ? window.InstallModal.show() : window.downloadAppDirect()" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 text-white border border-emerald-500/70 shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0" title="Download EcoBuild App Package for any PC or Browser">
@@ -173,7 +571,7 @@
           </button>
 
           <!-- Exit to Homepage Button -->
-          <button onclick="window.App.switchView('home')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/80 transition flex items-center gap-1.5" title="Return to Landing Page">
+          <button onclick="window.App.switchView('home')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/80 transition flex items-center gap-1.5" title="Return to Landing Page">
             <span>🏠</span> <span class="hidden sm:inline">Exit to Home</span>
           </button>
 
@@ -368,7 +766,7 @@
     <div id="workspace-container" class="hidden flex-1 w-full flex min-h-[calc(100vh-56px)] relative bg-[#F8FAFC]">
       
       <!-- Collapsible Left Navigation Sidebar (Desktop & Tablet) -->
-      <aside id="app-sidebar" class="w-64 bg-[#0D1912] border-r border-stone-800 text-stone-300 flex flex-col justify-between shrink-0 transition-all duration-200 z-30 select-none no-print">
+      <aside id="app-sidebar" class="w-64 bg-[#081912] border-r border-emerald-950/70 text-stone-300 flex flex-col justify-between shrink-0 transition-all duration-200 z-30 select-none no-print">
         <!-- Sidebar Navigation Sections -->
         <div class="flex-1 overflow-y-auto py-4 px-3 space-y-5 scrollbar-thin">
           
@@ -417,22 +815,26 @@
           <!-- Section Group 3: PLANNING & SIMULATION -->
           <div class="space-y-1">
             <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Planning & Simulation</div>
-            <button onclick="window.App.switchView('scenariostudio')" data-nav="scenariostudio" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="What-If Eco Studio">
-              <span class="text-base shrink-0">⚖️</span>
-              <span class="sidebar-label truncate">What-If Eco Studio</span>
+            <button onclick="window.App.switchView('site3d')" data-nav="site3d" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="3D Environmental Digital Twin">
+              <span class="text-base shrink-0">🌐</span>
+              <span class="sidebar-label truncate">3D Environmental Twin</span>
             </button>
           </div>
 
-          <!-- Section Group 4: OPERATIONS & AUDIT -->
+          <!-- Section Group 4: OPERATIONS & REPORTS -->
           <div class="space-y-1">
-            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Operations & Audit</div>
+            <div class="sidebar-section-heading px-3 text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">Operations & Reports</div>
+            <button onclick="window.App.switchView('report')" data-nav="report" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Official Statutory EIA Clearance Report & Export">
+              <span class="text-base shrink-0">📄</span>
+              <span class="sidebar-label truncate">Official EIA Report</span>
+            </button>
             <button onclick="window.App.switchView('monitoring')" data-nav="monitoring" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Monitoring">
               <span class="text-base shrink-0">📈</span>
               <span class="sidebar-label truncate">Monitoring</span>
             </button>
-            <button onclick="window.App.switchView('report')" data-nav="report" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Audit Report">
-              <span class="text-base shrink-0">📄</span>
-              <span class="sidebar-label truncate">Audit Report</span>
+            <button onclick="window.App.switchView('history')" data-nav="history" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition text-stone-300 hover:text-white hover:bg-stone-800/60" title="Plan History & Past Assessments">
+              <span class="text-base shrink-0">📜</span>
+              <span class="sidebar-label truncate">Plan History</span>
             </button>
           </div>
 
@@ -467,22 +869,22 @@
       </aside>
 
       <!-- Main Workspace Canvas Area -->
-      <div id="app-workspace-content" class="flex-1 min-w-0 flex flex-col overflow-y-auto">
+      <div id="app-workspace-content" class="flex-1 min-w-0 flex flex-col overflow-y-auto bg-gradient-to-b from-[#F8FAFC] via-[#F1F5F9]/60 to-[#F8FAFC]">
         
         <!-- Breadcrumb & Workspace Sub-bar -->
-        <div id="workspace-subbar" class="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-xs">
+        <div id="workspace-subbar" class="bg-white/90 backdrop-blur-md border-b border-slate-200/90 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-xs no-print">
           <!-- Hierarchical Breadcrumbs -->
-          <nav id="app-breadcrumbs" class="flex items-center gap-1.5 text-xs text-slate-500 font-medium overflow-x-auto whitespace-nowrap">
+          <nav id="app-breadcrumbs" class="flex items-center gap-1.5 text-xs text-stone-600 font-semibold overflow-x-auto whitespace-nowrap">
             <!-- Populated dynamically: EcoBuild / Projects / Kolhapur Campus / Nature Recovery / Action Plan -->
           </nav>
 
           <!-- Contextual Quick Action Buttons -->
           <div class="flex items-center gap-2 shrink-0 text-xs">
-            <button onclick="window.App.switchView('wizard')" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition flex items-center gap-1">
+            <button onclick="window.App.switchView('wizard')" class="px-3 py-1.5 rounded-xl crystal-3d-pill text-stone-700 hover:text-stone-900 font-bold transition flex items-center gap-1 shadow-xs" title="New Site Assessment">
               <span>+</span> <span>New Site</span>
             </button>
-            <button onclick="window.App.switchView('report')" class="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold transition flex items-center gap-1">
-              <span>📄</span> <span>Export Report</span>
+            <button onclick="window.App.switchView('report')" class="px-3.5 py-1.5 rounded-xl crystal-3d-button text-white font-bold transition flex items-center gap-1.5 text-xs shadow-md" title="Official Statutory EIA Clearance Report & Export">
+              <span>📄</span> <span>Official EIA Report</span>
             </button>
           </div>
         </div>
@@ -490,10 +892,10 @@
         <!-- View Containers -->
         <div class="p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
           <div id="dashboard-view" class="space-y-6"></div>
+          <div id="eiaresults-view" class="hidden"></div>
           <div id="wizard-view" class="hidden">
             <div id="wizard-container" class="max-w-4xl mx-auto"></div>
           </div>
-          <div id="scenariostudio-view" class="hidden"></div>
           <div id="technical-view" class="hidden"></div>
           <div id="recovery-view" class="hidden"></div>
           <div id="materials-view" class="hidden"></div>
@@ -507,6 +909,8 @@
           <div id="datasources-view" class="hidden"></div>
           <div id="waste-view" class="hidden"></div>
           <div id="plan-view" class="hidden"></div>
+          <div id="site3d-view" class="hidden"></div>
+          <div id="siteplanner-view" class="hidden"></div>
         </div>
 
       </div>
@@ -576,8 +980,10 @@
   <script src="js/calculations/scoreCalculator.js"></script>
   <script src="js/calculations/recoveryCalculator.js"></script>
   <script src="js/calculations/environmentalCalculator.js"></script>
+  <script src="js/calculations/optimizerEngine.js"></script>
   <script src="js/recommendations.js"></script>
   <script src="js/validation.js"></script>
+  <script src="js/projectFileManager.js"></script>
   <script src="js/components/explainModal.js"></script>
   <script src="js/components/mapModule.js"></script>
   <script src="js/components/wizard.js"></script>
@@ -588,14 +994,15 @@
   <script src="js/components/biodiversity.js"></script>
   <script src="js/components/technicalAnalysis.js"></script>
   <script src="js/components/natureRecovery.js"></script>
-  <script src="js/components/scenarioStudio.js"></script>
   <script src="js/components/history.js"></script>
   <script src="js/components/methodology.js"></script>
   <script src="js/components/dataSources.js"></script>
   <script src="js/components/report.js"></script>
   <script src="js/components/materialsView.js"></script>
   <script src="js/components/wasteView.js"></script>
+  <script src="js/components/sitePlannerView.js"></script>
   <script src="js/components/monitoringView.js"></script>
+  <script src="js/components/eiaResultsView.js"></script>
   <script src="js/components/hero3d.js"></script>
   <script src="js/components/homeView.js"></script>
   <script src="js/components/installModal.js"></script>

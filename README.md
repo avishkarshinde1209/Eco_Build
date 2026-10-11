@@ -112,7 +112,7 @@ Eco_Build/
 │       ├── wizard.js                  # 8-step project wizard with auto-fill
 │       ├── natureRecovery.js          # Nature recovery & mitigation portfolio
 │       ├── history.js                 # Plan archive, results modal & comparison
-│       ├── scenarioStudio.js          # Interactive what-if intervention sliders
+│       ├── sitePlannerView.js         # 1:1 Metric 3D Environmental Digital Twin & 2D Cadastre
 │       ├── technicalAnalysis.js       # Technical engineering drilldowns
 │       ├── methodology.js             # Scientific equations & academic citations
 │       ├── report.js                  # Printable EIA documentation report
@@ -123,7 +123,6 @@ Eco_Build/
 │       ├── energy.js                  # Solar energy analysis sub-module
 │       ├── biodiversity.js            # Ecology & tree impact sub-module
 │       ├── comparison.js              # Comparative analysis sub-module
-│       ├── simulator.js               # Real-time simulation controls
 │       └── dataSources.js             # Live API monitor & confidence levels
 └── tests/
     └── test_suite.py             # 32 automated verification unit tests (100% pass)

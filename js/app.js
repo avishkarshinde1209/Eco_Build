@@ -40,16 +40,17 @@ window.App = {
       hash = "recovery";
     }
     const validViews = [
-      "home", "dashboard", "wizard", "scenariostudio", "technical",
+      "home", "dashboard", "eiaresults", "wizard", "technical",
       "recovery", "stormwater", "energy", "materials", "biodiversity",
       "waste", "optimization", "cost",
-      "monitoring", "history", "methodology", "report", "datasources", "plan"
+      "monitoring", "history", "methodology", "report", "datasources", "plan",
+      "site3d", "siteplanner"
     ];
     const initialView = validViews.includes(hash) ? hash : "home";
     this.switchView(initialView);
   },
 
-  async loadProjectAndCalculate(project) {
+  async loadProjectAndCalculate(project, saveToHistory = false) {
     this.currentProject = project;
     localStorage.setItem("ecobuild_current_project", JSON.stringify(project));
 
@@ -68,8 +69,8 @@ window.App = {
       // 3. Synthesize rule-based recommendations
       this.recommendations = window.RecommendationEngine.generateRecoveryPlan(project, this.calculations, this.environmentalData);
 
-      // 4. Save to History Manager
-      if (window.HistoryManager) {
+      // 4. Save to History Manager only after explicit assessment submission
+      if (saveToHistory && window.HistoryManager) {
         window.HistoryManager.saveCurrentPlan(this.currentProject, this.calculations);
       }
 
@@ -86,8 +87,12 @@ window.App = {
     this.recommendations = window.RecommendationEngine.generateRecoveryPlan(this.currentProject, this.calculations, this.environmentalData);
     localStorage.setItem("ecobuild_current_project", JSON.stringify(this.currentProject));
 
+    // Update in history if this assessment already exists
     if (window.HistoryManager) {
-      window.HistoryManager.saveCurrentPlan(this.currentProject, this.calculations);
+      const plans = window.HistoryManager.getAllPlans();
+      if (plans.some(p => p.id === this.currentProject.id)) {
+        window.HistoryManager.saveCurrentPlan(this.currentProject, this.calculations);
+      }
     }
 
     this.updateTopBarBadge();
@@ -201,6 +206,7 @@ window.App = {
     
     const titles = {
       dashboard: "Project Overview",
+      eiaresults: "Official Statutory EIA Clearance Dossier",
       wizard: "Site Assessment & Cadastre",
       technical: "Environmental Baseline",
       recovery: "Nature Recovery Plan",
@@ -209,13 +215,14 @@ window.App = {
       materials: "Carbon Accounting & Materials",
       biodiversity: "Urban Biodiversity Matrix",
       waste: "Waste & Material Circularity",
-      scenariostudio: "What-If Sensitivity Studio",
+      site3d: "3D Environmental Digital Twin",
+      siteplanner: "3D Environmental Digital Twin",
       optimization: "Multi-Objective Optimizer",
       cost: "Lifecycle Cost & Abatement",
       monitoring: "Post-Occupancy Monitoring Hub",
-      report: "Statutory Environmental Audit",
+      report: "Official Statutory EIA Clearance Dossier",
       datasources: "Data Sources & Audit Trail",
-      history: "Project Archive & Settings"
+      history: "Plan History & Assessment Archive"
     };
 
     const currentTitle = titles[viewName] || viewName.toUpperCase();
@@ -236,18 +243,22 @@ window.App = {
     let targetView = viewName;
 
     // Route alias normalization to prevent blank containers
-    if (["plan", "recovery", "recoveryplan", "naturerecovery", "optimization"].includes(normalized)) {
+    if (["scenariostudio", "scenario", "whatif", "studio"].includes(normalized)) {
+      targetView = "site3d";
+    } else if (["eia", "eiaresults", "eiaresult", "results", "dossier", "export", "exportreport"].includes(normalized)) {
+      targetView = "report";
+    } else if (["plan", "recovery", "recoveryplan", "naturerecovery", "optimization"].includes(normalized)) {
       targetView = "recovery";
-    } else if (["siteplanner3d", "3dview", "3d", "architectural3d", "siteplanner", "siteplanner2d", "planner", "2dview"].includes(normalized)) {
-      targetView = "scenariostudio";
+    } else if (["siteplanner3d", "3dview", "3d", "architectural3d", "siteplanner", "siteplanner2d", "planner", "2dview", "site3d", "digitaltwin", "twin"].includes(normalized)) {
+      targetView = "site3d";
     } else if (["cost", "materials", "carbon"].includes(normalized)) {
       targetView = "materials";
     } else if (["technical", "baseline"].includes(normalized)) {
       targetView = "dashboard";
     } else if (["datasources", "data", "sources"].includes(normalized)) {
       targetView = "report";
-    } else if (["history"].includes(normalized)) {
-      targetView = "monitoring";
+    } else if (["history", "planhistory", "pastplans", "versions", "snapshots"].includes(normalized)) {
+      targetView = "history";
     } else if (["water", "stormwater"].includes(normalized)) {
       targetView = "stormwater";
     }
@@ -295,7 +306,8 @@ window.App = {
     if (targetView === "cost") targetViewContainer = "materials";
     if (targetView === "technical") targetViewContainer = "dashboard";
     if (targetView === "datasources") targetViewContainer = "report";
-    if (targetView === "history") targetViewContainer = "monitoring";
+    if (targetView === "siteplanner") targetViewContainer = "site3d";
+    if (targetView === "eiaresults") targetViewContainer = "report";
 
     // Update active nav item styling in sidebar
     document.querySelectorAll(".sidebar-nav-item").forEach(btn => {
@@ -311,9 +323,10 @@ window.App = {
 
     // Hide all workspace view containers
     const allViews = [
-      "dashboard", "wizard", "scenariostudio", "technical", "recovery",
+      "dashboard", "eiaresults", "wizard", "technical", "recovery",
       "materials", "monitoring", "stormwater", "energy",
-      "biodiversity", "datasources", "waste", "history", "methodology", "report", "plan"
+      "biodiversity", "datasources", "waste", "history", "methodology", "report", "plan",
+      "site3d", "siteplanner"
     ];
     allViews.forEach(v => {
       const el = document.getElementById(`${v}-view`);
@@ -366,11 +379,16 @@ window.App = {
       case "technical":
         window.DashboardView && window.DashboardView.render(proj, calc, env);
         break;
+      case "eiaresults":
+      case "report":
+        window.ReportView && window.ReportView.render(proj, calc, env);
+        break;
       case "wizard":
         window.ProjectWizard && window.ProjectWizard.init(proj);
         break;
-      case "scenariostudio":
-        window.ScenarioStudioView && window.ScenarioStudioView.render(proj, calc, env);
+      case "site3d":
+      case "siteplanner":
+        window.SitePlannerView && window.SitePlannerView.render(proj, calc, env);
         break;
       case "recovery":
       case "plan":
@@ -406,9 +424,6 @@ window.App = {
       case "datasources":
         window.DataSourcesView && window.DataSourcesView.render(env);
         break;
-      case "report":
-        window.ReportView && window.ReportView.render(proj, calc, env);
-        break;
       default:
         window.DashboardView && window.DashboardView.render(proj, calc, env);
         break;
@@ -416,7 +431,7 @@ window.App = {
   },
 
   async onProjectSubmitted(formData) {
-    await this.loadProjectAndCalculate(formData);
+    await this.loadProjectAndCalculate(formData, true);
     this.switchView("dashboard");
   },
 

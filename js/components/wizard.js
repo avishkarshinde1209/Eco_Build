@@ -87,9 +87,9 @@ window.ProjectWizard = {
     if (!container) return;
 
     container.innerHTML = `
-      <div class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden font-sans text-stone-800">
+      <div class="crystal-3d-card rounded-3xl shadow-2xl overflow-hidden font-sans text-stone-800">
         <!-- Wizard Header -->
-        <div class="bg-[#14281D] text-white p-6 md:p-8 border-b border-stone-800">
+        <div class="crystal-3d-emerald text-white p-6 md:p-8">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div class="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -102,31 +102,16 @@ window.ProjectWizard = {
               <p class="text-stone-300 text-xs mt-1 max-w-xl leading-relaxed">${this.getStepDescription(this.currentStep)}</p>
             </div>
 
-            <!-- Smart Auto-Correlation Switch & Mode Control -->
+            <!-- Smart Auto-Correlation Switch -->
             <div class="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
               <!-- Smart Correlation Toggle -->
               <button 
                 type="button" 
                 onclick="window.ProjectWizard.toggleAutoCorrelate()" 
-                class="px-3.5 py-2 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${this.autoCorrelate ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' : 'bg-stone-900 text-stone-400 border-stone-700'}"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${this.autoCorrelate ? 'crystal-3d-button text-white shadow-sm' : 'crystal-3d-pill text-stone-700'}"
                 title="When ON, entering plot or footprint auto-calculates open space, GFA, NBC occupants, water needs, and tree density">
                 <span>⚡ Smart Correlation:</span>
-                <span class="${this.autoCorrelate ? 'text-amber-300' : 'text-stone-500'} font-black">${this.autoCorrelate ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <!-- Mode Toggle -->
-              <div class="bg-stone-900/90 p-1 rounded-xl border border-stone-700 flex text-xs">
-                <button onclick="window.ProjectWizard.setMode('basic')" class="px-3 py-1.5 rounded-lg font-medium transition ${this.userMode === 'basic' ? 'bg-white text-stone-900 font-bold shadow-sm' : 'text-stone-400 hover:text-white'}">
-                  Basic
-                </button>
-                <button onclick="window.ProjectWizard.setMode('advanced')" class="px-3 py-1.5 rounded-lg font-medium transition ${this.userMode === 'advanced' ? 'bg-white text-stone-900 font-bold shadow-sm' : 'text-stone-400 hover:text-white'}">
-                  Advanced
-                </button>
-              </div>
-
-              <!-- Demo Button -->
-              <button onclick="window.ProjectWizard.loadSample('kolhapur_academic')" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-emerald-300 border border-stone-700 transition">
-                Load Kolhapur Demo
+                <span class="${this.autoCorrelate ? 'text-amber-300' : 'text-stone-600'} font-black">${this.autoCorrelate ? 'ON' : 'OFF'}</span>
               </button>
             </div>
           </div>
@@ -138,8 +123,8 @@ window.ProjectWizard = {
               const isActive = sNum === this.currentStep;
               const isPast = sNum < this.currentStep;
               return `
-                <button onclick="window.ProjectWizard.goToStep(${sNum})" class="text-left group focus:outline-none">
-                  <div class="h-1.5 rounded-full transition-all duration-300 ${isActive ? 'bg-amber-400' : isPast ? 'bg-emerald-400' : 'bg-stone-800'}"></div>
+                <button onclick="window.ProjectWizard.goToStep(${sNum})" class="text-left group focus:outline-none cursor-pointer">
+                  <div class="h-1.5 rounded-full transition-all duration-300 ${isActive ? 'bg-amber-400 shadow-sm' : isPast ? 'bg-emerald-400 shadow-sm' : 'bg-stone-800'}"></div>
                   <span class="text-[10px] hidden md:block mt-1.5 truncate ${isActive ? 'text-amber-300 font-bold' : isPast ? 'text-emerald-300 font-semibold' : 'text-stone-400'}">
                     ${this.getStepShortLabel(sNum)}
                   </span>
@@ -160,11 +145,11 @@ window.ProjectWizard = {
         </div>
 
         <!-- Footer Navigation -->
-        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+        <div class="bg-stone-50/80 px-6 py-4 border-t border-stone-200/80 flex items-center justify-between">
           <button 
             type="button" 
             onclick="window.ProjectWizard.goToStep(${this.currentStep - 1})"
-            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 transition ${this.currentStep === 1 ? 'invisible' : ''}">
+            class="px-4 py-2 rounded-xl text-xs font-bold crystal-3d-pill text-stone-700 hover:text-stone-900 transition cursor-pointer ${this.currentStep === 1 ? 'invisible' : ''}">
             &larr; Back
           </button>
 
@@ -173,7 +158,7 @@ window.ProjectWizard = {
               <button 
                 type="button" 
                 onclick="window.ProjectWizard.submitProject()"
-                class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+                class="px-6 py-2.5 rounded-xl text-xs font-black crystal-3d-button text-white shadow-lg transition flex items-center gap-2 cursor-pointer">
                 <span>Run Environmental Assessment</span>
                 <span>&rarr;</span>
               </button>
@@ -181,7 +166,7 @@ window.ProjectWizard = {
               <button 
                 type="button" 
                 onclick="window.ProjectWizard.goToStep(${this.currentStep + 1})"
-                class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 transition">
+                class="px-5 py-2 rounded-xl text-xs font-black crystal-3d-button text-white shadow-md transition cursor-pointer">
                 Next: ${this.getStepShortLabel(this.currentStep + 1)} &rarr;
               </button>
             `}
@@ -265,8 +250,8 @@ window.ProjectWizard = {
                 EcoBuild Smart features an intelligent correlation engine. As you type primary spatial dimensions (such as Plot Area or Building Type), related parameters (building footprint, roof area, NBC occupants, water demand, and surface allocations) automatically calculate sensible, physically sound defaults.
               </p>
               <div class="border-t border-slate-200 pt-3 text-xs space-y-1 text-slate-500">
-                <div>• Current Auto-Correlation: <strong class="${auto ? 'text-emerald-700' : 'text-slate-600'}">${auto ? 'Active (Auto-fills dependent fields)' : 'Disabled (Manual entry)'}</strong></div>
-                <div>• User Mode: <strong class="text-slate-800">${isAdv ? 'Advanced Engineering Mode' : 'Basic Student Mode'}</strong></div>
+                <div>• Auto-Correlation: <strong class="${auto ? 'text-emerald-700' : 'text-slate-600'}">${auto ? 'Active (Auto-fills physical parameters)' : 'Disabled (Manual entry)'}</strong></div>
+                <div>• Compliance Baseline: <strong class="text-emerald-800 font-semibold">Statutory Environmental Standards (NBC / CPCB / CEA)</strong></div>
               </div>
             </div>
           </div>
@@ -275,6 +260,21 @@ window.ProjectWizard = {
       case 2:
         return `
           <div class="space-y-6">
+            <!-- Cadastral Import Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">🗺️</span>
+                <div>
+                  <div class="text-xs font-bold text-slate-800">Cadastral Boundary GeoJSON / KML Import</div>
+                  <div class="text-[11px] text-slate-500">Upload municipal cadastral plot boundary to auto-populate exact polygon area & GPS coordinates</div>
+                </div>
+              </div>
+              <label class="cursor-pointer px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                <span>📂 Upload GIS Parcel (.geojson / .kml)</span>
+                <input type="file" accept=".geojson,.json,.kml" class="hidden" onchange="window.ProjectWizard.handleCadastralUpload(this.files[0])">
+              </label>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -321,6 +321,22 @@ window.ProjectWizard = {
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Gross Floor Area (m²)</label>
                 <input type="text" readonly value="${(p.site.built_up_area * p.site.floors).toLocaleString()} m²" class="w-full px-3.5 py-2 rounded-xl bg-slate-100 border text-sm font-bold text-slate-700">
                 <span class="text-[11px] text-slate-500 block mt-1">Determines NBC occupant density</span>
+              </div>
+            </div>
+
+            <!-- DCR Bye-Law Compliance Pre-Check -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-amber-50/60 border border-amber-200/80 rounded-2xl text-xs">
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Ground Coverage</span>
+                <div class="font-bold text-slate-800">${Math.round((p.site.built_up_area / p.site.plot_area) * 100)}% <span class="text-[10px] ${((p.site.built_up_area / p.site.plot_area) <= 0.45) ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}">(${((p.site.built_up_area / p.site.plot_area) <= 0.45) ? '✓ NBC/DCR ≤45%' : '⚠️ Exceeds 45% Limit'})</span></div>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Floor Space Index (FSI / FAR)</span>
+                <div class="font-bold text-slate-800">${((p.site.built_up_area * p.site.floors) / p.site.plot_area).toFixed(2)} <span class="text-[10px] ${(((p.site.built_up_area * p.site.floors) / p.site.plot_area) <= 2.5) ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}">(${(((p.site.built_up_area * p.site.floors) / p.site.plot_area) <= 2.5) ? '✓ Base Permissible' : '⚠️ Requires Premium FAR'})</span></div>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Mandatory Open Green</span>
+                <div class="font-bold text-slate-800">${Math.round(((p.site.plot_area - p.site.built_up_area) / p.site.plot_area) * 100)}% <span class="text-[10px] text-emerald-700 font-bold">(Min 15% mandated by MoEFCC)</span></div>
               </div>
             </div>
 
@@ -486,6 +502,25 @@ window.ProjectWizard = {
                 <input type="text" readonly value="${Math.max(0, p.site.plot_area - p.site.built_up_area).toLocaleString()} m²" class="w-full px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-sm font-bold text-emerald-800">
                 <span class="text-[11px] text-emerald-700">Plot Area minus Built Footprint</span>
               </div>
+            </div>
+
+            <!-- Soil Hydrologic Group (HSG) Selector -->
+            <div class="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🌱</span> Soil Hydrologic Group (NRCS HSG Standard)
+                </label>
+                <span class="text-[10px] font-bold text-teal-700 uppercase bg-teal-100/70 px-2 py-0.5 rounded-full">Percolation & Ksat Rate</span>
+              </div>
+              <select onchange="window.ProjectWizard.updateSiteField('soil_hydrologic_group', this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-teal-300 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-teal-500">
+                <option value="A" ${(p.site.soil_hydrologic_group || 'B') === 'A' ? 'selected' : ''}>Group A: Deep Sand / Loamy Sand (Ksat &gt; 25 mm/hr — High infiltration, rapid percolation, low runoff)</option>
+                <option value="B" ${(p.site.soil_hydrologic_group || 'B') === 'B' ? 'selected' : ''}>Group B: Sandy Loam / Moderate Loam (Ksat 10–25 mm/hr — Moderate infiltration - Standard Indian Soil)</option>
+                <option value="C" ${(p.site.soil_hydrologic_group || 'B') === 'C' ? 'selected' : ''}>Group C: Clay Loam / Shallow Sandy Loam (Ksat 2.5–10 mm/hr — Low infiltration, higher runoff volume)</option>
+                <option value="D" ${(p.site.soil_hydrologic_group || 'B') === 'D' ? 'selected' : ''}>Group D: Heavy Clay / High Water Table (Ksat &lt; 2.5 mm/hr — Very slow percolation, requires perforated underdrains)</option>
+              </select>
+              <p class="text-[11px] text-teal-800 leading-relaxed">
+                Soil hydrologic classification dictates whether bioswales and permeable pavements can freely exfiltrate into the natural ground or require perforated collector underdrains connected to secondary stormwater retention cells.
+              </p>
             </div>
           </div>
         `;
@@ -734,6 +769,31 @@ window.ProjectWizard = {
   },
 
   // Handlers for Smart Inter-Parameter Correlations
+  async handleCadastralUpload(file) {
+    if (!file) return;
+    try {
+      if (window.ProjectFileManager && window.ProjectFileManager.parseCadastralFile) {
+        const parsed = await window.ProjectFileManager.parseCadastralFile(file);
+        if (parsed && parsed.area_sqm > 0) {
+          this.handlePlotAreaChange(Math.round(parsed.area_sqm));
+          if (parsed.center) {
+            this.projectData.location.latitude = parseFloat(parsed.center.lat.toFixed(6));
+            this.projectData.location.longitude = parseFloat(parsed.center.lng.toFixed(6));
+            if (window.MapModule) {
+              window.MapModule.updateLocation(parsed.center.lat, parsed.center.lng, parsed.area_sqm);
+            }
+          }
+          this.render();
+          alert(`Cadastral boundary imported successfully!\nPlot Area: ${Math.round(parsed.area_sqm).toLocaleString()} m²\nCoordinates: ${parsed.center.lat.toFixed(4)}, ${parsed.center.lng.toFixed(4)}`);
+          return;
+        }
+      }
+      alert('Unable to extract polygon geometry from file. Ensure GeoJSON/KML contains valid polygon coordinates.');
+    } catch (err) {
+      alert(`Cadastral import error: ${err.message}`);
+    }
+  },
+
   handlePlotAreaChange(val) {
     if (isNaN(val) || val <= 0) return;
     this.projectData = window.CorrelationEngine.onPlotAreaChange(val, this.projectData, this.autoCorrelate);

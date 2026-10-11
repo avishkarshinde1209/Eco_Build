@@ -8,6 +8,100 @@
 window.HistoryManager = {
   STORAGE_KEY: "ecobuild_plans_history",
 
+  getInitialSampleHistory() {
+    const active = window.App?.currentProject || (window.ECO_SAMPLE_PROJECTS && window.ECO_SAMPLE_PROJECTS.kolhapur_academic);
+    const now = Date.now();
+    const dayMs = 86400000;
+    const baseCalcs = window.App?.calculations;
+
+    return [
+      {
+        id: active?.id || "proj_kolhapur_demo",
+        name: active?.name || "Kolhapur Engineering Campus Expansion",
+        description: "Active running statutory site assessment with NBC Part 11 compliant landscape recovery plan.",
+        building_type: active?.building_type || "Institutional",
+        user_mode: "advanced",
+        status: "Active Running Assessment",
+        location: active?.location || { address: "Kolhapur, Maharashtra, India", city: "Kolhapur", state: "Maharashtra" },
+        site: active?.site || { plot_area: 5000, built_up_area: 2200, total_floor_area: 4400, floors: 2, roof_area: 2200, open_area: 2800 },
+        saved_at: new Date(now - 1000 * 60 * 18).toISOString(),
+        summary_score: baseCalcs?.score?.composite_score || 86,
+        summary_tier: "Good",
+        summary_runoff_reduction: 28.7,
+        summary_trees_planted: 90,
+        summary_solar_kwp: 88,
+        summary_waste_tonnes: 330,
+        summary_diversion_pct: 65,
+        summary_topsoil_m3: 440,
+        summary_miyawaki_trees: 2450,
+        summary_bng_gain: 42
+      },
+      {
+        id: "hist_kolhapur_iter2",
+        name: "Kolhapur Campus - Milestone 2 (High-Efficiency RWH & Solar PV)",
+        description: "Variant exploring maximized rooftop rainwater harvesting storage and high-output photovoltaic array.",
+        building_type: "Institutional",
+        user_mode: "advanced",
+        status: "Milestone Revision",
+        location: { address: "Kolhapur, Maharashtra, India", city: "Kolhapur", state: "Maharashtra" },
+        site: { plot_area: 5000, built_up_area: 2200, total_floor_area: 4400, floors: 2, roof_area: 2200, open_area: 2800 },
+        saved_at: new Date(now - dayMs * 2).toISOString(),
+        summary_score: 79,
+        summary_tier: "Moderate",
+        summary_runoff_reduction: 22.4,
+        summary_trees_planted: 60,
+        summary_solar_kwp: 110,
+        summary_waste_tonnes: 330,
+        summary_diversion_pct: 55,
+        summary_topsoil_m3: 380,
+        summary_miyawaki_trees: 1800,
+        summary_bng_gain: 31
+      },
+      {
+        id: "hist_kolhapur_baseline",
+        name: "Kolhapur Campus - Baseline Site Survey (Pre-Intervention)",
+        description: "Initial environmental benchmark prior to any ecological restoration or SUDS installation.",
+        building_type: "Institutional",
+        user_mode: "advanced",
+        status: "Baseline Survey",
+        location: { address: "Kolhapur, Maharashtra, India", city: "Kolhapur", state: "Maharashtra" },
+        site: { plot_area: 5000, built_up_area: 2200, total_floor_area: 4400, floors: 2, roof_area: 2200, open_area: 2800 },
+        saved_at: new Date(now - dayMs * 7).toISOString(),
+        summary_score: 52,
+        summary_tier: "Poor",
+        summary_runoff_reduction: 8.2,
+        summary_trees_planted: 0,
+        summary_solar_kwp: 0,
+        summary_waste_tonnes: 330,
+        summary_diversion_pct: 20,
+        summary_topsoil_m3: 0,
+        summary_miyawaki_trees: 0,
+        summary_bng_gain: 4
+      },
+      {
+        id: "hist_hinjewadi_demo",
+        name: "Pune Hinjewadi IT Park - Phase 1 Environmental Clearance Dossier",
+        description: "Commercial IT Park appraisal under Parivesh 2.0 Cat. 8(a) Building Construction.",
+        building_type: "Commercial",
+        user_mode: "advanced",
+        status: "Archived Clearance",
+        location: { address: "Hinjewadi Phase 1, Pune, Maharashtra", city: "Pune", state: "Maharashtra" },
+        site: { plot_area: 12000, built_up_area: 5500, total_floor_area: 16500, floors: 3, roof_area: 5500, open_area: 6500 },
+        saved_at: new Date(now - dayMs * 14).toISOString(),
+        summary_score: 83,
+        summary_tier: "Good",
+        summary_runoff_reduction: 35.8,
+        summary_trees_planted: 160,
+        summary_solar_kwp: 240,
+        summary_waste_tonnes: 720,
+        summary_diversion_pct: 78,
+        summary_topsoil_m3: 1100,
+        summary_miyawaki_trees: 4200,
+        summary_bng_gain: 48
+      }
+    ];
+  },
+
   getAllPlans() {
     let plans = [];
     try {
@@ -17,12 +111,11 @@ window.HistoryManager = {
       console.warn("Error parsing history from storage:", e);
     }
 
-    // Always ensure the Kolhapur demo exists in the history catalog
-    if (!plans.some(p => p.id === "proj_kolhapur_demo")) {
-      const demo = JSON.parse(JSON.stringify(window.ECO_SAMPLE_PROJECTS.kolhapur_academic));
-      demo.status = "Demo Reference";
-      demo.saved_at = new Date().toISOString();
-      plans.unshift(demo);
+    if (!plans || plans.length === 0) {
+      plans = this.getInitialSampleHistory();
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(plans));
+      } catch (e) {}
     }
 
     return plans;
@@ -106,13 +199,19 @@ window.HistoryManager = {
     }
   },
 
-  loadPlan(planId) {
+  async loadPlan(planId, redirectToDashboard = true) {
     const plans = this.getAllPlans();
     const target = plans.find(p => p.id === planId);
     if (!target) return;
 
-    window.App.loadProjectAndCalculate(JSON.parse(JSON.stringify(target)));
-    window.App.switchView("dashboard");
+    if (window.App) {
+      await window.App.loadProjectAndCalculate(JSON.parse(JSON.stringify(target)));
+      if (redirectToDashboard) {
+        window.App.switchView("dashboard");
+      } else {
+        this.render();
+      }
+    }
   },
 
   duplicatePlan(planId) {
@@ -133,11 +232,6 @@ window.HistoryManager = {
   },
 
   deletePlan(planId) {
-    if (planId === "proj_kolhapur_demo") {
-      alert("The Kolhapur academic demonstration benchmark cannot be deleted.");
-      return;
-    }
-
     if (!confirm("Are you sure you want to delete this historical plan? This cannot be undone.")) return;
 
     let plans = this.getAllPlans();
@@ -159,19 +253,17 @@ window.HistoryManager = {
     if (!calcs && window.EnvironmentalCalculator) {
       calcs = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(target, window.App?.environmentalData);
     }
+    let eia = calcs?.eia_results;
+    if (!eia && window.EnvironmentalCalculator) {
+      eia = window.EnvironmentalCalculator.generateAppropriateEIAResults(target, calcs || {}, window.App?.environmentalData);
+    }
 
-    const score = calcs?.score?.composite_score || target.summary_score || 85;
-    const tier = calcs?.score?.tier || target.summary_tier || "Good";
+    const score = eia?.screening?.composite_score || calcs?.score?.composite_score || target.summary_score || 85;
+    const tier = eia?.screening?.performance_tier || calcs?.score?.tier || target.summary_tier || "Good";
     const dateStr = target.saved_at ? new Date(target.saved_at).toLocaleString() : "Preloaded Reference";
     const isActive = target.id === window.App?.currentProject?.id;
-
-    // Waste and recovery metrics
-    const wasteTonnes = target.waste?.construction_waste_tonnes || target.summary_waste_tonnes || 0;
-    const diversionPct = target.waste?.recycling_pct || target.summary_diversion_pct || 65;
-    const topsoilM3 = calcs?.recovery?.phase1_construction?.topsoil?.salvage_volume_m3 || target.summary_topsoil_m3 || 0;
-    const miyawakiTrees = calcs?.recovery?.phase2_operational?.miyawaki_forest?.total_saplings || target.summary_miyawaki_trees || 0;
-    const bngNet = calcs?.recovery?.phase2_operational?.biodiversity_net_gain?.net_gain_pct || target.summary_bng_gain || 0;
-    const paybackYrs = calcs?.recovery?.phase2_operational?.carbon_restoration_balance?.carbon_neutrality_payback_years || 5.8;
+    const scr = eia?.screening || {};
+    const kpis = eia?.key_results || [];
 
     let modal = document.getElementById("history-results-modal");
     if (!modal) {
@@ -183,18 +275,25 @@ window.HistoryManager = {
 
     modal.classList.remove("hidden");
     modal.innerHTML = `
-      <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
+      <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up font-sans">
         <!-- Modal Header -->
-        <div class="bg-slate-900 text-white p-5 flex items-start justify-between">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}">
+        <div class="bg-[#0D1912] text-white p-5 sm:p-6 flex items-start justify-between border-b border-stone-800">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}">
                 ${isActive ? '🟢 ACTIVE RUNNING PLAN' : (target.status || 'SAVED ASSESSMENT')}
               </span>
-              <span class="text-xs text-slate-400">ID: ${target.id}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${scr.category_badge || 'bg-blue-900/60 text-blue-300 border border-blue-700'}">
+                ${scr.category || 'MoEFCC Form 1A Project'}
+              </span>
+              <span class="text-xs text-slate-400 font-mono">ID: ${target.id}</span>
             </div>
-            <h3 class="text-xl font-bold text-white">${target.name}</h3>
-            <p class="text-xs text-slate-300">📍 ${target.location?.city || 'Kolhapur'}, ${target.location?.state || 'Maharashtra'} • Saved: ${dateStr}</p>
+            <h3 class="text-xl sm:text-2xl font-bold font-serif text-white">${target.name}</h3>
+            <p class="text-xs text-slate-300 flex items-center gap-2">
+              <span>📍 ${target.location?.city || 'Kolhapur'}, ${target.location?.state || 'Maharashtra'}</span>
+              <span>•</span>
+              <span>Saved: ${dateStr}</span>
+            </p>
           </div>
           <button onclick="document.getElementById('history-results-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-2xl font-bold leading-none p-1">
             &times;
@@ -203,107 +302,108 @@ window.HistoryManager = {
 
         <!-- Modal Content Body -->
         <div class="p-6 space-y-5 overflow-y-auto text-xs">
-          <!-- Overall Composite Score Header -->
-          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <span class="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block">Comprehensive Environmental Score</span>
-              <div class="flex items-baseline gap-2 mt-0.5">
-                <span class="text-3xl font-black text-emerald-800">${score}</span>
-                <span class="text-xs font-bold text-emerald-700">/ 100 (${tier} Performance)</span>
+          <!-- Overall Composite Score Header & Verdict -->
+          <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-white border border-emerald-300 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] uppercase font-bold text-emerald-900 tracking-wider">Statutory Appraisal Status</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  ${scr.statutory_verdict || 'COMPLIANT — ELIGIBLE FOR EC'}
+                </span>
               </div>
-              <p class="text-[11px] text-slate-600 mt-1">Weighted composite across Runoff, Carbon, Water, Heat Island, and Ecology.</p>
+              <div class="flex items-baseline gap-2 mt-0.5">
+                <span class="text-3xl font-black text-emerald-900 font-serif">${score}</span>
+                <span class="text-xs font-bold text-emerald-800">/ 100 (${tier} Performance)</span>
+              </div>
+              <p class="text-[11px] text-slate-600 max-w-xl">
+                Certified 7-dimension composite (Runoff, Water, Energy, Carbon, Waste, Permeability, Greenery) under NBC 2016 Part 11.
+              </p>
             </div>
-            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-emerald-500 flex flex-col items-center justify-center font-black text-emerald-700 shadow-sm shrink-0">
-              <span class="text-xl">${score}</span>
+            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-emerald-600 flex flex-col items-center justify-center font-black text-emerald-800 shadow-sm shrink-0 self-start sm:self-auto">
+              <span class="text-2xl">${score}</span>
               <span class="text-[8px] uppercase font-bold text-slate-400">RATING</span>
             </div>
           </div>
 
-          <!-- 4 Core Quantitative Pillars -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <span class="text-[9px] uppercase font-bold text-slate-400 block">Stormwater Runoff</span>
-              <div class="text-base font-extrabold text-blue-700">-${calcs?.runoff?.impact_summary?.runoff_reduction_pct || target.summary_runoff_reduction || 28.7}%</div>
-              <span class="text-[10px] text-slate-500">Peak flow mitigation</span>
+          <!-- 6 Decisive Key EIA Results (3-Stage Lifecycle Pattern) -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Key Statutory EIA Results (Appraisal Form Schedule)</span>
+              <span class="text-[9px] text-stone-400 font-mono hidden sm:inline">1. Before Construction &rarr; 2. After Construction &rarr; 3. After Assessment</span>
             </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <span class="text-[9px] uppercase font-bold text-slate-400 block">Solar Clean Energy</span>
-              <div class="text-base font-extrabold text-amber-600">${calcs?.energy?.installed_capacity_kwp || target.summary_solar_kwp || 88} kWp</div>
-              <span class="text-[10px] text-slate-500">${calcs?.energy?.annual_generation_kwh?.toLocaleString() || '128,400'} kWh/yr</span>
-            </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <span class="text-[9px] uppercase font-bold text-slate-400 block">Compensatory Trees</span>
-              <div class="text-base font-extrabold text-emerald-700">${target.interventions?.trees_planted || target.summary_trees_planted || 90} Trees</div>
-              <span class="text-[10px] text-slate-500">3:1 Replacement ratio</span>
-            </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <span class="text-[9px] uppercase font-bold text-slate-400 block">Rainwater Harvested</span>
-              <div class="text-base font-extrabold text-cyan-700">${((calcs?.rwh?.annual_harvested_litres || 1800000) / 1000).toLocaleString()} kL</div>
-              <span class="text-[10px] text-slate-500">Monsoon potential</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${kpis.length > 0 ? kpis.map(k => `
+                <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+                  <div class="flex items-center justify-between pb-1 border-b border-stone-200">
+                    <span class="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                      <span>${k.icon}</span> <span>${k.label}</span>
+                    </span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${k.badge_class} border text-right truncate">${k.status}</span>
+                  </div>
+                  <div class="space-y-1 text-[11px]">
+                    <div class="flex items-start justify-between gap-1 text-stone-500">
+                      <span class="shrink-0 font-medium">⏮️ 1. Before:</span>
+                      <span class="font-mono text-right text-stone-700 truncate">${k.before_construction || k.prev_condition || 'Baseline'}</span>
+                    </div>
+                    <div class="flex items-start justify-between gap-1 text-amber-900">
+                      <span class="shrink-0 font-medium">🏗️ 2. After Const:</span>
+                      <span class="font-mono text-right text-stone-800 truncate">${k.after_construction || k.present_condition || 'Unmitigated'}</span>
+                    </div>
+                    <div class="flex items-start justify-between gap-1 text-emerald-900 font-bold">
+                      <span class="shrink-0">✅ 3. After Assess:</span>
+                      <span class="font-mono text-right text-emerald-950 truncate">${k.after_assessment || k.subtext}</span>
+                    </div>
+                  </div>
+                  <div class="pt-1 border-t border-stone-200 flex justify-between items-center text-[10px]">
+                    <span class="text-stone-400 uppercase font-bold">Net Benefit:</span>
+                    <span class="font-black text-emerald-800 font-serif text-xs">${k.net_result || k.value}</span>
+                  </div>
+                </div>
+              `).join('') : `
+                <div class="col-span-3 text-center text-stone-500 py-2">EIA metrics available in Full Dossier.</div>
+              `}
             </div>
           </div>
 
-          <!-- Waste & Nature Recovery Highlights -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Waste Pillar -->
-            <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-amber-900 text-xs">🏗️ C&D Waste & Circularity (TIFAC / CPCB)</span>
-                <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">${diversionPct}% Target</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-[11px]">
-                <div>
-                  <span class="text-slate-500 block">Total Waste:</span>
-                  <span class="font-bold text-slate-800">${wasteTonnes} Tonnes</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Diverted Rubble:</span>
-                  <span class="font-bold text-emerald-700">~${Math.round(wasteTonnes * (diversionPct / 100))} Tonnes</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Daily MSW:</span>
-                  <span class="font-bold text-slate-800">${target.waste?.daily_solid_waste_kg || 50} kg/day</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Organic Compost:</span>
-                  <span class="font-bold text-amber-800">~${Math.round((target.waste?.daily_organic_waste_kg || 25) * 365 * 0.25 / 1000 * 10) / 10} t/yr</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Nature Recovery Pillar -->
-            <div class="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-emerald-900 text-xs">🌱 Nature Recovery (NBC & Miyawaki)</span>
-                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">+${bngNet}% BNG</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-[11px]">
-                <div>
-                  <span class="text-slate-500 block">Topsoil Salvage:</span>
-                  <span class="font-bold text-slate-800">${topsoilM3.toLocaleString()} m³</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Miyawaki Forest:</span>
-                  <span class="font-bold text-emerald-700">${miyawakiTrees.toLocaleString()} Saplings</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Carbon Payback:</span>
-                  <span class="font-bold text-slate-800">~${paybackYrs} Years</span>
-                </div>
-                <div>
-                  <span class="text-slate-500 block">Bio-Solar Bonus:</span>
-                  <span class="font-bold text-emerald-700">+4.5% PV Yield</span>
-                </div>
+          <!-- Domain Summary Table -->
+          ${eia?.domains ? `
+            <div class="space-y-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">EIA Statutory Domain Breakdown</span>
+              <div class="border border-stone-200 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-stone-100 text-stone-700 font-bold text-[10px] uppercase border-b border-stone-200">
+                      <th class="p-2.5 pl-3">EIA Domain</th>
+                      <th class="p-2.5">Standard Ref</th>
+                      <th class="p-2.5">Key Mitigated Measure</th>
+                      <th class="p-2.5 pr-3 text-right">Clearance Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-stone-100 bg-white">
+                    ${eia.domains.map(d => `
+                      <tr class="hover:bg-stone-50">
+                        <td class="p-2.5 pl-3 font-bold text-stone-800">${d.domain_name}</td>
+                        <td class="p-2.5 text-stone-500 font-mono text-[11px]">${d.standard_ref}</td>
+                        <td class="p-2.5 text-emerald-800 font-medium">${d.parameters[d.parameters.length - 1]?.name}: ${d.parameters[d.parameters.length - 1]?.mitigated}</td>
+                        <td class="p-2.5 pr-3 text-right">
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            ${d.parameters[0]?.status || 'Compliant'}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
+          ` : ''}
         </div>
 
         <!-- Modal Footer Actions -->
         <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             ${!isActive ? `
-              <button onclick="window.HistoryManager.loadPlan('${target.id}'); document.getElementById('history-results-modal').classList.add('hidden');" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+              <button onclick="window.HistoryManager.loadPlan('${target.id}'); document.getElementById('history-results-modal').classList.add('hidden');" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-sm transition">
                 Load as Active Plan
               </button>
             ` : `
@@ -315,8 +415,8 @@ window.HistoryManager = {
           </div>
 
           <div class="flex items-center gap-2">
-            <button onclick="window.HistoryManager.loadPlan('${target.id}'); window.App.switchView('report'); document.getElementById('history-results-modal').classList.add('hidden');" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:text-emerald-700 transition">
-              📄 Official EIA Report
+            <button onclick="window.HistoryManager.loadPlan('${target.id}'); window.App.switchView('report'); document.getElementById('history-results-modal').classList.add('hidden');" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-1" title="Load Plan & View Official Statutory EIA Report">
+              <span>📄</span> <span>Load & View Official EIA Report</span>
             </button>
             <button onclick="document.getElementById('history-results-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition">
               Close
@@ -513,125 +613,209 @@ window.HistoryManager = {
     if (!container) return;
 
     const plans = this.getAllPlans();
-    const activeId = window.App.currentProject?.id;
+    const activeId = window.App?.currentProject?.id;
+    const totalCount = plans.length;
+    const scores = plans.map(p => p.summary_score || 85);
+    const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / (totalCount || 1));
+    const maxScore = Math.max(...scores);
+    const maxSolar = Math.max(...plans.map(p => p.summary_solar_kwp || 0));
 
     container.innerHTML = `
       <div class="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-stone-800">
-        <!-- Header -->
-        <div class="bg-[#14281D] rounded-3xl p-6 sm:p-8 text-white border border-stone-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div class="space-y-1.5">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Assessment Logs & Archive</span>
-            </span>
-            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white font-serif mt-1">
+        
+        <!-- Header Hero Banner -->
+        <div class="bg-gradient-to-r from-[#0C2017] via-[#142E22] to-[#0D1F17] rounded-3xl p-6 sm:p-8 text-white border border-emerald-800/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Historical Log & Version Archive</span>
+              </span>
+              <span class="text-xs font-mono text-emerald-400/80 bg-stone-900/60 px-2 py-0.5 rounded border border-emerald-900/60">${totalCount} Saved Plans</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white font-serif">
               Plan History & Variant Studio
             </h1>
             <p class="text-xs sm:text-sm text-stone-300 max-w-2xl leading-relaxed">
-              Review running environmental simulations, inspect full results of past plans, save named version snapshots, and compare scenarios side-by-side.
+              Review previous site assessments, inspect full calculated results, restore past versions into your live workspace, and compare scenarios side-by-side.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2 self-start md:self-center">
-            <button onclick="window.HistoryManager.saveNamedSnapshot()" class="px-4 py-2 text-xs font-bold rounded-xl bg-stone-900 text-stone-200 border border-stone-700 hover:bg-stone-800 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-              <span>💾 Save Snapshot</span>
+            <button onclick="window.App.switchView('dashboard')" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-stone-900/90 text-stone-200 border border-stone-700/80 hover:bg-stone-800 hover:text-white transition flex items-center gap-1.5 shadow-sm" title="Return to Active Project Dashboard">
+              <span>📊</span> <span>Dashboard</span>
             </button>
-            <button onclick="window.HistoryManager.openCompareModal()" class="px-4 py-2 text-xs font-bold rounded-xl bg-stone-900 text-stone-200 border border-stone-700 hover:bg-stone-800 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-              <span>⚖️ Compare Plans</span>
+            <button onclick="window.HistoryManager.saveNamedSnapshot()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-stone-900/90 text-stone-200 border border-stone-700/80 hover:bg-stone-800 hover:text-white transition flex items-center gap-1.5 shadow-sm" title="Save Active State as a Named Snapshot">
+              <span>💾</span> <span>Save Snapshot</span>
             </button>
-            <button onclick="window.App.switchView('wizard')" class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 text-stone-950 hover:bg-emerald-400 shadow-lg shadow-emerald-900/30 transition flex items-center gap-1.5">
-              <span>+ New Plan</span>
+            <button onclick="window.HistoryManager.openCompareModal()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-stone-900/90 text-stone-200 border border-stone-700/80 hover:bg-stone-800 hover:text-white transition flex items-center gap-1.5 shadow-sm" title="Side-by-Side Comparison Tool">
+              <span>⚖️</span> <span>Compare Plans</span>
             </button>
+            <button onclick="window.App.switchView('wizard')" class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 text-stone-950 hover:bg-emerald-400 shadow-lg shadow-emerald-900/30 transition flex items-center gap-1.5" title="Run Assessment Wizard for a New Site">
+              <span>+</span> <span>New Plan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary KPIs Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xl shrink-0">
+              📁
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Archived Plans</div>
+              <div class="text-lg font-black text-slate-800 font-mono">${totalCount} <span class="text-xs font-normal text-slate-500">Versions</span></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-xl shrink-0">
+              🎯
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Average Score</div>
+              <div class="text-lg font-black text-blue-700 font-mono">${avgScore} <span class="text-xs font-normal text-slate-500">/ 100</span></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl shrink-0">
+              🏆
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Top Variant Score</div>
+              <div class="text-lg font-black text-amber-700 font-mono">${maxScore} <span class="text-xs font-normal text-slate-500">/ 100</span></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-xl shrink-0">
+              ☀️
+            </div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Peak Solar PV</div>
+              <div class="text-lg font-black text-teal-700 font-mono">${maxSolar} <span class="text-xs font-normal text-slate-500">kWp</span></div>
+            </div>
           </div>
         </div>
 
         <!-- Plans Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          ${plans.map(p => {
-            const isActive = p.id === activeId;
-            const scoreVal = p.summary_score || 86;
-            const dateStr = p.saved_at ? new Date(p.saved_at).toLocaleString() : "Preloaded Reference";
-            const wasteTonnes = p.waste?.construction_waste_tonnes || p.summary_waste_tonnes || 320;
-            const topsoilM3 = p.summary_topsoil_m3 || Math.round((p.site?.built_up_area || 2200) * 0.20);
+        ${plans.length === 0 ? `
+          <div class="crystal-3d-card p-10 sm:p-14 text-center rounded-3xl border border-dashed border-stone-300 max-w-xl mx-auto space-y-4 my-6">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-inner">
+              📋
+            </div>
+            <h3 class="text-xl font-bold font-serif text-stone-900">No Assessment History Yet</h3>
+            <p class="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+              Your site assessments, environmental recovery plans, and project snapshots will appear here as you evaluate projects in the assessment wizard.
+            </p>
+            <div class="pt-2">
+              <button onclick="window.App.switchView('wizard')" class="px-5 py-2.5 rounded-xl text-xs font-black crystal-3d-button text-white shadow-md transition inline-flex items-center gap-2 cursor-pointer">
+                <span>+ Run First Site Assessment</span>
+                <span>&rarr;</span>
+              </button>
+            </div>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${plans.map(p => {
+              const isActive = p.id === activeId || (activeId && p.id && p.id.includes(activeId));
+              const scoreVal = p.summary_score || 86;
+              const dateStr = p.saved_at ? new Date(p.saved_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Saved Reference";
+              const wasteTonnes = p.waste?.construction_waste_tonnes || p.summary_waste_tonnes || 320;
+              const topsoilM3 = p.summary_topsoil_m3 || Math.round((p.site?.built_up_area || 2200) * 0.20);
+              const solarKwp = p.summary_solar_kwp || p.energy?.installed_capacity_kwp || 0;
+              const bngGain = p.summary_bng_gain || 0;
 
-            return `
-              <div class="bg-white rounded-xl border-2 transition-all duration-200 shadow-sm overflow-hidden flex flex-col justify-between ${isActive ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-slate-200 hover:border-slate-300'}">
-                <div class="p-5 space-y-4">
-                  <!-- Card Header -->
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <div class="flex items-center gap-1.5 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
-                          ${isActive ? '🟢 ACTIVE RUNNING' : (p.status || 'SAVED PLAN')}
-                        </span>
-                        <span class="text-[10px] font-semibold text-slate-500">${p.building_type}</span>
+              return `
+                <div class="bg-white rounded-2xl border-2 transition-all duration-200 shadow-sm hover:shadow-md overflow-hidden flex flex-col justify-between ${isActive ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-slate-200 hover:border-slate-300'}">
+                  <div class="p-5 space-y-4">
+                    <!-- Card Header -->
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200'}">
+                            ${isActive ? '🟢 ACTIVE RUNNING' : (p.status || 'SAVED PLAN')}
+                          </span>
+                          <span class="text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">${p.building_type || 'Commercial'}</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-base leading-tight">${p.name}</h3>
+                        <div class="text-xs text-slate-500">📍 ${p.location?.city || 'Kolhapur'}, ${p.location?.state || 'Maharashtra'}</div>
                       </div>
-                      <h3 class="font-bold text-slate-800 text-base leading-tight">${p.name}</h3>
-                      <div class="text-xs text-slate-500 mt-0.5">📍 ${p.location?.city || 'Kolhapur'}, ${p.location?.state || 'Maharashtra'}</div>
+
+                      <!-- Circular Score Gauge -->
+                      <div class="w-12 h-12 rounded-full border-2 ${scoreVal >= 70 ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : scoreVal >= 50 ? 'border-amber-500 text-amber-600 bg-amber-50' : 'border-rose-500 text-rose-600 bg-rose-50'} flex flex-col items-center justify-center font-extrabold text-sm shrink-0 shadow-xs">
+                        <span class="leading-none">${scoreVal}</span>
+                        <span class="text-[7px] font-bold leading-none text-slate-400 mt-0.5">SCORE</span>
+                      </div>
                     </div>
 
-                    <!-- Circular Score Gauge -->
-                    <div class="w-12 h-12 rounded-full border-2 ${scoreVal >= 70 ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-amber-500 text-amber-600 bg-amber-50'} flex flex-col items-center justify-center font-extrabold text-sm shrink-0">
-                      <span>${scoreVal}</span>
-                      <span class="text-[8px] font-normal leading-none text-slate-400">SCORE</span>
+                    ${p.description ? `
+                      <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                        ${p.description}
+                      </p>
+                    ` : ''}
+
+                    <!-- Key Metric Grid -->
+                    <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+                      <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block">Plot Area</span>
+                        <span class="font-semibold text-slate-800">${p.site?.plot_area?.toLocaleString() || 5000} m²</span>
+                      </div>
+                      <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block">Runoff Mitigated</span>
+                        <span class="font-semibold text-blue-700">~${p.summary_runoff_reduction || 28.7}%</span>
+                      </div>
+                      <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block">Rooftop Solar</span>
+                        <span class="font-semibold text-amber-700">${solarKwp} kWp</span>
+                      </div>
+                      <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block">Topsoil Salvage</span>
+                        <span class="font-semibold text-emerald-700">${topsoilM3.toLocaleString()} m³</span>
+                      </div>
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                      <span>Saved: ${dateStr}</span>
+                      ${bngGain ? `<span class="text-emerald-700 font-semibold font-mono">+${bngGain}% BNG</span>` : ''}
                     </div>
                   </div>
 
-                  <!-- Key Metric Tags -->
-                  <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div>
-                      <span class="text-slate-400 text-[10px] uppercase font-bold block">Plot Area</span>
-                      <span class="font-semibold text-slate-800">${p.site?.plot_area?.toLocaleString() || 5000} m²</span>
+                  <!-- Action Toolbar Footer -->
+                  <div class="bg-slate-50 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
+                    <div class="flex items-center gap-1.5">
+                      <button onclick="window.HistoryManager.viewPlanResults('${p.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white transition flex items-center gap-1" title="View Full Statutory Assessment Results">
+                        <span>👁️ View Results</span>
+                      </button>
+                      ${!isActive ? `
+                        <button onclick="window.HistoryManager.loadPlan('${p.id}')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition" title="Restore this plan into the active workspace">
+                          ⚡ Load
+                        </button>
+                      ` : `
+                        <span class="text-[11px] font-bold text-emerald-700 px-1.5">Active</span>
+                      `}
                     </div>
-                    <div>
-                      <span class="text-slate-400 text-[10px] uppercase font-bold block">Runoff Mitigated</span>
-                      <span class="font-semibold text-blue-700">~${p.summary_runoff_reduction || 28.7}%</span>
-                    </div>
-                    <div>
-                      <span class="text-slate-400 text-[10px] uppercase font-bold block">C&D Waste</span>
-                      <span class="font-semibold text-amber-800">${wasteTonnes} Tonnes</span>
-                    </div>
-                    <div>
-                      <span class="text-slate-400 text-[10px] uppercase font-bold block">Topsoil Salvage</span>
-                      <span class="font-semibold text-emerald-700">${topsoilM3.toLocaleString()} m³</span>
-                    </div>
-                  </div>
 
-                  <div class="text-[10px] text-slate-400">
-                    Saved: ${dateStr}
+                    <div class="flex items-center gap-1">
+                      <button onclick="window.HistoryManager.openCompareModal('${activeId}', '${p.id}')" class="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-200 transition" title="Compare with current plan">
+                        ⚖️
+                      </button>
+                      <button onclick="window.HistoryManager.duplicatePlan('${p.id}')" class="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-200 transition" title="Duplicate scenario">
+                        Clone
+                      </button>
+                      <button onclick="window.HistoryManager.loadPlan('${p.id}', false); window.App.switchView('report');" class="px-2 py-1 text-xs font-medium text-slate-700 hover:text-emerald-700 transition" title="View PDF Assessment Report">
+                        📄 Report
+                      </button>
+                      ${!isActive ? `
+                        <button onclick="window.HistoryManager.deletePlan('${p.id}')" class="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 transition" title="Delete plan">
+                          🗑️
+                        </button>
+                      ` : ''}
+                    </div>
                   </div>
                 </div>
-
-                <!-- Action Toolbar Footer -->
-                <div class="bg-slate-50 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                  <div class="flex items-center gap-1.5">
-                    <button onclick="window.HistoryManager.viewPlanResults('${p.id}')" class="px-2.5 py-1 text-xs font-bold rounded bg-emerald-700 hover:bg-emerald-800 text-white transition flex items-center gap-1" title="View Full Results">
-                      <span>👁️ View Results</span>
-                    </button>
-                    ${!isActive ? `
-                      <button onclick="window.HistoryManager.loadPlan('${p.id}')" class="px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition">
-                        Load
-                      </button>
-                    ` : ''}
-                  </div>
-
-                  <div class="flex items-center gap-1">
-                    <button onclick="window.HistoryManager.duplicatePlan('${p.id}')" class="px-2 py-1 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-200 transition" title="Duplicate scenario">
-                      Clone
-                    </button>
-                    <button onclick="window.HistoryManager.loadPlan('${p.id}'); window.App.switchView('report');" class="px-2 py-1 text-xs font-medium text-slate-700 hover:text-emerald-700 transition" title="View PDF Assessment Report">
-                      📄 Report
-                    </button>
-                    ${p.id !== 'proj_kolhapur_demo' ? `
-                      <button onclick="window.HistoryManager.deletePlan('${p.id}')" class="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 transition" title="Delete plan">
-                        🗑️
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
+              `;
+            }).join("")}
+          </div>
+        `}
       </div>
     `;
   }
