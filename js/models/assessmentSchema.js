@@ -110,16 +110,16 @@
       slope_deg: getValidNumber(locRaw.slope_deg, 0)
     };
 
-    const plotArea = getValidNumber(siteRaw.plot_area, null);
-    const builtUpArea = getValidNumber(siteRaw.built_up_area, null);
-    const floors = getValidNumber(siteRaw.floors, 1);
-    const totalFloorArea = getValidNumber(siteRaw.total_floor_area, (builtUpArea !== null ? builtUpArea * floors : null));
-    const roofArea = getValidNumber(siteRaw.roof_area, builtUpArea);
+    const plotArea = getValidNumber(siteRaw.plot_area ?? siteRaw.plotArea ?? raw.plot_area ?? raw.plotArea, null);
+    const builtUpArea = getValidNumber(siteRaw.built_up_area ?? siteRaw.builtUpArea ?? raw.built_up_area ?? raw.builtUpArea, null);
+    const floors = getValidNumber(siteRaw.floors ?? raw.floors, 1);
+    const totalFloorArea = getValidNumber(siteRaw.total_floor_area ?? siteRaw.totalFloorArea ?? raw.total_floor_area ?? raw.totalFloorArea, (builtUpArea !== null ? builtUpArea * floors : null));
+    const roofArea = getValidNumber(siteRaw.roof_area ?? siteRaw.roofArea ?? raw.roof_area ?? raw.roofArea, builtUpArea);
     
     // Explicit Open Area calculation
     const openArea = (plotArea !== null && builtUpArea !== null) 
       ? Math.max(0, plotArea - builtUpArea) 
-      : getValidNumber(siteRaw.open_area, null);
+      : getValidNumber(siteRaw.open_area ?? raw.openArea, null);
 
     const site = {
       plot_area: plotArea,
@@ -129,15 +129,15 @@
       roof_area: roofArea,
       open_area: openArea,
       soil_hydrologic_group: siteRaw.soil_hydrologic_group || advRaw.soil_hydrologic_group || 'B',
-      boundary_geometry: raw.boundary_geometry || null,
+      boundary_geometry: siteRaw.boundary_geometry || raw.boundary_geometry || null,
       survey_date: raw.survey_date || null,
       assessment_date: raw.assessment_date || new Date().toISOString()
     };
 
     // --- Section B: Baseline Environmental Conditions ---
-    const existingGreenArea = getValidNumber(vegRaw.existing_green_area, null);
-    const existingTrees = getValidNumber(vegRaw.existing_tree_count, null);
-    const treeCategory = vegRaw.tree_category || 'Mixed Native Canopy';
+    const existingGreenArea = getValidNumber(vegRaw.existing_green_area ?? vegRaw.existingGreenArea ?? raw.existing_green_area ?? raw.existingGreenArea, null);
+    const existingTrees = getValidNumber(vegRaw.existing_tree_count ?? vegRaw.existingTreeCount ?? raw.existing_tree_count ?? raw.treeCount ?? raw.existingTreeCount, null);
+    const treeCategory = vegRaw.tree_category || raw.treeCategory || 'Mixed Native Canopy';
 
     // Baseline Status determination:
     // If neither green area nor tree count was provided, baseline is INCOMPLETE.

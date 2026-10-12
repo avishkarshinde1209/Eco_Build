@@ -101,6 +101,13 @@
     },
 
     /**
+     * Alias for calculateTreeImpact for cross-module compatibility
+     */
+    calculateTreeLoss(treesExisting, treesRemoved, treeCategory = "Mixed Canopy") {
+      return this.calculateTreeImpact(treesExisting, treesRemoved, treeCategory);
+    },
+
+    /**
      * Green Roof & Permeable Pavement Recommendations
      */
     calculateGreenInfrastructureRequirements(roofAreaM2, concreteAreaM2, existingSolarAreaM2 = 0) {

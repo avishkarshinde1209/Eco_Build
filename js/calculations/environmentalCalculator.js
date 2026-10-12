@@ -199,6 +199,36 @@
         ? root.OptimizerEngine.generateParetoPackages(canonicalProject, intermediateResults)
         : [];
 
+      // 8. Scientific Data Confidence Assessment
+      let confidenceScore = 100;
+      const confidenceReasons = [];
+      if (canonicalProject.baseline?.is_provisional || canonicalProject.baseline?.status === 'incomplete' || canonicalProject.baseline?.existing_green_area === null) {
+        confidenceScore -= 35;
+        confidenceReasons.push("Pre-development baseline green cover or tree count was unmeasured/provisional.");
+      }
+      if (!environmentalData || !environmentalData.rainfall || environmentalData.isFallback) {
+        confidenceScore -= 20;
+        confidenceReasons.push("Environmental rainfall was estimated via regional fallback rather than on-site gauge.");
+      }
+      if (canonicalProject.site?.plot_area && !canonicalProject.site?.survey_date) {
+        confidenceScore -= 10;
+        confidenceReasons.push("Site geometry was user-declared without formal cadastral survey verification.");
+      }
+      confidenceScore = Math.max(10, Math.min(100, confidenceScore));
+      let confidenceLevel = "HIGH";
+      if (confidenceScore < 60) confidenceLevel = "PROVISIONAL";
+      else if (confidenceScore < 80) confidenceLevel = "MODERATE";
+
+      const dataConfidence = {
+        score: confidenceScore,
+        level: confidenceLevel,
+        is_provisional: confidenceLevel === "PROVISIONAL",
+        reasons: confidenceReasons,
+        description: confidenceLevel === "PROVISIONAL" 
+          ? "Provisional confidence due to estimated baseline or fallback climate parameters."
+          : (confidenceLevel === "MODERATE" ? "Moderate confidence based on user-declared spatial metrics." : "High confidence based on measured site inputs.")
+      };
+
       const calculationsBundle = {
         timestamp: new Date().toISOString(),
         validation: validation,
@@ -214,11 +244,12 @@
         green_infra_potential: infra,
         impervious_balance: imperviousImpact,
         score: score,
+        data_confidence: dataConfidence,
         recovery: recovery,
         recovery_packages: recoveryPackages
       };
 
-      // 8. Synthesize Statutory EIA Master Results Matrix
+      // 9. Synthesize Statutory EIA Master Results Matrix
       const eiaResults = this.generateAppropriateEIAResults(canonicalProject, calculationsBundle, environmentalData);
       calculationsBundle.eia_results = eiaResults;
 

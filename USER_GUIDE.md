@@ -7,6 +7,43 @@ Welcome to **EcoBuild Smart**, the Dynamic Environmental Impact Assessment & Gre
 
 ---
 
+## 🚀 How to Use EcoBuild (Homepage Quick Start & Walkthrough)
+
+On the home screen, EcoBuild Smart provides two complementary guidance layers designed for both first-time planners and engineering students:
+
+### A. The 8-Step Quick-Start Flow
+The homepage features a high-visibility, 8-step quick-start workflow with direct interactive jump links:
+1. **1. Set Location** — Enter site address or GPS coordinates to bind local weather grids and soil groups.
+2. **2. Describe Site** — Enter plot dimensions, built-up footprint, and number of floors.
+3. **3. Existing Baseline** — Record pre-development vegetation, existing trees, and soil permeability.
+4. **4. Proposed Development** — Specify planned hardscapes, building geometry, water demand, and electricity use.
+5. **5. Review Assumptions** — Verify external climatic datasets, grid carbon factors, and runoff coefficients.
+6. **6. Run Assessment** — Execute the canonical calculation engine across all 7 environmental domains.
+7. **7. Compare Recovery Plans** — Evaluate Essential, Balanced, and Maximum Feasible restoration packages.
+8. **8. Export EIA Reports** — Download or print academic-grade EIA reports, DXF CAD layers, and monitoring plans.
+
+> 📋 **Preparation Checklist:** Before beginning, have your total plot area ($m^2$), building footprint ($m^2$), number of floors, estimated occupant count, and count of existing trees ready.
+
+---
+
+### B. The 13-Step Interactive Walkthrough Modal
+Click **"📖 Open Step-by-Step Guide"** on the home screen or in the top navigation bar to launch the step-by-step modal:
+- **Step 1: Create a Project** — Choose a descriptive name, select typology, and understand demo vs. real projects.
+- **Step 2: Enter Location & Coordinates** — Geocoding, weather grid binding, and offline fallback behavior.
+- **Step 3: Define Site Geometry** — Strict dimensional separation between plot, footprint, GFA, roof, and open ground.
+- **Step 4: Record Pre-Development Baseline** — Why genuine zeros ($0$ trees removed) must be preserved and how unmeasured baselines are labeled provisional.
+- **Step 5: Detail Proposed Construction** — Paving, parking hardscapes, water demands, and electricity profiles.
+- **Step 6: Review Traceable Climatic Data** — Understanding IMD rain grids, NASA POWER solar GHI, and CEA grid factors.
+- **Step 7: Physical Constraint Validation** — How the engine prevents physical impossibilities (allocations exceeding available ground or roof).
+- **Step 8: Execute the Assessment Engine** — Generating before, proposed, and mitigated conditions simultaneously.
+- **Step 9: Interpret Results Correctly** — Understanding environmental scores, data confidence ratings, and why scores are decoupled from statutory approvals.
+- **Step 10: Compare Recovery Scenarios** — Exploring Essential, Balanced, and Maximum Feasible packages.
+- **Step 11: Review Statutory EIA Clearances** — Categorization under MoEFCC EIA Notification 2006 Schedule 8(a)/8(b).
+- **Step 12: Save, Compare & Export** — Named snapshots, side-by-side delta variances, and PDF print formatting.
+- **Step 13: Explore the Academic Demo** — Hands-on walkthrough using the synthetic Kolhapur Academic Campus profile.
+
+---
+
 ## 📌 Navigating the Application
 
 The application features a clean, responsive navigation bar with 8 primary studios:

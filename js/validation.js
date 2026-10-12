@@ -111,6 +111,12 @@
       const treesPlanted = Math.max(0, Number(iv.trees_planted) || 0);
       const isBioSolar = !!iv.bio_solar_colocated;
 
+      if (roof <= 0 && greenRoof > 0) {
+        errors.green_roof_m2 = `Cannot allocate green roof (${greenRoof} m²) on site with 0 m² usable roof area.`;
+      }
+      if (roof <= 0 && solarArea > 0) {
+        errors.solar_pv_area_m2 = `Cannot allocate solar PV (${solarArea} m²) on site with 0 m² usable roof area.`;
+      }
       if (roof > 0) {
         if (greenRoof > roof) {
           errors.green_roof_m2 = `Green roof area (${greenRoof} m²) exceeds available roof area (${roof} m²).`;

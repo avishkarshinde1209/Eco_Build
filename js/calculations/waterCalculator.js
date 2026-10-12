@@ -102,6 +102,8 @@
           filter_efficiency_eta: filterEff
         },
         annual_potential_litres: annualPotentialLitres,
+        annual_harvest_litres: annualPotentialLitres,
+        annual_demand_litres: annualDemand,
         annual_potential_m3: annualPotentialM3,
         monthly_harvest: monthlyHarvestLitres,
         recommended_storage_range_litres: {
@@ -208,6 +210,13 @@
         annual_deficit_m3: Math.round(totalDeficitL / 1000),
         monthly_summary: monthlySummary
       };
+    },
+
+    /**
+     * Alias for simulateDailyMassBalance for cross-module compatibility
+     */
+    simulate365DayRWH(roofAreaM2, rainfallData, occupants, dailyDemandLitres, tankCapacityL = 45000) {
+      return this.simulateDailyMassBalance(roofAreaM2, rainfallData, occupants, dailyDemandLitres, tankCapacityL);
     },
 
     /**

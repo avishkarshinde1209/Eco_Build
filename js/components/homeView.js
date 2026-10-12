@@ -70,8 +70,9 @@ window.HomeView = {
             </div>
 
             <!-- Center Navigation Links -->
-            <div class="hidden md:flex items-center gap-7 text-xs font-semibold text-emerald-100">
+            <div class="hidden md:flex items-center gap-6 text-xs font-semibold text-emerald-100">
               <a href="#hero" class="hover:text-white transition-colors">Home</a>
+              <a href="#how-to-use-ecobuild" class="hover:text-white transition-colors text-emerald-200 font-bold flex items-center gap-1"><span>📖</span> How to Use</a>
               <a href="#what-is-ecobuild" class="hover:text-white transition-colors">What is EcoBuild</a>
               <a href="#why-this-matters" class="hover:text-white transition-colors">Why It Matters</a>
               <a href="#how-it-works" class="hover:text-white transition-colors">How It Works</a>
@@ -254,6 +255,185 @@ window.HomeView = {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- 2.5 HOW TO USE ECOBUILD — QUICK START & WORKFLOW GUIDE    -->
+        <!-- ========================================================= -->
+        <section id="how-to-use-ecobuild" class="py-14 px-4 sm:px-8 max-w-7xl mx-auto border-b border-stone-200/80">
+          <div class="space-y-8">
+            <!-- Section Header -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div class="space-y-2 max-w-2xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold crystal-3d-pill text-[#123C32]">
+                  <span>📖</span>
+                  <span>ESSENTIAL ONBOARDING & ENGINEERING WORKFLOW</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black text-stone-900 font-serif tracking-tight">
+                  How to Use EcoBuild Smart
+                </h2>
+                <p class="text-sm sm:text-base text-stone-600 font-medium leading-relaxed">
+                  Assess your site. Understand its environmental impacts. Compare realistic ways to improve it.
+                </p>
+              </div>
+
+              <!-- Quick Launch Buttons -->
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <button onclick="window.App.switchView('wizard')" class="crystal-3d-button px-4 py-2.5 rounded-xl text-xs font-black shadow-md transition flex items-center gap-1.5" title="Start a fresh site assessment">
+                  <span>+</span> <span>Start New Assessment</span>
+                </button>
+                <button onclick="window.App.toggleProjectSwitcher(true)" class="crystal-3d-pill px-3.5 py-2.5 rounded-xl text-xs font-bold text-stone-800 hover:text-stone-950 transition flex items-center gap-1.5" title="Load saved or active projects">
+                  <span>📁</span> <span>Open Project</span>
+                </button>
+                <button onclick="window.HomeView.openWalkthroughModal(1)" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-[#123C32] hover:bg-[#185E42] text-white shadow transition flex items-center gap-1.5" title="Explore full 13-step guide">
+                  <span>🎓</span> <span>Step-by-Step Guide</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Compact 8-Step Progress Flow Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              <!-- Step 1 -->
+              <div onclick="window.HomeView.openWalkthroughModal(1)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">01</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">PROJECT</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Start a Project</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Name your project, select typology (Residential, Commercial, Institutional), and set user mode.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Launch Wizard Step 1</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div onclick="window.HomeView.openWalkthroughModal(2)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">02</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">LOCATION</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Set Location & Cadastre</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Enter geographic coordinates or choose city presets to link regional rainfall and solar irradiance.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Geospatial Locator</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div onclick="window.HomeView.openWalkthroughModal(4)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">03</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">BASELINE</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Describe Site Baseline</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Record existing trees, green cover, and soil group (A–D). Missing data is cleanly marked provisional.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Evidence Standard</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div onclick="window.HomeView.openWalkthroughModal(5)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">04</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">PROPOSAL</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Enter Proposed Works</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Specify built-up footprint, floors, roof area, external hardscape, water demand, and C&D waste.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Geometric Balance</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 5 -->
+              <div onclick="window.HomeView.openWalkthroughModal(6)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">05</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">CLIMATE</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Check Data & Physics</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Review external Open-Meteo climate feeds, design storm intensity (35 mm/hr), and CEA grid factors.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Traceable Sources</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 6 -->
+              <div onclick="window.HomeView.openWalkthroughModal(8)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">06</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">ASSESSMENT</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Review Tri-Scenario Metrics</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Compare Baseline vs Proposed vs Mitigated states across runoff, carbon, energy, and biodiversity.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Dynamic Dashboard</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 7 -->
+              <div onclick="window.HomeView.openWalkthroughModal(10)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">07</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">RECOVERY</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Compare Recovery Plans</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Evaluate Essential, Balanced, and Max Feasible Pareto packages strictly constrained to site area.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Pareto Optimizer</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+              <!-- Step 8 -->
+              <div onclick="window.HomeView.openWalkthroughModal(11)" class="crystal-3d-card p-5 space-y-2.5 cursor-pointer hover:border-emerald-600 group transition">
+                <div class="flex items-center justify-between">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-900 font-black text-xs flex items-center justify-center font-mono">08</span>
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">REPORTS</span>
+                </div>
+                <h4 class="text-sm font-bold text-stone-900 group-hover:text-emerald-800 transition">Generate & Export EIA</h4>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Export formal academic EIA dossier, CAD blueprints (DXF), and itemized capital/maintenance budgets.
+                </p>
+                <div class="pt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Printable Dossier</span> <span>&rarr;</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Preparation Checklist Banner -->
+            <div class="crystal-3d-card p-5 sm:p-6 bg-gradient-to-r from-emerald-50/70 via-stone-50/60 to-emerald-50/70 border border-emerald-200/80 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-stone-900 text-xs sm:text-sm">📋 What Information to Prepare Before You Begin:</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200/70 text-emerald-900">RECOMMENDED</span>
+                </div>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                  Total plot area (m²), proposed building footprint, floor count, mature tree count to retain/remove, and utility demands. Approximate values are permitted and flagged provisional.
+                </p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="window.App.switchProject('kolhapur_academic'); window.App.switchView('dashboard');" class="px-3.5 py-2 rounded-xl text-xs font-bold crystal-3d-pill text-stone-800 hover:text-stone-950 transition">
+                  Explore Pre-filled Demo ➜
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1207,6 +1387,84 @@ window.HomeView = {
           </div>
         </footer>
 
+        <!-- ========================================================= -->
+        <!-- 2.6 COMPREHENSIVE 13-STEP FIRST-TIME WALKTHROUGH MODAL   -->
+        <!-- ========================================================= -->
+        <div id="ecobuild-walkthrough-modal" class="hidden fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+          <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] shadow-2xl border border-stone-200 overflow-hidden flex flex-col font-sans">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-[#071A13] via-[#0D261C] to-[#071A13] text-white p-5 sm:px-8 flex items-center justify-between border-b border-emerald-900/80">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-500/50 flex items-center justify-center text-emerald-300 font-bold text-sm shadow">
+                  📖
+                </div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">EcoBuild Master Engineering Guide</span>
+                  <h3 class="text-base sm:text-lg font-bold font-serif text-white">How to Use EcoBuild — 13-Step Interactive Walkthrough</h3>
+                </div>
+              </div>
+              <button onclick="window.HomeView.closeWalkthroughModal()" class="text-stone-400 hover:text-white text-2xl font-bold leading-none p-1.5 rounded-lg hover:bg-stone-800 transition">
+                &times;
+              </button>
+            </div>
+
+            <!-- Modal Body: Two-Column Step Browser -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden min-h-[380px]">
+              
+              <!-- Left: Step Index Sidebar (Scrollable) -->
+              <div class="md:col-span-4 bg-stone-50 border-r border-stone-200 overflow-y-auto p-3 space-y-1">
+                <div class="px-2 py-1.5 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Walkthrough Steps</div>
+                <div id="walkthrough-nav-list" class="space-y-1">
+                  <!-- Dynamically rendered by HomeView.updateWalkthroughUI -->
+                </div>
+              </div>
+
+              <!-- Right: Active Step Deep Dive (Scrollable) -->
+              <div class="md:col-span-8 p-6 sm:p-8 overflow-y-auto space-y-5 bg-white text-stone-700">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span id="wt-step-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono">
+                      STEP 1 OF 13
+                    </span>
+                    <span id="wt-step-category" class="text-xs font-semibold text-stone-500">Project Setup</span>
+                  </div>
+                  <span id="wt-step-context" class="text-[11px] font-bold text-emerald-700 font-mono">Screen: Wizard & Dashboard</span>
+                </div>
+
+                <h3 id="wt-step-title" class="text-xl font-black text-stone-900 font-serif leading-snug">
+                  Create an Assessment Project
+                </h3>
+
+                <div id="wt-step-content" class="text-xs sm:text-sm text-stone-600 leading-relaxed space-y-3">
+                  <!-- Injected by HomeView.updateWalkthroughUI -->
+                </div>
+
+                <div id="wt-step-box" class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-1.5 text-xs text-emerald-950">
+                  <!-- Injected callout/tips -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Modal Footer: Navigation Controls -->
+            <div class="bg-stone-50 px-6 py-4 border-t border-stone-200 flex items-center justify-between gap-3">
+              <button onclick="window.HomeView.prevWalkthroughStep()" id="wt-prev-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-stone-200 hover:bg-stone-300 text-stone-800 transition disabled:opacity-40">
+                &larr; Previous Step
+              </button>
+
+              <div class="flex items-center gap-2">
+                <button onclick="window.HomeView.closeWalkthroughModal(); window.App.switchView('wizard')" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm">
+                  <span>🚀 Open Assessment Wizard</span>
+                </button>
+                <button onclick="window.HomeView.nextWalkthroughStep()" id="wt-next-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#123C32] hover:bg-[#185E42] text-white transition">
+                  Next Step &rarr;
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -1427,6 +1685,274 @@ window.HomeView = {
     if (b) b.innerText = cur.badge;
     if (t) t.innerText = cur.title;
     if (d) d.innerText = cur.desc;
+  },
+
+  // =========================================================================
+  // 13-STEP FIRST-TIME DETAILED WALKTHROUGH CONTROLLER
+  // =========================================================================
+  walkthroughStep: 1,
+
+  walkthroughStepsData: [
+    {
+      step: 1,
+      category: "Project Setup",
+      context: "Screen: Wizard Step 1 & Switcher",
+      title: "Create an Assessment Project",
+      content: `<p>To start, click <strong>"Start New Assessment"</strong> in the top navigation bar or the homepage action bar. A project represents a specific spatial site with an intended development program.</p>
+      <p>Select your project name, intended building typology (<em>Residential, Commercial, Institutional, Industrial, or Mixed</em>), and user mode (<em>Standard</em> for guided estimation or <em>Advanced</em> for engineering override parameters).</p>
+      <p>Draft assessments can be saved at any point into local browser memory and the integrated SQLite database (<code>ecobuild.db</code>). When exploring features without real site data, switch to the pre-filled <strong>Kolhapur Campus Demo</strong>.</p>`,
+      tip: `<strong>💡 Pro Tip:</strong> Typology determines default occupancy density and water benchmark standards (e.g., 135 LPCD for Residential vs. 45 LPCD for Commercial offices under CPHEEO).`
+    },
+    {
+      step: 2,
+      category: "Geospatial Locator",
+      context: "Screen: Wizard Step 2",
+      title: "Set Location & Coordinates",
+      content: `<p>Enter a city or address in the geocoding search box or click anywhere on the interactive OpenStreetMap locator. You can also manually input precise latitude and longitude coordinates.</p>
+      <p>Setting coordinates links your site to regional climate baselines: long-term rainfall precipitation (mm), solar global horizontal irradiance (kWh/m²/day), and ambient temperature curves.</p>
+      <p>If network services are temporarily unavailable or operating offline, EcoBuild automatically falls back to verified regional meteorological tables (e.g., IMD / NASA POWER climatological normals) without manufacturing fake numbers.</p>`,
+      tip: `<strong>⚠️ Environmental Integrity:</strong> Climatological averages are regional estimates. EcoBuild clearly distinguishes live station feeds from regional reanalysis.`
+    },
+    {
+      step: 3,
+      category: "Spatial Cadastre",
+      context: "Screen: Wizard Step 3 & 3D Twin",
+      title: "Define the Site Dimensions & Geometry",
+      content: `<p>Carefully input your site's physical dimensions. The application strictly distinguishes between independent spatial categories that must never be added together indiscriminately:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Total Plot Area (m²):</strong> Total cadastral land boundary.</li>
+        <li><strong>Building Footprint (m²):</strong> Ground-level area occupied by building foundations.</li>
+        <li><strong>Gross Floor Area (m²):</strong> Total built floor area across all vertical storeys.</li>
+        <li><strong>Usable Roof Area (m²):</strong> Usable structural rooftop envelope available for PV or sedum green roofs.</li>
+        <li><strong>Open Ground Area (m²):</strong> Remaining land calculated as <code>Plot Area - Building Footprint</code>.</li>
+      </ul>
+      <p>The system enforces geometric feasibility: building footprint cannot exceed plot area, and external hardscapes cannot exceed available open ground.</p>`,
+      tip: `<strong>📐 Area Conservation:</strong> In irregular or non-rectangular plots without CAD geometry, dimensions are verified by area totals before calculation.`
+    },
+    {
+      step: 4,
+      category: "Baseline Evidence",
+      context: "Screen: Wizard Step 4",
+      title: "Record Existing Environmental Baseline",
+      content: `<p>Describe the site's condition prior to new construction: existing mature trees, shrub area, natural pervious soil, and USDA NRCS Soil Hydrologic Group (A, B, C, or D).</p>
+      <p><strong>Crucial Distinction between Zero and Unknown:</strong></p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><code>0 trees removed</code>: The user explicitly declares that zero trees will be felled (statutory planting obligation = 0).</li>
+        <li><code>Unknown tree loss</code>: Left blank or unmeasured. The baseline is labeled <em>incomplete/provisional</em>, and no false benefits are claimed.</li>
+      </ul>
+      <p>Never invent baseline surfaces. If historical green cover is unrecorded, EcoBuild transparently labels the pre-development comparison as provisional.</p>`,
+      tip: `<strong>🌱 Soil Physics:</strong> Soil Group A (sand/gravel) infiltrates rapidly (>30 mm/hr). Soil Group D (black cotton clay) percolates very slowly (<5 mm/hr) and requires underdrainage.`
+    },
+    {
+      step: 5,
+      category: "Development Proposal",
+      context: "Screen: Wizard Steps 5 & 7",
+      title: "Enter the Development Proposal & Materials",
+      content: `<p>Input proposed construction parameters: concrete paving, asphalt driveway area, interlocking tiles, construction materials (concrete volume m³, structural steel tonnes), and anticipated utility demands.</p>
+      <p>For construction & demolition (C&D) waste, EcoBuild calculates benchmark waste generation ($50-65\\text{ kg/m}^2$ GFA) based on official <strong>TIFAC & CPCB 2016</strong> research, breaking waste into 7 circular material streams.</p>
+      <p>Entering real material quantities significantly improves embodied carbon accuracy compared to rough floor-area rule-of-thumb approximations.</p>`,
+      tip: `<strong>🧱 Low-Carbon Strategy:</strong> Specifying 40% GGBS / fly ash blended concrete in your proposal saves up to 140 kg CO₂e per cubic meter.`
+    },
+    {
+      step: 6,
+      category: "Climate Integration",
+      context: "Screen: Wizard Step 8 & Technical",
+      title: "Retrieve & Review Environmental Data",
+      content: `<p>In Step 8 of the wizard, EcoBuild queries Open-Meteo meteorological reanalysis APIs using site coordinates to fetch:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Annual Rainfall Precipitation Depth (mm)</li>
+        <li>Peak Storm Design Intensity ($I = 35\\text{ mm/hr}$ default return storm)</li>
+        <li>Annual Solar Irradiance (GHI $\\sim 5.3\\text{ kWh/m}^2/\\text{day}$)</li>
+        <li>Regional Air Quality (PM2.5, PM10, AQI index)</li>
+      </ul>
+      <p>Every external dataset includes source attribution, retrieval date, and units. If an external API is down, cached or offline fallback data are clearly tagged as estimates.</p>`,
+      tip: `<strong>🔍 Traceability:</strong> Weather-grid reanalysis reflects regional climate, not an on-site physical meteorological mast.`
+    },
+    {
+      step: 7,
+      category: "Validation Layer",
+      context: "Screen: Wizard Pre-Check",
+      title: "Validate the Project Inputs",
+      content: `<p>Before calculation begins, the <code>ValidationEngine</code> validates all inputs to prevent physical impossibilities or numerical corruption:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Rejects negative numbers, non-finite values, and malformed strings.</li>
+        <li>Ensures building footprint $\\le$ plot area.</li>
+        <li>Checks that rooftop green roof + solar PV does not exceed roof envelope (unless bio-solar co-location is enabled).</li>
+        <li>Checks that tree removal count does not exceed recorded existing trees.</li>
+        <li>Prevents overlapping ground interventions from exceeding open ground.</li>
+      </ul>
+      <p>Actionable error messages appear directly adjacent to invalid fields, explaining exactly what is wrong and how to correct it.</p>`,
+      tip: `<strong>🛡️ Zero Protection:</strong> Genuine zero values (0 trees, 0 recycling, 0 solar) are strictly preserved and never mutated into defaults.`
+    },
+    {
+      step: 8,
+      category: "Calculation Engine",
+      context: "Screen: Dynamic Dashboard",
+      title: "Generate the Environmental Assessment",
+      content: `<p>Click <strong>"Run Assessment"</strong> to execute the full scientific calculation pipeline. EcoBuild computes three comparable, dimensionally verified scenarios:</p>
+      <ol class="list-decimal pl-5 space-y-1">
+        <li><strong>Existing Baseline:</strong> Pre-development site condition based on user declarations.</li>
+        <li><strong>Proposed Development:</strong> The unmitigated impact of the new building and hardscape.</li>
+        <li><strong>Mitigated Condition:</strong> The post-intervention state after implementing green infrastructure.</li>
+      </ol>
+      <p>Calculations adhere to verified dimensional formulas: Rational Method $Q = \\frac{C \\cdot I \\cdot A}{1000}$ for stormwater runoff, 365-day mass-balance for RWH, and CEA v19 grid emission factors for solar carbon offsets.</p>`,
+      tip: `<strong>⚡ Instant Recalculation:</strong> Changing any design parameter instantly updates all dependent carbon, energy, water, and runoff indicators.`
+    },
+    {
+      step: 9,
+      category: "Interpreting Results",
+      context: "Screen: Dashboard & Domains",
+      title: "Understand the Environmental Results",
+      content: `<p>EcoBuild separates results into three distinct, transparent dimensions:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Performance Score (0–100):</strong> Design quality rating across 7 weighted environmental domains.</li>
+        <li><strong>Data Confidence Rating:</strong> Quality and provenance of inputs (verified survey vs. regional screening). High confidence does not imply good environmental performance.</li>
+        <li><strong>Statutory Clearance Status:</strong> Derived strictly from statutory bylaws, independent of internal scores.</li>
+      </ul>
+      <p>Review the 8 core indicators with clear sign conventions: higher green cover and solar kWh are positive gains; higher peak runoff surge and embodied carbon are deficits requiring mitigation.</p>`,
+      tip: `<strong>ℹ️ Explainability Inspector:</strong> Click the "ℹ️ Explain" button on any KPI card to inspect the underlying formula, variable inputs, and scientific assumptions.`
+    },
+    {
+      step: 10,
+      category: "Recovery Optimizer",
+      context: "Screen: Recovery Studio",
+      title: "Compare and Choose a Recovery Plan",
+      content: `<p>The <code>OptimizerEngine</code> generates three site-constrained Pareto recovery packages:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Scenario 1: Essential Recovery:</strong> Low-cost baseline compliance (compensatory planting, basic stormwater delay, first-flush RWH filter).</li>
+        <li><strong>Scenario 2: Balanced Recovery:</strong> Optimal trade-off between stormwater reduction, solar generation, Miyawaki micro-forest, and capital investment.</li>
+        <li><strong>Scenario 3: Maximum Feasible Benefit:</strong> Bio-solar roof integration, maximum permeable paving, and advanced tertiary wastewater reuse.</li>
+      </ul>
+      <p>Intervention allocations are strictly clamped to physical site geometry. If open ground is zero, the optimizer allocates zero ground trees and redirects greening to the rooftop.</p>`,
+      tip: `<strong>💰 Sourced Rates:</strong> Capital costs and annual maintenance budgets are based on official <strong>CPWD Delhi Schedule of Rates (DSR) 2023–24</strong>.`
+    },
+    {
+      step: 11,
+      category: "EIA Reporting",
+      context: "Screen: Official EIA Report",
+      title: "Review the EIA and Statutory Screening",
+      content: `<p>Inspect the comprehensive 13-section academic Environmental Impact Assessment (EIA) dossier.</p>
+      <p>The report includes statutory screening against the <strong>MoEFCC EIA Notification 2006 Schedule 8</strong> based on Gross Floor Area (GFA):</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>$\\text{GFA} < 20,000\\text{ m}^2$: Exempt from formal SEIAA Prior EC (appraised via Local Authority / SPCB).</li>
+        <li>$20,000 \\le \\text{GFA} < 1,50,000\\text{ m}^2$: Category B2 appraisal via State SEIAA / SEAC.</li>
+        <li>$\\text{GFA} \\ge 1,50,000\\text{ m}^2$: Category A appraisal via Central MoEFCC EAC.</li>
+      </ul>
+      <p>EcoBuild reports are academic screening tools and do not substitute for formal statutory environmental clearance submissions via the government PARIVESH portal.</p>`,
+      tip: `<strong>📄 Transparent Standards:</strong> Fabricated file IDs or fictional auditor accreditations are strictly prohibited in EcoBuild reports.`
+    },
+    {
+      step: 12,
+      category: "Persistence & Export",
+      context: "Screen: Plan History & Report",
+      title: "Save, Compare, and Export Assessments",
+      content: `<p>Save named project snapshots (e.g., <em>"Design Option B - 60% Solar + Miyawaki"</em>) into persistent storage. Saved projects survive browser restarts and offline usage.</p>
+      <p>Use the <strong>Scenario Comparison Studio</strong> to select any two saved assessments and evaluate indicator variance side-by-side with color-coded differential ($\Delta$) metrics.</p>
+      <p>Export options include:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Printable EIA Dossier:</strong> Formatted for A4 portrait with proper page-breaks.</li>
+        <li><strong>CAD Blueprint (DXF):</strong> 5-layer engineering vector export of site geometry.</li>
+        <li><strong>JSON Data Package:</strong> Raw canonical project and assessment schema export.</li>
+      </ul>`,
+      tip: `<strong>💾 Automatic Sync:</strong> Edits to site parameters flag dependent reports as stale until recalculated, preventing contradictory numbers.`
+    },
+    {
+      step: 13,
+      category: "Interactive Demo",
+      context: "Screen: Demo Walkthrough",
+      title: "Learn from an Example: Kolhapur Campus",
+      content: `<p>Explore the pre-configured <strong>Kolhapur Engineering Campus Expansion</strong> case study to see how a real site assessment operates:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Site:</strong> 5,000 m² plot with 2,200 m² built-up footprint (2 storeys, GFA = 4,400 m²).</li>
+        <li><strong>Baseline:</strong> 80 mature trees; 30 trees removed for foundation footprint.</li>
+        <li><strong>Compensatory Action:</strong> Statutory 3:1 ratio enforces 90 native saplings.</li>
+        <li><strong>Stormwater:</strong> Unmitigated peak flow surges to 147 m³/hr; mitigated plan reduces peak discharge by 60% to 58.8 m³/hr using bioswales and permeable paving.</li>
+        <li><strong>Clean Energy:</strong> 126 kWp solar array generates 182,810 kWh/yr, offsetting 149.9 tonnes CO₂e.</li>
+      </ul>
+      <p>This project is tagged as <strong>DEMONSTRATION DATA</strong> to illustrate how all 8 environmental modules interact without mixing into your own custom projects.</p>`,
+      tip: `<strong>🚀 Immediate Exploration:</strong> Click "Load Demo Project" below to inspect this live assessment on the dashboard right now!`
+    }
+  ],
+
+  openWalkthroughModal(step = 1) {
+    this.walkthroughStep = Math.max(1, Math.min(13, step));
+    const modal = document.getElementById("ecobuild-walkthrough-modal");
+    if (modal) modal.classList.remove("hidden");
+    this.updateWalkthroughUI();
+  },
+
+  closeWalkthroughModal() {
+    const modal = document.getElementById("ecobuild-walkthrough-modal");
+    if (modal) modal.classList.add("hidden");
+  },
+
+  setWalkthroughStep(step) {
+    this.walkthroughStep = Math.max(1, Math.min(13, step));
+    this.updateWalkthroughUI();
+  },
+
+  nextWalkthroughStep() {
+    if (this.walkthroughStep < 13) {
+      this.walkthroughStep++;
+      this.updateWalkthroughUI();
+    }
+  },
+
+  prevWalkthroughStep() {
+    if (this.walkthroughStep > 1) {
+      this.walkthroughStep--;
+      this.updateWalkthroughUI();
+    }
+  },
+
+  updateWalkthroughUI() {
+    const curStepNum = this.walkthroughStep;
+    const data = this.walkthroughStepsData[curStepNum - 1];
+    if (!data) return;
+
+    // Update Sidebar Navigation
+    const navList = document.getElementById("walkthrough-nav-list");
+    if (navList) {
+      navList.innerHTML = this.walkthroughStepsData.map(d => {
+        const isActive = d.step === curStepNum;
+        return `
+          <button onclick="window.HomeView.setWalkthroughStep(${d.step})" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between ${isActive ? 'bg-emerald-800 text-white shadow-sm font-bold' : 'text-stone-700 hover:bg-stone-200/70'}">
+            <span class="truncate">Step ${d.step}: ${d.title}</span>
+            ${isActive ? '<span class="text-emerald-300 font-bold ml-1">●</span>' : ''}
+          </button>
+        `;
+      }).join("");
+    }
+
+    // Update Header Badges & Titles
+    const badge = document.getElementById("wt-step-badge");
+    const category = document.getElementById("wt-step-category");
+    const context = document.getElementById("wt-step-context");
+    const title = document.getElementById("wt-step-title");
+    const content = document.getElementById("wt-step-content");
+    const tipBox = document.getElementById("wt-step-box");
+
+    if (badge) badge.innerText = `STEP ${data.step} OF 13`;
+    if (category) category.innerText = data.category;
+    if (context) context.innerText = data.context;
+    if (title) title.innerText = data.title;
+    if (content) content.innerHTML = data.content;
+    if (tipBox) tipBox.innerHTML = data.tip;
+
+    // Update Previous / Next Buttons
+    const prevBtn = document.getElementById("wt-prev-btn");
+    const nextBtn = document.getElementById("wt-next-btn");
+    if (prevBtn) prevBtn.disabled = curStepNum <= 1;
+    if (nextBtn) {
+      if (curStepNum >= 13) {
+        nextBtn.innerText = "Finish Walkthrough ✓";
+        nextBtn.onclick = () => window.HomeView.closeWalkthroughModal();
+      } else {
+        nextBtn.innerText = "Next Step →";
+        nextBtn.onclick = () => window.HomeView.nextWalkthroughStep();
+      }
+    }
   }
 };
+
 

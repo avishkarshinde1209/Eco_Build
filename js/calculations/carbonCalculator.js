@@ -126,6 +126,48 @@
           "Central Electricity Authority (CEA) India grid emission factor: 0.82 kg CO₂e/kWh"
         ]
       };
+    },
+
+    /**
+     * Calculate Embodied Carbon from specific bill-of-quantities or floor area benchmarks
+     */
+    calculateEmbodiedCarbon(project = {}, defaultBuiltUp = 0) {
+      const materials = (project && project.materials) || {};
+      const site = (project && project.site) || {};
+      const builtUpArea = Number(site.total_floor_area) || Number(site.built_up_area) || Number(defaultBuiltUp) || 0;
+
+      const hasExplicitMaterials = (materials.concrete_m3 !== undefined && materials.concrete_m3 !== null) ||
+                                   (materials.steel_tonnes !== undefined && materials.steel_tonnes !== null);
+
+      if (hasExplicitMaterials) {
+        const concreteM3 = Number(materials.concrete_m3) || 0;
+        const steelTonnes = Number(materials.steel_tonnes) || 0;
+        const concreteEmissionsKg = concreteM3 * 350; // 350 kg CO2e / m3 typical OPC concrete
+        const steelEmissionsKg = steelTonnes * 1800; // 1800 kg CO2e / tonne structural rebar
+        const totalEmbodiedKg = concreteEmissionsKg + steelEmissionsKg;
+
+        return {
+          status: "MEASURED_QUANTITIES",
+          concrete_m3: concreteM3,
+          steel_tonnes: steelTonnes,
+          concrete_emissions_tonnes: Math.round((concreteEmissionsKg / 1000) * 10) / 10,
+          steel_emissions_tonnes: Math.round((steelEmissionsKg / 1000) * 10) / 10,
+          total_embodied_tonnes: Math.round((totalEmbodiedKg / 1000) * 10) / 10,
+          total_embodied_kg: totalEmbodiedKg
+        };
+      } else {
+        const factor = (typeof window !== 'undefined' && window.ECO_CONFIG?.CARBON_FACTORS?.construction_avg_per_m2) || 450;
+        const totalEmbodiedKg = Math.round(builtUpArea * factor);
+        return {
+          status: "ESTIMATED_BENCHMARK",
+          built_up_area_m2: builtUpArea,
+          intensity_factor: factor,
+          concrete_emissions_tonnes: 0,
+          steel_emissions_tonnes: 0,
+          total_embodied_tonnes: Math.round((totalEmbodiedKg / 1000) * 10) / 10,
+          total_embodied_kg: totalEmbodiedKg
+        };
+      }
     }
   };
 

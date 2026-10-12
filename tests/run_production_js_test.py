@@ -51,6 +51,21 @@ if start_marker in output:
         print(f"Total Tests Run: {data.get('total')}")
         print(f"Passed: {data.get('passed')}")
         print(f"Failed: {data.get('failed')}")
+        perf = data.get('performance', {})
+        rand = data.get('randomized', {})
+        if perf:
+            print("------------------------------------------------------------")
+            print(" PERFORMANCE TELEMETRY:")
+            print(f"  • Single Assessment Execution: {perf.get('singleAssessmentMs')} ms")
+            print(f"  • 1,000 Fuzzing Profiles Total Time: {perf.get('thousandProfilesTotalMs')} ms")
+            print(f"  • Throughput: {perf.get('profilesPerSecond')} profiles/sec")
+            print(f"  • Total Test Suite Execution Time: {perf.get('totalSuiteTimeMs')} ms")
+        if rand:
+            print("------------------------------------------------------------")
+            print(" RANDOMIZED FUZZING SUITE (SEED 42):")
+            print(f"  • Total Synthetic Profiles: {rand.get('totalCases')}")
+            print(f"  • Valid Profiles Evaluated: {rand.get('validPassed')}")
+            print(f"  • Intentionally Invalid Profiles Rejected: {rand.get('invalidRejected')}")
         print("------------------------------------------------------------")
         
         failed_tests = [r for r in data.get('results', []) if not r.get('pass')]
@@ -66,6 +81,10 @@ if start_marker in output:
     except Exception as e:
         print("Could not parse JSON output:", e)
         print("Raw text snippet:", json_text[:500])
+        if '<pre id="test-output"' in output:
+            pre_content = output.split('<pre id="test-output"')[1].split('</pre>')[0]
+            print("\nBrowser test output log:")
+            print(pre_content[:1500])
         sys.exit(1)
 else:
     print("Could not find test-results div in browser DOM output.")

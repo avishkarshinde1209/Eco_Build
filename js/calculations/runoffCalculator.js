@@ -288,6 +288,7 @@
             : "Pre-development scenario based on user-supplied baseline site conditions."
         },
         pre_development: {
+          catchment_area_A_m2: plotArea,
           composite_c: cPre,
           peak_runoff_m3_hr: Math.round(qPrePeakM3Hr * 10) / 10,
           peak_runoff_litres_sec: Math.round(qPrePeakLps * 10) / 10,
@@ -296,6 +297,7 @@
           time_of_concentration_minutes: tcPreMin
         },
         proposed_development: {
+          catchment_area_A_m2: plotArea,
           composite_c: cProposed,
           peak_runoff_m3_hr: Math.round(qProposedPeakM3Hr * 10) / 10,
           peak_runoff_litres_sec: Math.round(qProposedPeakLps * 10) / 10,
@@ -304,6 +306,7 @@
           time_of_concentration_minutes: tcProposedMin
         },
         with_green_infrastructure: {
+          catchment_area_A_m2: plotArea,
           composite_c: cIntervention,
           peak_runoff_m3_hr: Math.round(qInterventionPeakM3Hr * 10) / 10,
           peak_runoff_litres_sec: Math.round(qInterventionPeakLps * 10) / 10,
