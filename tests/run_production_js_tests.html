@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EcoBuild Smart - Production JavaScript Test Suite</title>
+  <!-- Load ALL Production Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/fallbackData.js"></script>
+  <script src="../js/plantDatabase.js"></script>
+  <script src="../js/models/assessmentSchema.js"></script>
+  <script src="../js/models/sampleProjects.js"></script>
+  <script src="../js/correlationEngine.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/calculations/runoffCalculator.js"></script>
+  <script src="../js/calculations/waterCalculator.js"></script>
+  <script src="../js/calculations/vegetationCalculator.js"></script>
+  <script src="../js/calculations/carbonCalculator.js"></script>
+  <script src="../js/calculations/energyCalculator.js"></script>
+  <script src="../js/calculations/heatIslandCalculator.js"></script>
+  <script src="../js/calculations/scoreCalculator.js"></script>
+  <script src="../js/calculations/recoveryCalculator.js"></script>
+  <script src="../js/calculations/environmentalCalculator.js"></script>
+  <script src="../js/calculations/optimizerEngine.js"></script>
+  <script src="../js/validation.js"></script>
+  <script src="../js/recommendations.js"></script>
+</head>
+<body style="background: #111; color: #eee; font-family: sans-serif; padding: 20px;">
+  <h2>EcoBuild Smart — Production JS Automated Test Suite</h2>
+  <div id="test-summary">RUNNING TESTS...</div>
+  <pre id="test-output" style="background: #1e1e1e; padding: 15px; border-radius: 8px; font-size: 13px; max-height: 500px; overflow-y: auto;"></pre>
+  <div id="test-results" style="display: none;"></div>
+
+  <script>
+    class ProductionTestRunner {
+      constructor() {
+        this.results = [];
+        this.passed = 0;
+        this.failed = 0;
+      }
+
+      assertEqual(actual, expected, name) {
+        const pass = actual === expected;
+        this._record(pass, name, `Expected: ${expected}, Got: ${actual}`);
+      }
+
+      assertAlmostEqual(actual, expected, tolerance = 0.05, name) {
+        const pass = Math.abs(actual - expected) <= tolerance;
+        this._record(pass, name, `Expected ~= ${expected} (tol ${tolerance}), Got: ${actual}`);
+      }
+
+      assertTrue(condition, name, details = "") {
+        this._record(!!condition, name, details || `Condition evaluated to: ${condition}`);
+      }
+
+      assertFalse(condition, name, details = "") {
+        this._record(!condition, name, details || `Condition evaluated to: ${condition}`);
+      }
+
+      _record(pass, name, details) {
+        if (pass) {
+          this.passed++;
+          this.results.push({ name, pass: true });
+        } else {
+          this.failed++;
+          this.results.push({ name, pass: false, details });
+          console.error(`[FAIL] ${name}: ${details}`);
+        }
+      }
+    }
+
+    // Pseudo-random number generator with documented seed (LCG)
+    class SeededRandom {
+      constructor(seed = 42) {
+        this.seed = seed;
+      }
+      next() {
+        this.seed = (this.seed * 1664525 + 1013904223) % 4294967296;
+        return this.seed / 4294967296;
+      }
+      range(min, max) {
+        return min + this.next() * (max - min);
+      }
+      intRange(min, max) {
+        return Math.floor(this.range(min, max + 1));
+      }
+      choice(arr) {
+        return arr[Math.floor(this.next() * arr.length)];
+      }
+    }
+
+    async function runProductionTests() {
+      const t = new ProductionTestRunner();
+      const out = document.getElementById("test-output");
+
+      function log(msg) {
+        out.textContent += msg + "\n";
+      }
+
+      log("Starting Production Tests against real JS modules in browser runtime...\n");
+
+      // =========================================================================
+      // PART A: DETERMINISTIC EDGE CASES
+      // =========================================================================
+      log("--- Part A: Deterministic Edge Cases ---");
+
+      // Case 1: All relevant inputs missing / empty project
+      const emptyProject = {};
+      const vEmpty = window.ValidationEngine.validateProject(emptyProject);
+      t.assertFalse(vEmpty.isValid, "Empty Project: Rejected by ValidationEngine");
+      const normEmpty = window.AssessmentSchema.normalizeProject(emptyProject);
+      t.assertEqual(normEmpty.baseline.status, "incomplete", "Empty Project: Baseline marked incomplete");
+      t.assertTrue(normEmpty.baseline.is_provisional, "Empty Project: Baseline marked provisional");
+
+      // Case 2: Explicit Zero Values Preserved
+      const zeroProject = {
+        name: "Zero Deficit Project",
+        building_type: "Residential",
+        site: { plot_area: 2000, built_up_area: 800, floors: 1, roof_area: 800 },
+        vegetation: { existing_green_area: 500, existing_tree_count: 20, trees_removed: 0 },
+        surfaces: { concrete_area: 200, asphalt_area: 0, tiles_pavers: 0, soil_open_ground: 1000 },
+        water: { occupants: 0, daily_consumption_lpcd: 0 },
+        energy: { annual_electricity_kwh: 0, solar_panel_area_m2: 0 },
+        waste: { construction_waste_tonnes: 0, daily_organic_waste_kg: 0, recycling_pct: 0 },
+        interventions: { trees_planted: 0, green_roof_m2: 0, solar_pv_area_m2: 0, permeable_pavement_m2: 0, rain_garden_m2: 0 }
+      };
+      const normZero = window.AssessmentSchema.normalizeProject(zeroProject);
+      t.assertEqual(normZero.vegetation.trees_removed, 0, "Zero Value: Trees removed strictly 0");
+      t.assertEqual(normZero.interventions.trees_planted, 0, "Zero Value: Trees planted strictly 0");
+      t.assertEqual(normZero.waste.daily_organic_waste_kg, 0, "Zero Value: Organic waste strictly 0");
+      t.assertEqual(normZero.waste.recycling_pct, 0, "Zero Value: Recycling pct strictly 0");
+      t.assertEqual(normZero.interventions.green_roof_m2, 0, "Zero Value: Green roof strictly 0");
+      t.assertEqual(normZero.interventions.solar_pv_area_m2, 0, "Zero Value: Solar PV strictly 0");
+
+      const calcZero = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(normZero, { rainfall: { annual_rainfall_mm: 1000 } });
+      t.assertEqual(calcZero.tree_impact.trees_removed, 0, "Zero Calculations: Tree loss removed is 0");
+      t.assertEqual(calcZero.tree_impact.recommended_planting_quantity, 0, "Zero Calculations: Tree replacement obligation is 0 when 0 removed");
+      t.assertEqual(calcZero.energy.annual_generation_kwh, 0, "Zero Calculations: Solar generation is 0 when 0 m² PV");
+      t.assertEqual(calcZero.energy.annual_co2_offset_tonnes, 0, "Zero Calculations: Avoided CO2 is 0 when 0 m² PV");
+      t.assertEqual(calcZero.score.sub_indicators.waste_management.score, 0, "Zero Score: Waste score is 0 when 0% recycling (no free points)");
+      t.assertEqual(calcZero.score.sub_indicators.water_conservation.score, 0, "Zero Score: Water score is 0 when 0% RWH offset (no free points)");
+
+      // Case 3: Negative Values Rejected
+      const negProject = {
+        site: { plot_area: -500, built_up_area: -100 },
+        vegetation: { existing_tree_count: -5, trees_removed: -2 }
+      };
+      const vNeg = window.ValidationEngine.validateProject(negProject);
+      t.assertFalse(vNeg.isValid, "Negative Values: Rejected by ValidationEngine");
+      t.assertTrue("plot_area" in vNeg.errors, "Negative Values: plot_area flagged in errors");
+      t.assertTrue("existing_tree_count" in vNeg.errors, "Negative Values: tree count flagged in errors");
+
+      // Case 4: Tiny Plot (10 m²)
+      const tinyProject = {
+        name: "Tiny Kiosk",
+        building_type: "Commercial",
+        site: { plot_area: 10, built_up_area: 6, floors: 1, roof_area: 6 },
+        vegetation: { existing_green_area: 2, existing_tree_count: 0, trees_removed: 0 },
+        surfaces: { concrete_area: 2, asphalt_area: 0, tiles_pavers: 0, soil_open_ground: 2 }
+      };
+      const vTiny = window.ValidationEngine.validateProject(tinyProject);
+      t.assertTrue(vTiny.isValid, "Tiny Plot: Passes geometric validation when proportional");
+      const calcTiny = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(tinyProject, null);
+      t.assertTrue(calcTiny.runoff.pre_development.annual_runoff_m3 >= 0, "Tiny Plot: Non-negative runoff calculated");
+
+      // Case 5: Large Plot (500,000 m²) & Category A EIA Trigger
+      const largeProject = {
+        name: "Mega Township",
+        building_type: "Mixed",
+        site: { plot_area: 500000, built_up_area: 80000, floors: 3, total_floor_area: 240000, roof_area: 80000 },
+        vegetation: { existing_green_area: 200000, existing_tree_count: 800, trees_removed: 150 },
+        water: { occupants: 5000, daily_consumption_lpcd: 135 }
+      };
+      const calcLarge = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(largeProject, null);
+      t.assertTrue(calcLarge.eia_results.screening.category.includes("Category A"), "Large Plot: Total GFA >= 1,50,000 m² triggers MoEFCC Category A screening");
+
+      // Case 6: Building Footprint Equal to Plot Area (Zero Open Ground)
+      const zeroLotProject = {
+        name: "Urban Zero Lot Line",
+        building_type: "Commercial",
+        site: { plot_area: 1000, built_up_area: 1000, floors: 4, roof_area: 1000 },
+        interventions: { trees_planted: 20, permeable_pavement_m2: 100 }
+      };
+      const vZeroLot = window.ValidationEngine.validateProject(zeroLotProject);
+      t.assertFalse(vZeroLot.isValid, "Zero Open Ground: Planting ground trees on zero open area flagged as invalid");
+      t.assertTrue("trees_planted" in vZeroLot.errors, "Zero Open Ground: trees_planted flagged in errors");
+
+      // Case 7: Building Footprint Exceeding Plot Area
+      const exceedProject = {
+        site: { plot_area: 2000, built_up_area: 3000 }
+      };
+      const vExceed = window.ValidationEngine.validateProject(exceedProject);
+      t.assertFalse(vExceed.isValid, "Footprint > Plot: Rejected by ValidationEngine");
+      t.assertTrue("built_up_area" in vExceed.errors, "Footprint > Plot: built_up_area flagged in errors");
+
+      // Case 8: Roof Interventions Exceeding Usable Roof Area
+      const exceedRoofProject = {
+        site: { plot_area: 5000, built_up_area: 2000, roof_area: 2000 },
+        interventions: { green_roof_m2: 1500, solar_pv_area_m2: 1500, bio_solar_colocated: false }
+      };
+      const vExceedRoof = window.ValidationEngine.validateProject(exceedRoofProject);
+      t.assertFalse(vExceedRoof.isValid, "Roof Interventions > Roof: Conflict flagged when non-co-located roof sum exceeds roof envelope");
+
+      // Case 9: Trees Removed Greater than Existing Trees
+      const treeDeficitProject = {
+        vegetation: { existing_tree_count: 10, trees_removed: 15 }
+      };
+      const vTreeDeficit = window.ValidationEngine.validateProject(treeDeficitProject);
+      t.assertFalse(vTreeDeficit.isValid, "Trees Removed > Existing: Rejected by ValidationEngine");
+
+      // Case 10: Zero Rainfall & Extremely High Rainfall
+      const testSite = { site: { plot_area: 5000, built_up_area: 2000, roof_area: 2000 }, surfaces: { concrete_area: 1000 } };
+      const calcZeroRain = window.RunoffCalculator.calculateScenarios(testSite, { rainfall: { annual_rainfall_mm: 0, peak_intensity_mm_hr: 0 } });
+      t.assertEqual(calcZeroRain.pre_development.peak_runoff_m3_hr, 0, "Zero Rainfall: Peak flow is strictly 0 m³/hr");
+      t.assertEqual(calcZeroRain.pre_development.annual_runoff_m3, 0, "Zero Rainfall: Annual runoff is strictly 0 m³");
+
+      const calcHighRain = window.RunoffCalculator.calculateScenarios(testSite, { rainfall: { annual_rainfall_mm: 5000, peak_intensity_mm_hr: 150 } });
+      t.assertTrue(calcHighRain.proposed_development.peak_runoff_m3_hr > 0, "High Rainfall: Peak flow scales positively without crashing");
+
+      // Case 11: Dimensional Consistency in Rational Method Q = (C * I * A) / 1000
+      // C = 0.90, I = 35 mm/hr, A = 5000 m2 -> Q = (0.90 * 35 * 5000) / 1000 = 157.5 m3/hr
+      const qRational = (0.90 * 35 * 5000) / 1000;
+      t.assertAlmostEqual(qRational, 157.5, 0.001, "Dimensional Check: Rational formula Q = (C*I*A)/1000 = 157.5 m³/hr");
+
+      // Case 12: Incomplete Baseline Scenario Labeling
+      const incompleteSite = {
+        name: "Provisional Site",
+        building_type: "Institutional",
+        site: { plot_area: 5000, built_up_area: 2000, roof_area: 2000 }
+      };
+      const calcIncomplete = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(incompleteSite, null);
+      t.assertEqual(calcIncomplete.runoff.baseline_provenance.status, "incomplete", "Baseline Provenance: Incomplete baseline labeled incomplete");
+      t.assertTrue(calcIncomplete.runoff.baseline_provenance.is_provisional, "Baseline Provenance: Incomplete baseline marked provisional");
+
+      // Case 13: Recalculation Propagation
+      const dynProject = JSON.parse(JSON.stringify(window.ECO_SAMPLE_PROJECTS.kolhapur_academic));
+      const res1 = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(dynProject, null);
+      dynProject.interventions.solar_pv_area_m2 = 1200; // Increase solar
+      const res2 = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(dynProject, null);
+      t.assertTrue(res2.energy.annual_generation_kwh > res1.energy.annual_generation_kwh, "Recalculation: Increased solar area increases annual generation");
+      t.assertTrue(res2.carbon.solar_emissions_offset.annual_offset_tonnes > res1.carbon.solar_emissions_offset.annual_offset_tonnes, "Recalculation: Carbon offset propagates updated energy output");
+
+      // =========================================================================
+      // PART B: 100 RANDOMIZED REPRODUCIBLE SYNTHETIC SITE PROFILES (SEED 42)
+      // =========================================================================
+      log("\n--- Part B: 100 Randomized Synthetic Site Profiles ---");
+      const rng = new SeededRandom(42);
+      let randPassed = 0;
+      let randRejected = 0;
+      let randTotal = 100;
+
+      for (let i = 1; i <= randTotal; i++) {
+        const isIntentionallyInvalid = (i % 5 === 0); // 20% intentionally invalid
+        let plot = rng.intRange(300, 50000);
+        let footprintRatio = isIntentionallyInvalid && (i % 10 === 0) ? rng.range(1.1, 1.8) : rng.range(0.15, 0.75);
+        let builtUp = Math.round(plot * footprintRatio);
+        let roof = builtUp;
+        let openGround = Math.max(0, plot - builtUp);
+
+        let concrete = Math.round(openGround * rng.range(0.1, 0.6));
+        let treesExisting = rng.intRange(0, 200);
+        let treesRemoved = isIntentionallyInvalid && (i % 10 === 5) ? (treesExisting + rng.intRange(5, 50)) : rng.intRange(0, treesExisting);
+        let rainMm = rng.range(300, 3500);
+        let solarArea = Math.round(roof * rng.range(0.0, 0.6));
+        let greenRoofArea = Math.round(roof * rng.range(0.0, 0.4));
+
+        const randSite = {
+          id: `synth_${i}`,
+          name: `Synthetic Test Site ${i}`,
+          building_type: rng.choice(["Residential", "Commercial", "Institutional", "Educational"]),
+          site: { plot_area: plot, built_up_area: builtUp, floors: rng.intRange(1, 10), roof_area: roof },
+          vegetation: { existing_green_area: Math.round(openGround * 0.5), existing_tree_count: treesExisting, trees_removed: treesRemoved },
+          surfaces: { concrete_area: concrete, asphalt_area: 0, tiles_pavers: 0, soil_open_ground: Math.max(0, openGround - concrete) },
+          water: { occupants: rng.intRange(10, 1000), daily_consumption_lpcd: rng.choice([45, 70, 135]) },
+          energy: { annual_electricity_kwh: rng.intRange(10000, 500000), solar_panel_area_m2: solarArea },
+          waste: { construction_waste_tonnes: rng.intRange(10, 500), recycling_pct: rng.intRange(0, 90) },
+          interventions: { solar_pv_area_m2: solarArea, green_roof_m2: greenRoofArea, trees_planted: treesRemoved * 3 }
+        };
+
+        const vRes = window.ValidationEngine.validateProject(randSite);
+
+        if (isIntentionallyInvalid) {
+          if (!vRes.isValid) {
+            randRejected++;
+            t.assertTrue(true, `Synthetic Profile ${i}: Intentionally invalid case rejected correctly`);
+          } else {
+            t.assertTrue(false, `Synthetic Profile ${i}: FAILED to reject invalid profile`);
+          }
+        } else {
+          if (vRes.isValid) {
+            randPassed++;
+            const calcRes = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(randSite, { rainfall: { annual_rainfall_mm: rainMm } });
+            
+            // Invariant assertions on valid profiles:
+            t.assertTrue(calcRes.runoff.proposed_development.peak_runoff_m3_hr >= 0, `Profile ${i}: Peak runoff non-negative`);
+            t.assertTrue(calcRes.energy.annual_generation_kwh >= 0, `Profile ${i}: Energy non-negative`);
+            t.assertTrue(calcRes.score.composite_score >= 0 && calcRes.score.composite_score <= 100, `Profile ${i}: Score within 0-100`);
+            t.assertTrue(calcRes.recovery_packages.length === 3, `Profile ${i}: Exactly 3 recovery packages synthesized`);
+          } else {
+            t.assertTrue(false, `Synthetic Profile ${i}: Legitimate profile failed validation: ${JSON.stringify(vRes.errors)}`);
+          }
+        }
+      }
+      log(`Completed 100 synthetic profiles: ${randPassed} valid accepted, ${randRejected} invalid correctly rejected.`);
+
+      // =========================================================================
+      // PART C: INVARIANT & CROSS-MODULE PROPERTY TESTS
+      // =========================================================================
+      log("\n--- Part C: Invariant & Cross-Module Property Tests ---");
+
+      // Invariant 1: Solar CO2 in energyCalculator matches solar CO2 in carbonCalculator
+      const demoProject = JSON.parse(JSON.stringify(window.ECO_SAMPLE_PROJECTS.kolhapur_academic));
+      const demoCalc = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(demoProject, null);
+      
+      const energyAvoidedTonnes = demoCalc.energy.annual_co2_offset_tonnes;
+      const carbonSolarTonnes = demoCalc.carbon.solar_emissions_offset.annual_offset_tonnes;
+      t.assertAlmostEqual(energyAvoidedTonnes, carbonSolarTonnes, 0.05, "Cross-Module Invariant: Solar CO2 offset in Energy matches Carbon calculator");
+
+      // Invariant 2: Recovery Package Area Constraints
+      demoCalc.recovery_packages.forEach((pkg, idx) => {
+        const areaAcc = pkg.area_accounting;
+        t.assertTrue(areaAcc.roof_allocated_m2 <= areaAcc.roof_total_m2 * (pkg.is_bio_solar ? 1.5 : 1.01), `Package ${idx + 1} (${pkg.name}): Roof allocation within physical roof boundary`);
+        t.assertTrue(areaAcc.hardscape_converted_m2 <= areaAcc.hardscape_total_m2 * 1.01, `Package ${idx + 1} (${pkg.name}): Paver replacement within existing hardscape`);
+        t.assertTrue(areaAcc.open_ground_allocated_m2 <= areaAcc.open_ground_total_m2 * 1.01, `Package ${idx + 1} (${pkg.name}): Bioswales within open ground area`);
+      });
+
+      // Invariant 3: Tree Planting Ground Area Accounting
+      // If plot has zero open ground, recovery packages must NOT prescribe ground canopy planting
+      const zeroGroundSite = {
+        name: "Zero Ground Kiosk",
+        site: { plot_area: 500, built_up_area: 500, roof_area: 500 },
+        vegetation: { existing_tree_count: 0, trees_removed: 0 }
+      };
+      const zeroGroundPkgs = window.OptimizerEngine.generateParetoPackages(zeroGroundSite);
+      zeroGroundPkgs.forEach(pkg => {
+        t.assertEqual(pkg.interventions.trees_planted, 0, `Zero Open Ground: ${pkg.name} allocates 0 ground trees`);
+      });
+
+      // Invariant 4: EIA Screening Thresholds Decoupled from Composite Score
+      const smallBUASite = { site: { plot_area: 5000, built_up_area: 1000, floors: 2 } }; // GFA 2,000 m2 < 20,000 m2
+      const calcSmallBUA = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(smallBUASite, null);
+      t.assertTrue(calcSmallBUA.eia_results.screening.category.includes("Exempt"), "EIA Screening: GFA < 20,000 m² is exempt from formal State/Central EC");
+
+      const medBUASite = { site: { plot_area: 30000, built_up_area: 10000, floors: 5, total_floor_area: 50000 } }; // GFA 50,000 m2
+      const calcMedBUA = window.EnvironmentalCalculator.calculateOverallEnvironmentalIndicators(medBUASite, null);
+      t.assertTrue(calcMedBUA.eia_results.screening.category.includes("Category B2"), "EIA Screening: GFA 20,000 to <1,50,000 m² triggers Category B2 (SEIAA)");
+
+      // Final Summary
+      log(`\n============================================================`);
+      log(`  TEST RESULTS: ${t.passed} PASSED, ${t.failed} FAILED`);
+      log(`============================================================`);
+
+      const summaryEl = document.getElementById("test-summary");
+      summaryEl.innerText = t.failed === 0 ? `ALL ${t.passed} TESTS PASSED SUCCESSFULLY!` : `${t.failed} TESTS FAILED`;
+      summaryEl.style.color = t.failed === 0 ? "#4ade80" : "#f87171";
+
+      const resultsDiv = document.getElementById("test-results");
+      resultsDiv.innerText = JSON.stringify({
+        status: t.failed === 0 ? "PASSED" : "FAILED",
+        total: t.passed + t.failed,
+        passed: t.passed,
+        failed: t.failed,
+        results: t.results
+      });
+
+      return {
+        allPassed: t.failed === 0,
+        passed: t.passed,
+        failed: t.failed
+      };
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      runProductionTests();
+    });
+  </script>
+</body>
+</html>

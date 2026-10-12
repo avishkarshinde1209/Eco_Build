@@ -62,8 +62,8 @@ window.ReportView = {
     const calc = window.App?.calculations || {};
     const env = window.App?.environmentalData || {};
     const exportData = {
-      dossier_type: "STATUTORY_EIA_ENVIRONMENTAL_CLEARANCE_DOSSIER",
-      parivesh_reference: "SIA/MH/INFRA2/481920/2026",
+      dossier_type: "ECOBUILD_PRELIMINARY_EIA_DECISION_SUPPORT_DOSSIER",
+      assessment_reference: `ECOBUILD-${project.id || 'PRELIMINARY'}`,
       generated_at: new Date().toISOString(),
       project: project,
       calculations: calc,
@@ -130,13 +130,16 @@ window.ReportView = {
     const roof = site.roof_area || builtUp;
     const openGround = site.open_area || Math.max(0, plot - builtUp);
     
-    let hardscape = (surfaces.concrete_area || 0) + (surfaces.asphalt_area || 0) + (surfaces.tiles_pavers || 0);
-    if (hardscape === 0) hardscape = Math.max(150, Math.round(openGround * 0.45));
+    const hardscape = (Number(surfaces.concrete_area) || 0) + (Number(surfaces.asphalt_area) || 0) + (Number(surfaces.tiles_pavers) || 0);
     const greenGround = Math.max(0, openGround - hardscape);
 
-    const treesRemoved = proj.vegetation?.trees_removed !== undefined ? proj.vegetation.trees_removed : 25;
-    const existingTrees = proj.vegetation?.existing_tree_count || 50;
-    const occupants = proj.water?.occupants || proj.occupancy?.occupants || 100;
+    const treesRemoved = proj.vegetation?.trees_removed !== undefined && proj.vegetation.trees_removed !== null 
+      ? Math.max(0, Number(proj.vegetation.trees_removed)) 
+      : 0;
+    const existingTrees = Math.max(0, Number(proj.vegetation?.existing_tree_count) || 0);
+    const occupants = proj.water?.occupants !== undefined && proj.water?.occupants !== null 
+      ? Math.max(0, Number(proj.water.occupants)) 
+      : (Number(proj.occupancy?.occupants) || 0);
 
     // Climate, Rainfall & Meteorology
     const weatherRain = env.rainfall?.annual_rainfall_mm || env.weather?.annual_rainfall_mm || 980;
@@ -168,23 +171,38 @@ window.ReportView = {
     const recycledAnnualKL = Math.round((recycledDailyL * 365) / 1000);
     const isZLD = treatedEffluentDailyL <= (recycledDailyL + 500);
 
-    // Dynamic Recovery Interventions (Balanced Blueprint Alt 6)
-    const dynTrees = Math.min(Math.max(15, treesRemoved * 3), Math.floor((openGround * 0.6) / 16));
-    const dynGreenRoof = Math.round(roof * 0.27);
-    const dynPermPavers = Math.round(Math.min(hardscape * 0.45, hardscape));
-    const dynRwhL = Math.round(Math.min(roof * 40, Math.max(15000, dailyNonPotableL * 18)));
-    const dynSolarArea = Math.round(Math.min(roof * 0.35, Math.max(0, roof - dynGreenRoof)));
-    const dynSwaleM2 = Math.round(Math.min(openGround * 0.12, 180));
-    const dynCoolRoof = Math.round(Math.max(0, roof - dynGreenRoof - dynSolarArea));
+    // Site-Constrained Recovery Interventions
+    const maxCanopyGroundTrees = openGround > 0 ? Math.floor(openGround / 16) : 0;
+    const dynTrees = treesRemoved > 0 ? Math.min(maxCanopyGroundTrees, treesRemoved * 3) : 0;
+    const dynGreenRoof = Math.min(roof, Math.round(roof * 0.27));
+    const dynPermPavers = Math.min(hardscape, Math.round(hardscape * 0.45));
+    const dynRwhL = roof > 0 ? Math.round(Math.min(roof * 40, Math.max(15000, dailyNonPotableL * 18))) : 0;
+    const dynSolarArea = Math.min(Math.max(0, roof - dynGreenRoof), Math.round(roof * 0.35));
+    const dynSwaleM2 = openGround > 0 ? Math.min(openGround, Math.round(openGround * 0.12)) : 0;
+    const dynCoolRoof = Math.max(0, roof - dynGreenRoof - dynSolarArea);
 
     const iv = {
-      trees_planted: proj.interventions?.trees_planted ?? dynTrees,
-      green_roof_m2: proj.interventions?.green_roof_m2 ?? dynGreenRoof,
-      permeable_pavement_m2: proj.interventions?.permeable_pavement_m2 ?? dynPermPavers,
-      rwh_tank_capacity_l: proj.interventions?.rwh_tank_capacity_l ?? dynRwhL,
-      solar_pv_area_m2: proj.interventions?.solar_pv_area_m2 ?? dynSolarArea,
-      rain_garden_m2: proj.interventions?.rain_garden_m2 ?? dynSwaleM2,
-      cool_roof_m2: proj.interventions?.cool_roof_m2 ?? dynCoolRoof
+      trees_planted: (proj.interventions?.trees_planted !== undefined && proj.interventions?.trees_planted !== null)
+        ? Math.max(0, Number(proj.interventions.trees_planted))
+        : dynTrees,
+      green_roof_m2: (proj.interventions?.green_roof_m2 !== undefined && proj.interventions?.green_roof_m2 !== null)
+        ? Math.max(0, Number(proj.interventions.green_roof_m2))
+        : dynGreenRoof,
+      permeable_pavement_m2: (proj.interventions?.permeable_pavement_m2 !== undefined && proj.interventions?.permeable_pavement_m2 !== null)
+        ? Math.max(0, Number(proj.interventions.permeable_pavement_m2))
+        : dynPermPavers,
+      rwh_tank_capacity_l: (proj.interventions?.rwh_tank_capacity_l !== undefined && proj.interventions?.rwh_tank_capacity_l !== null)
+        ? Math.max(0, Number(proj.interventions.rwh_tank_capacity_l))
+        : dynRwhL,
+      solar_pv_area_m2: (proj.interventions?.solar_pv_area_m2 !== undefined && proj.interventions?.solar_pv_area_m2 !== null)
+        ? Math.max(0, Number(proj.interventions.solar_pv_area_m2))
+        : dynSolarArea,
+      rain_garden_m2: (proj.interventions?.rain_garden_m2 !== undefined && proj.interventions?.rain_garden_m2 !== null)
+        ? Math.max(0, Number(proj.interventions.rain_garden_m2))
+        : dynSwaleM2,
+      cool_roof_m2: (proj.interventions?.cool_roof_m2 !== undefined && proj.interventions?.cool_roof_m2 !== null)
+        ? Math.max(0, Number(proj.interventions.cool_roof_m2))
+        : dynCoolRoof
     };
 
     const solarKwp = Math.round((iv.solar_pv_area_m2 / 5.5) * 10) / 10;
@@ -436,9 +454,9 @@ window.ReportView = {
 
             <!-- Metadata Reference Box -->
             <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs space-y-1.5 shrink-0 sm:min-w-[240px] text-left md:text-right">
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Parivesh File No.</span><strong class="font-mono text-stone-900">SIA/MH/INFRA2/481920/2026</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">EC Proposal ID</span><strong class="font-mono text-stone-900">IA/MH/NCP/48201/2026</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">NABET Consultant Cert.</span><strong class="font-mono text-emerald-800">NABET/EIA/2326/RA0192</strong></div>
+              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment ID</span><strong class="font-mono text-stone-900">ECOBUILD-${proj.id || 'PRELIMINARY'}</strong></div>
+              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Statutory Screening</span><strong class="font-mono text-stone-900">${eia.screening?.category || 'MoEFCC Item 8'}</strong></div>
+              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Appraisal Level</span><strong class="font-mono text-emerald-800">${eia.screening?.appraisal_authority ? 'Official Review Required' : 'Local Clearance'}</strong></div>
               <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment Date</span><strong class="text-stone-800">${now} (${nowTime})</strong></div>
               <div class="pt-2 border-t border-stone-200 mt-2">
                 <span class="text-[10px] font-bold uppercase text-stone-400 block">EcoBuild Resilience Score</span>
@@ -1618,22 +1636,22 @@ window.ReportView = {
                 </p>
               </div>
 
-              <!-- Topic 101 & 102: Certified Professional Digital Signatures -->
+              <!-- Topic 101 & 102: Environmental Assessment Preparation & Endorsement -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4 border-t border-stone-200 text-xs">
                 <div class="space-y-1.5">
-                  <span class="text-[10px] uppercase font-bold text-stone-400 block">101. Prepared & Certified by (QCI / NABET Accredited):</span>
+                  <span class="text-[10px] uppercase font-bold text-stone-400 block">101. Prepared by Assessment Specialist:</span>
                   <div class="pt-8 border-b-2 border-stone-800 w-64 mb-1"></div>
-                  <strong class="text-stone-900 block font-serif">Lead EIA Coordinator & Environmental Systems Specialist</strong>
-                  <div class="text-[11px] text-stone-500">EcoBuild Smart Environmental Decision Support Division</div>
-                  <div class="text-[10px] font-mono text-emerald-800 font-bold">NABET Reg: NABET/EIA/2326/RA0192 • SHA-256: 7F8E9D0C-VERIFIED</div>
+                  <strong class="text-stone-900 block font-serif">Environmental Assessment Specialist / Modeler</strong>
+                  <div class="text-[11px] text-stone-500">EcoBuild Smart Environmental Planning Division</div>
+                  <div class="text-[10px] font-mono text-emerald-800 font-bold">Assessment ID: ECOBUILD-${proj.id || 'STUDY'} • Status: Validated Model</div>
                 </div>
 
                 <div class="space-y-1.5 sm:text-right">
-                  <span class="text-[10px] uppercase font-bold text-stone-400 block">102. Document Control & Project Proponent Endorsement:</span>
+                  <span class="text-[10px] uppercase font-bold text-stone-400 block">102. Proponent Review & Endorsement:</span>
                   <div class="pt-8 border-b-2 border-stone-800 w-64 mb-1 sm:ml-auto"></div>
-                  <strong class="text-stone-900 block font-serif">Authorized Signatory / Project Proponent</strong>
-                  <div class="text-[11px] text-stone-500">Board of Sustainable Urban Infrastructure Assessment</div>
-                  <div class="text-[10px] font-mono text-stone-500">PARIVESH Dossier Ref: SIA/MH/INFRA2/481920/2026 • Official Seal</div>
+                  <strong class="text-stone-900 block font-serif">Project Proponent / Planning Representative</strong>
+                  <div class="text-[11px] text-stone-500">Sustainable Infrastructure Planning</div>
+                  <div class="text-[10px] font-mono text-stone-500">Document Ref: ECOBUILD-${proj.id || 'PRELIMINARY'} • Digital Copy</div>
                 </div>
               </div>
             </div>

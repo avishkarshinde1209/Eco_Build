@@ -38,45 +38,64 @@ window.DashboardView = {
     const concrete = surfaces.concrete_area || 0;
     const asphalt = surfaces.asphalt_area || 0;
     const tiles = surfaces.tiles_pavers || 0;
-    let hardscape = concrete + asphalt + tiles;
-    if (hardscape === 0) hardscape = Math.max(150, Math.round(openArea * 0.45));
+    const hardscape = concrete + asphalt + tiles;
 
     const veg = project.vegetation || {};
-    const existingGreen = veg.existing_green_area || Math.round(plotArea * 0.28);
-    const greenPct = Math.round((existingGreen / plotArea) * 100);
-    const existingTrees = veg.existing_tree_count || 50;
-    const treesRemoved = veg.trees_removed !== undefined ? veg.trees_removed : 25;
+    const existingGreen = (veg.existing_green_area !== undefined && veg.existing_green_area !== null) 
+      ? Math.max(0, Number(veg.existing_green_area)) 
+      : (calculations?.green_cover?.existing_green_area_m2 ?? 0);
+    const greenPct = plotArea > 0 ? Math.round((existingGreen / plotArea) * 100) : 0;
+    const existingTrees = (veg.existing_tree_count !== undefined && veg.existing_tree_count !== null)
+      ? Math.max(0, Number(veg.existing_tree_count))
+      : (calculations?.tree_impact?.trees_existing ?? 0);
+    const treesRemoved = (veg.trees_removed !== undefined && veg.trees_removed !== null)
+      ? Math.max(0, Number(veg.trees_removed))
+      : (calculations?.tree_impact?.trees_removed ?? 0);
     const protectedTrees = Math.max(0, existingTrees - treesRemoved);
 
     const iv = project.interventions || {};
-    const targetTrees = iv.trees_planted || Math.max(15, treesRemoved * 3);
-    const greenRoofM2 = iv.green_roof_m2 || Math.round(roofArea * 0.27);
-    const permM2 = iv.permeable_pavement_m2 || Math.round(hardscape * 0.45);
-    const targetGreenPct = Math.min(95, Math.round(((existingGreen + greenRoofM2 + permM2) / plotArea) * 100));
+    const targetTrees = (iv.trees_planted !== undefined && iv.trees_planted !== null)
+      ? Math.max(0, Number(iv.trees_planted))
+      : (treesRemoved > 0 ? treesRemoved * 3 : 0);
+    const greenRoofM2 = (iv.green_roof_m2 !== undefined && iv.green_roof_m2 !== null)
+      ? Math.max(0, Number(iv.green_roof_m2))
+      : (calculations?.green_infra_potential?.recommended_green_roof_m2 ?? 0);
+    const permM2 = (iv.permeable_pavement_m2 !== undefined && iv.permeable_pavement_m2 !== null)
+      ? Math.max(0, Number(iv.permeable_pavement_m2))
+      : (calculations?.green_infra_potential?.recommended_permeable_pavement_m2 ?? 0);
+    const targetGreenPct = Math.min(100, Math.round(((existingGreen + greenRoofM2 + permM2) / plotArea) * 100));
 
-    const weatherRain = environmentalData?.weather?.annual_rainfall_mm || project.climate?.annual_rainfall || 980;
-    const occupants = project.water?.occupants || project.occupancy?.occupants || 100;
-    const dailyLpcd = project.water?.daily_consumption_lpcd || 70;
+    const weatherRain = environmentalData?.rainfall?.annual_rainfall_mm || environmentalData?.weather?.annual_rainfall_mm || project.climate?.annual_rainfall || 980;
+    const occupants = (project.water?.occupants !== undefined && project.water?.occupants !== null)
+      ? Math.max(0, Number(project.water.occupants))
+      : (Number(project.occupancy?.occupants) || 0);
+    const dailyLpcd = Number(project.water?.daily_consumption_lpcd) || (calculations?.water_demand?.lpcd ?? 70);
     const annualDemandM3 = Math.round((occupants * dailyLpcd * 365) / 1000);
-    const rwhYieldM3 = Math.round(roofArea * (weatherRain / 1000) * 0.85 * 0.90);
-    const tankLitres = iv.rwh_tank_capacity_l || Math.round(Math.min(roofArea * 40, Math.max(15000, occupants * 45 * 18)));
+    const rwhYieldM3 = calculations?.rwh?.annual_potential_m3 ?? Math.round(roofArea * (weatherRain / 1000) * 0.85 * 0.85);
+    const tankLitres = Number(iv.rwh_tank_capacity_l) || calculations?.rwh?.recommended_storage_range_litres?.optimum || 0;
     const tankCapKL = Math.round(tankLitres / 1000);
-    const waterOffsetPct = annualDemandM3 > 0 ? Math.min(100, Math.round((rwhYieldM3 / annualDemandM3) * 100)) : 45;
+    const waterOffsetPct = calculations?.rwh?.demand_offset_percentage ?? (annualDemandM3 > 0 ? Math.min(100, Math.round((rwhYieldM3 / annualDemandM3) * 100)) : 0);
 
     const imperviousPct = Math.round((hardscape / plotArea) * 100);
-    const peakQBefore = (runoff?.unmitigated_peak_flow_m3_hr || (hardscape * 0.035 * 0.85)).toFixed(1);
-    const peakQAfter = (runoff?.mitigated_peak_flow_m3_hr || (hardscape * 0.035 * 0.35)).toFixed(1);
-    const bioswaleM2 = iv.rain_garden_m2 || Math.round(hardscape * 0.06);
+    const peakQBefore = (calculations?.runoff?.proposed_development?.peak_runoff_m3_hr ?? (hardscape * 0.035 * 0.85)).toFixed(1);
+    const peakQAfter = (calculations?.runoff?.with_green_infrastructure?.peak_runoff_m3_hr ?? (hardscape * 0.035 * 0.35)).toFixed(1);
+    const bioswaleM2 = (iv.rain_garden_m2 !== undefined && iv.rain_garden_m2 !== null)
+      ? Math.max(0, Number(iv.rain_garden_m2))
+      : 0;
 
-    const elecDemandKwh = project.energy?.annual_electricity_kwh || Math.round(gfa * 15);
-    const solarM2 = iv.solar_pv_area_m2 || Math.round(roofArea * 0.35);
-    const solarKwp = Math.round(solarM2 / 5.5);
-    const solarGenKwh = Math.round(solarKwp * 1450);
-    const solarOffsetPct = elecDemandKwh > 0 ? Math.min(100, Math.round((solarGenKwh / elecDemandKwh) * 100)) : 100;
+    const elecDemandKwh = (project.energy?.annual_electricity_kwh !== undefined && project.energy?.annual_electricity_kwh !== null)
+      ? Math.max(0, Number(project.energy.annual_electricity_kwh))
+      : (calculations?.energy?.annual_demand_kwh ?? Math.round(gfa * 15));
+    const solarM2 = (iv.solar_pv_area_m2 !== undefined && iv.solar_pv_area_m2 !== null)
+      ? Math.max(0, Number(iv.solar_pv_area_m2))
+      : (calculations?.energy?.solar_allocated_area_m2 ?? 0);
+    const solarKwp = calculations?.energy?.installed_capacity_kwp ?? Math.round(solarM2 * 0.18 * 10) / 10;
+    const solarGenKwh = calculations?.energy?.annual_generation_kwh ?? Math.round(solarKwp * 1450);
+    const solarOffsetPct = calculations?.energy?.demand_offset_percentage ?? (elecDemandKwh > 0 ? Math.min(100, Math.round((solarGenKwh / elecDemandKwh) * 100)) : 0);
 
-    const embodiedCarbon = carbon?.construction_emissions_tonnes || Math.round((gfa * 450) / 1000);
+    const embodiedCarbon = calculations?.carbon?.total_embodied_tonnes ?? calculations?.carbon?.construction_emissions_tonnes ?? Math.round((gfa * 450) / 1000);
     const operationalCO2 = Math.round((elecDemandKwh * 0.82) / 1000 * 10) / 10;
-    const avoidedSolarCO2 = Math.round((solarGenKwh * 0.82) / 1000 * 10) / 10;
+    const avoidedSolarCO2 = calculations?.energy?.annual_co2_offset_tonnes ?? Math.round((solarGenKwh * 0.82) / 1000 * 10) / 10;
     const treeCO2 = (targetTrees * 21.8 / 1000).toFixed(1);
 
     const baselineBng = Math.round((existingGreen / plotArea) * 100);

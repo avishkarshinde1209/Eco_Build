@@ -9,6 +9,7 @@ project storage (SQLite database), and serves static frontend assets.
 import sys
 import os
 import json
+import time
 import sqlite3
 import urllib.request
 import urllib.parse
@@ -103,7 +104,7 @@ class EcoBuildRequestHandler(SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             try:
                 project_data = json.loads(post_data.decode('utf-8'))
-                proj_id = project_data.get("id") or f"proj_{int(urllib.parse.time.time())}"
+                proj_id = project_data.get("id") or f"proj_{int(time.time())}"
                 name = project_data.get("name", "Untitled Project")
                 b_type = project_data.get("building_type", "Residential")
                 loc = project_data.get("location", {})
@@ -187,16 +188,33 @@ class EcoBuildRequestHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/environmental/proxy":
-            # Safe external proxy to prevent CORS blocks
+            # Secured external proxy to prevent CORS blocks while preventing SSRF
             target_url = query.get("url", [None])[0]
             if not target_url:
                 self.send_json_response(400, {"error": "Missing url parameter"})
                 return
 
             try:
+                parsed_target = urllib.parse.urlparse(target_url)
+                if parsed_target.scheme != "https":
+                    self.send_json_response(400, {"error": "Only secure HTTPS URLs are permitted"})
+                    return
+
+                allowed_hosts = {
+                    "api.open-meteo.com",
+                    "archive-api.open-meteo.com",
+                    "air-quality-api.open-meteo.com",
+                    "nominatim.openstreetmap.org"
+                }
+
+                hostname = (parsed_target.hostname or "").lower()
+                if hostname not in allowed_hosts:
+                    self.send_json_response(403, {"error": f"Target host '{hostname}' is not in approved environmental provider allowlist"})
+                    return
+
                 req = urllib.request.Request(
                     target_url,
-                    headers={'User-Agent': 'EcoBuild-Smart-Academic/2.5'}
+                    headers={'User-Agent': 'EcoBuild-Smart-Academic/3.0'}
                 )
                 with urllib.request.urlopen(req, timeout=10) as response:
                     raw_data = response.read()
@@ -205,6 +223,8 @@ class EcoBuildRequestHandler(SimpleHTTPRequestHandler):
                     self.send_cors_headers()
                     self.end_headers()
                     self.wfile.write(raw_data)
+            except urllib.error.HTTPError as e:
+                self.send_json_response(e.code, {"error": f"Upstream provider returned HTTP {e.code}"})
             except Exception as e:
                 self.send_json_response(502, {"error": f"Upstream API failure: {str(e)}"})
             return
