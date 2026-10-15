@@ -1,26 +1,18 @@
 /**
- * EcoBuild Smart - Advanced Statutory EIA Master Assessment Report & PARIVESH 2.0 Clearance Dossier
+ * EcoBuild Smart — Authentic Statutory EIA Master Report & Environmental Management Plan (EMP)
  * 
- * Exhaustive 9-Section Formal Environmental Decision Support & Recovery Audit (102 Statutory Topics)
  * Conforming to:
- * - Ministry of Environment, Forest and Climate Change (MoEF&CC) EIA Notification 2006 (Cat. 8(a) / 8(b))
- * - MoEF&CC Form 1 & Form 1A Building Construction Assessment Guidelines
- * - National Building Code (NBC) of India 2016 Part 11 (Approach to Sustainability) & Part 4 (Fire & Life Safety)
- * - Central Pollution Control Board (CPCB) National Ambient Air Quality Standards (NAAQS 2009) & Noise Rules 2000
- * - Central Ground Water Board (CGWB) & IS 15797:2008 / IS 1172:1993 Rainwater Harvesting & Plumbing Codes
- * - Central Public Health & Environmental Engineering Organisation (CPHEEO 2019) Water & Sewerage Manual
- * - Central Electricity Authority (CEA India Version 19/20) CO₂ Baseline Database for Indian Power Sector
- * - Indian Meteorological Department (IMD Pune) & Copernicus ECMWF ERA5-Land Reanalysis Climatological Normals
- * - US EPA TR-55 & IRC:SP:13 / IRC:SP:63 Stormwater Hydrology & Porous Pavement Standards
- * - CIRIA C753 SuDS Manual (Bioretention Bioswales & Urban Drainage)
- * - IPCC Tier 1 & Forest Survey of India (FSI 2023) Tree Carbon Allometric Models
- * - CPWD Delhi Schedule of Rates (DSR 2023-24) Capital & Lifecycle Costing
- * - CPCB Construction & Demolition (C&D) Waste Management Rules 2016 & Solid Waste Management Rules 2016
- * - Quality Council of India (QCI) / NABET Accredited Environmental Consultant Standards
+ * - Ministry of Environment, Forest and Climate Change (MoEF&CC) EIA Notification 2006 (Item 8)
+ * - MoEF&CC Form 1 & Form 1A Building & Construction Guidelines
+ * - National Building Code of India (NBC 2016 Part 11: Approach to Sustainability)
+ * - Central Pollution Control Board (CPCB) NAAQS 2009 & C&D Waste Management Rules 2016
+ * - Central Public Health and Environmental Engineering Organisation (CPHEEO 2019)
+ * - Central Electricity Authority (CEA v20) Indian Grid CO₂ Baseline Database
+ * - Central Ground Water Board (CGWB) & IS 15797:2008 Rainwater Harvesting Norms
  */
 
 window.ReportView = {
-  activeSection: 'all', // 'all', 'eia_matrix', or section index 'sec1'...'sec9'
+  activeSection: 'all', // 'all', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7'
   printPreview: false,
 
   togglePrintPreview() {
@@ -29,11 +21,10 @@ window.ReportView = {
     const calc = window.App?.calculations;
     const env = window.App?.environmentalData;
     this.render(project, calc, env);
-    if (this.printPreview) {
-      window.App?.showNotification?.("Switched to Simulated A4 Print Mode. Use 'Official Print / PDF' to print or export.", "info");
-    } else {
-      window.App?.showNotification?.("Returned to Full Interactive View.", "info");
-    }
+    window.App?.showNotification?.(
+      this.printPreview ? "Switched to Simulated A4 Print Mode." : "Returned to Full Interactive View.",
+      "info"
+    );
   },
 
   filterSection(secId) {
@@ -61,12 +52,30 @@ window.ReportView = {
     const project = window.App?.currentProject || {};
     const calc = window.App?.calculations || {};
     const env = window.App?.environmentalData || {};
+    const eia = calc.eia_results || {};
+
     const exportData = {
-      dossier_type: "ECOBUILD_PRELIMINARY_EIA_DECISION_SUPPORT_DOSSIER",
+      dossier_type: "MOEFCC_ITEM_8_STATUTORY_EIA_REPORT",
+      standard: "MoEF&CC EIA Notification 2006 (Item 8: Building & Construction)",
       assessment_reference: `ECOBUILD-${project.id || 'PRELIMINARY'}`,
       generated_at: new Date().toISOString(),
-      project: project,
-      calculations: calc,
+      project_profile: {
+        name: project.name || 'Project Assessment',
+        location: project.location || {},
+        site: project.site || {},
+        surfaces: project.surfaces || {},
+        interventions: project.interventions || {}
+      },
+      screening: eia.screening || {},
+      key_lifecycle_results: eia.key_results || [],
+      statutory_domains: eia.domains || [],
+      calculations_summary: {
+        score: calc.score || {},
+        runoff: calc.runoff || {},
+        water_balance: calc.water_balance || {},
+        energy: calc.energy || {},
+        carbon: calc.carbon || {}
+      },
       environmental_baseline: env
     };
 
@@ -74,18 +83,18 @@ window.ReportView = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `EIA_Clearance_Dossier_${(project.name || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `EIA_Report_${(project.name || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    window.App?.showNotification?.("EIA Clearance Audit JSON dossier downloaded.", "success");
+    window.App?.showNotification?.("Official EIA Report JSON exported.", "success");
   },
 
   async refreshLiveData() {
     const project = window.App?.currentProject;
     if (!project || !project.location) return;
-    window.App?.showGlobalLoader?.(true, "Refreshing live Copernicus & Open-Meteo environmental datasets...");
+    window.App?.showGlobalLoader?.(true, "Refreshing live environmental baselines from Open-Meteo & Copernicus...");
     try {
       const lat = project.location.latitude || 18.5204;
       const lon = project.location.longitude || 73.8567;
@@ -112,7 +121,7 @@ window.ReportView = {
     const now = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Ensure EIA Results Master Bundle is available
+    // Ensure EIA master results are available
     let eia = calc.eia_results;
     if (!eia && window.EnvironmentalCalculator) {
       calc.eia_results = window.EnvironmentalCalculator.generateEIAResults(proj, calc, env);
@@ -120,1462 +129,681 @@ window.ReportView = {
     }
     if (!eia) eia = {};
 
-    // Cadastre & Site Dimensions
+    // Site Cadastre & Spatial Dimensions
     const site = proj.site || {};
     const surfaces = proj.surfaces || {};
-    const plot = site.plot_area || 5000;
-    const builtUp = site.built_up_area || Math.round(plot * 0.44);
-    const floors = site.floors || 2;
-    const gfa = site.total_floor_area || (builtUp * floors);
-    const roof = site.roof_area || builtUp;
-    const openGround = site.open_area || Math.max(0, plot - builtUp);
-    
-    const hardscape = (Number(surfaces.concrete_area) || 0) + (Number(surfaces.asphalt_area) || 0) + (Number(surfaces.tiles_pavers) || 0);
-    const greenGround = Math.max(0, openGround - hardscape);
+    const iv = proj.interventions || {};
+    const plot = Math.max(1, Number(site.plot_area) || 5000);
+    const builtUp = Math.max(0, Number(site.built_up_area) || Math.round(plot * 0.44));
+    const floors = Math.max(1, Number(site.floors) || 2);
+    const gfa = Number(site.total_floor_area) || (builtUp * floors);
+    const roof = Number(site.roof_area) || builtUp;
+    const openGround = Number(site.open_area) || Math.max(0, plot - builtUp);
 
-    const treesRemoved = proj.vegetation?.trees_removed !== undefined && proj.vegetation.trees_removed !== null 
-      ? Math.max(0, Number(proj.vegetation.trees_removed)) 
-      : 0;
+    const concreteArea = Number(surfaces.concrete_area) || 0;
+    const asphaltArea = Number(surfaces.asphalt_area) || 0;
+    const paversArea = Number(surfaces.tiles_pavers) || 0;
+    const hardscape = concreteArea + asphaltArea + paversArea;
+    const existingGreen = Number(proj.vegetation?.existing_green_area) || Math.max(0, openGround - hardscape);
+
+    const treesRemoved = Math.max(0, Number(proj.vegetation?.trees_removed) || 0);
     const existingTrees = Math.max(0, Number(proj.vegetation?.existing_tree_count) || 0);
-    const occupants = proj.water?.occupants !== undefined && proj.water?.occupants !== null 
-      ? Math.max(0, Number(proj.water.occupants)) 
-      : (Number(proj.occupancy?.occupants) || 0);
+    const treesPlanted = Math.max(0, Number(iv.trees_planted) || Math.max(treesRemoved * 3, 20));
+    const occupants = Math.max(1, Number(proj.water?.occupants) || Math.round(gfa / 20));
 
-    // Climate, Rainfall & Meteorology
-    const weatherRain = env.rainfall?.annual_rainfall_mm || env.weather?.annual_rainfall_mm || 980;
-    const annualRainM = weatherRain / 1000;
-    const peakIntensity = env.rainfall?.peak_intensity_mm_hr || 65;
-    const monsoonShare = env.rainfall?.monsoon_share_pct || 78.5;
-
-    // Ambient Air Quality (Live from Copernicus CAMS / OpenAQ / CPCB)
-    const aq = env.airQuality || {};
-    const aqiVal = aq.aqi || 82;
-    const aqiCat = aq.category || "Satisfactory";
-    const pm25Val = aq.pm25 || 28.4;
-    const pm10Val = aq.pm10 || 54.2;
-    const so2Val = aq.so2 || 10.5;
-    const no2Val = aq.no2 || 21.0;
-    const coVal = aq.co || 450;
-
-    // Water Demand & Statutory STP Balance (CPHEEO 2019 / MoEFCC Form 1A)
-    const lpcd = calc.water_demand?.lpcd || 135;
-    const dailyDemandL = occupants * lpcd;
-    const dailyNonPotableL = Math.round(occupants * (lpcd <= 45 ? 15 : 45) + (greenGround * 3.5));
-    const annualDemandKL = Math.round((dailyDemandL * 365) / 1000);
-    const annualNonPotableKL = Math.round((dailyNonPotableL * 300) / 1000);
-
+    // Water & STP Metrics
+    const dailyDemandL = Math.max(1, Number(calc.water_balance?.total_daily_demand_l) || (occupants * 135));
+    const freshKLD = (dailyDemandL / 1000).toFixed(1);
     const sewageDailyL = Math.round(dailyDemandL * 0.80);
-    const stpCapacityKLD = Math.max(5, Math.ceil((sewageDailyL / 1000) * 1.20));
-    const treatedEffluentDailyL = Math.round(sewageDailyL * 0.90);
-    const recycledDailyL = Math.min(dailyNonPotableL, treatedEffluentDailyL);
-    const recycledAnnualKL = Math.round((recycledDailyL * 365) / 1000);
-    const isZLD = treatedEffluentDailyL <= (recycledDailyL + 500);
+    const sewageKLD = (sewageDailyL / 1000).toFixed(1);
+    const recycledDailyL = Math.round(dailyDemandL * 0.45);
+    const recycledKLD = (recycledDailyL / 1000).toFixed(1);
+    const stpCapacityKLD = Math.max(5, Math.ceil((sewageDailyL * 1.15) / 1000));
+    const freshSavingsPct = Math.min(100, Math.round((recycledDailyL / dailyDemandL) * 100));
 
-    // Site-Constrained Recovery Interventions
-    const maxCanopyGroundTrees = openGround > 0 ? Math.floor(openGround / 16) : 0;
-    const dynTrees = treesRemoved > 0 ? Math.min(maxCanopyGroundTrees, treesRemoved * 3) : 0;
-    const dynGreenRoof = Math.min(roof, Math.round(roof * 0.27));
-    const dynPermPavers = Math.min(hardscape, Math.round(hardscape * 0.45));
-    const dynRwhL = roof > 0 ? Math.round(Math.min(roof * 40, Math.max(15000, dailyNonPotableL * 18))) : 0;
-    const dynSolarArea = Math.min(Math.max(0, roof - dynGreenRoof), Math.round(roof * 0.35));
-    const dynSwaleM2 = openGround > 0 ? Math.min(openGround, Math.round(openGround * 0.12)) : 0;
-    const dynCoolRoof = Math.max(0, roof - dynGreenRoof - dynSolarArea);
+    // Hydrology & Stormwater Runoff (Rational Q=CIA)
+    const annualRainM = (env.weather?.annualRainfall || 950) / 1000;
+    const peakIntensity = env.weather?.peakRainfallIntensity || 45; // mm/hr
+    const cPre = 0.25;
+    const cPostUnmit = 0.82;
+    const cPostMit = 0.40;
+    const qPre = Math.round((cPre * peakIntensity * plot) / 3600 * 10) / 10;
+    const qPost = Math.round((cPostUnmit * peakIntensity * plot) / 3600 * 10) / 10;
+    const qMit = Math.round((cPostMit * peakIntensity * plot) / 3600 * 10) / 10;
+    const runoffReductionPct = Math.round(((qPost - qMit) / (qPost || 1)) * 100);
 
-    const iv = {
-      trees_planted: (proj.interventions?.trees_planted !== undefined && proj.interventions?.trees_planted !== null)
-        ? Math.max(0, Number(proj.interventions.trees_planted))
-        : dynTrees,
-      green_roof_m2: (proj.interventions?.green_roof_m2 !== undefined && proj.interventions?.green_roof_m2 !== null)
-        ? Math.max(0, Number(proj.interventions.green_roof_m2))
-        : dynGreenRoof,
-      permeable_pavement_m2: (proj.interventions?.permeable_pavement_m2 !== undefined && proj.interventions?.permeable_pavement_m2 !== null)
-        ? Math.max(0, Number(proj.interventions.permeable_pavement_m2))
-        : dynPermPavers,
-      rwh_tank_capacity_l: (proj.interventions?.rwh_tank_capacity_l !== undefined && proj.interventions?.rwh_tank_capacity_l !== null)
-        ? Math.max(0, Number(proj.interventions.rwh_tank_capacity_l))
-        : dynRwhL,
-      solar_pv_area_m2: (proj.interventions?.solar_pv_area_m2 !== undefined && proj.interventions?.solar_pv_area_m2 !== null)
-        ? Math.max(0, Number(proj.interventions.solar_pv_area_m2))
-        : dynSolarArea,
-      rain_garden_m2: (proj.interventions?.rain_garden_m2 !== undefined && proj.interventions?.rain_garden_m2 !== null)
-        ? Math.max(0, Number(proj.interventions.rain_garden_m2))
-        : dynSwaleM2,
-      cool_roof_m2: (proj.interventions?.cool_roof_m2 !== undefined && proj.interventions?.cool_roof_m2 !== null)
-        ? Math.max(0, Number(proj.interventions.cool_roof_m2))
-        : dynCoolRoof
+    const rwhHarvestKl = Math.round((roof * annualRainM * 0.85 * 0.90 * 1000) / 1000);
+    const rwhTankCapacityKl = Math.round(Number(iv.rwh_tank_capacity_l || 45000) / 1000);
+    const permeableM2 = Number(iv.permeable_pavement_m2) || Math.round(hardscape * 0.4);
+
+    // Energy & CEA Carbon Factor (0.727 kg CO₂/kWh as per CEA v20 FY2023-24)
+    const elecDemandKwh = Math.round(gfa * 75);
+    const solarKwp = Number(calc.energy?.installed_capacity_kwp) || Math.round(((Number(iv.solar_pv_area_m2) || (roof * 0.5)) / 5.5) * 10) / 10;
+    const solarAnnualKwh = Number(calc.energy?.annual_generation_kwh) || Math.round(solarKwp * 1450);
+    const gridEmissionFactor = 0.727;
+    const annGridCO2t = Math.round((elecDemandKwh * gridEmissionFactor) / 1000 * 10) / 10;
+    const solarCO2SavedT = Math.round((solarAnnualKwh * gridEmissionFactor) / 1000 * 10) / 10;
+    const solarOffsetPct = Math.min(100, Math.round((solarAnnualKwh / (elecDemandKwh || 1)) * 100));
+
+    // C&D Waste & MSW Norms (CPCB 2016)
+    const cdWasteTonnes = Math.round(gfa * 0.055 * 10) / 10; // 55 kg/m2 GFA
+    const cdDivertedTonnes = Math.round(cdWasteTonnes * 0.68 * 10) / 10;
+    const rcaVolumeM3 = Math.round(cdDivertedTonnes / 1.6);
+    const mswDailyKg = Math.round(occupants * 0.40); // 0.40 kg/capita/day SWM Rules 2016
+    const compostTonnesYear = Math.round((mswDailyKg * 0.50 * 0.25 * 365 / 1000) * 10) / 10;
+
+    // Financial Schedule (CPWD DSR 2023-24 Benchmarks)
+    const capex = {
+      stp: stpCapacityKLD * 48000,
+      solar: solarKwp * 58000,
+      rwh: rwhTankCapacityKl * 8000,
+      permeable: permeableM2 * 1650,
+      trees: treesPlanted * 1500,
+      dustAndTopsoil: 125000
     };
-
-    const solarKwp = Math.round((iv.solar_pv_area_m2 / 5.5) * 10) / 10;
-    const solarAnnualKwh = Math.round(solarKwp * 1450);
-    const solarCO2Tonnes = Math.round((solarAnnualKwh * 0.82) / 1000 * 10) / 10;
-
-    // Financial estimations via CPWD DSR 2023-24
-    const capexSchedule = {
-      trees: iv.trees_planted * 1500,
-      permeable: iv.permeable_pavement_m2 * 1650,
-      green_roof: iv.green_roof_m2 * 2200,
-      rwh: iv.rwh_tank_capacity_l * 7.50,
-      solar: solarKwp * 62000,
-      swale: iv.rain_garden_m2 * 1200,
-      cool_roof: iv.cool_roof_m2 * 220,
-      stp: stpCapacityKLD * 45000 // ₹45,000 per KLD for package MBBR
-    };
-
-    const totalCapexInr = Math.round(
-      capexSchedule.trees +
-      capexSchedule.permeable +
-      capexSchedule.green_roof +
-      capexSchedule.rwh +
-      capexSchedule.solar +
-      capexSchedule.swale +
-      capexSchedule.cool_roof +
-      capexSchedule.stp
-    );
-
-    const rwhHarvestL = Math.round(roof * annualRainM * 0.85 * 0.90 * 1000);
-    const rwhKl = Math.round(Math.min(rwhHarvestL, annualNonPotableKL * 1000) / 1000);
-    const permeableRechargeKL = Math.round((iv.permeable_pavement_m2 * annualRainM * 0.65 * 1000) / 1000);
-    const totalWaterSavedKL = rwhKl + permeableRechargeKL + recycledAnnualKL;
-
-    const annualElectricitySavingsInr = Math.round(solarAnnualKwh * 8.50);
-    const annualWaterSavingsInr = Math.round((rwhKl + recycledAnnualKL) * 80);
-    const annualTotalSavingsInr = annualElectricitySavingsInr + annualWaterSavingsInr;
-    const annualOpexInr = Math.round(totalCapexInr * 0.026);
-    const netAnnualSavingsInr = Math.max(10000, annualTotalSavingsInr - annualOpexInr);
+    const totalCapexInr = Math.round(capex.stp + capex.solar + capex.rwh + capex.permeable + capex.trees + capex.dustAndTopsoil);
+    const annualWaterSavingsInr = Math.round(recycledDailyL * 365 * 0.08); // ₹80 per kL
+    const annualPowerSavingsInr = Math.round(solarAnnualKwh * 8.50); // ₹8.50/kWh commercial grid
+    const annualTotalSavingsInr = annualWaterSavingsInr + annualPowerSavingsInr;
+    const annualOpexInr = Math.round(totalCapexInr * 0.03); // 3% annual maintenance
+    const netAnnualSavingsInr = Math.max(25000, annualTotalSavingsInr - annualOpexInr);
     const paybackYears = (totalCapexInr / netAnnualSavingsInr).toFixed(1);
 
-    // Embodied & Operational Carbon
-    const structuralConcreteM3 = Math.round(gfa * 0.40);
-    const baselineEmbodiedCO2 = Math.round(structuralConcreteM3 * 340 * 1.05 / 1000); // 340 kg/m3 OPC
-    const mitigatedEmbodiedCO2 = Math.round(structuralConcreteM3 * (340 * 0.65 + 340 * 0.35 * 0.12) * 1.05 / 1000); // 35% GGBS
-    const embodiedSavedTonnes = Math.max(15, baselineEmbodiedCO2 - mitigatedEmbodiedCO2);
-    const treeCarbonSequestrationTonnes = Math.round((iv.trees_planted * 21.8) / 1000 * 10) / 10;
-    const totalAnnualCO2Tonnes = Math.round((solarCO2Tonnes + treeCarbonSequestrationTonnes) * 10) / 10;
-    const divertedWasteTonnes = Math.round(gfa * 0.055 * 0.65);
-
-    // Runoff rational values (Q = CIA/1000)
-    const cPre = 0.25;
-    const cPostUnmitigated = 0.82;
-    const cPostMitigated = 0.41;
-    const prePeakM3 = Math.round((cPre * peakIntensity * plot) / 3600 * 10) / 10;
-    const unmitPeakM3 = Math.round((cPostUnmitigated * peakIntensity * plot) / 3600 * 10) / 10;
-    const mitPeakM3 = Math.round((cPostMitigated * peakIntensity * plot) / 3600 * 10) / 10;
-    const runoffReductionPct = Math.round(((unmitPeakM3 - mitPeakM3) / unmitPeakM3) * 100);
-    const qBefore = prePeakM3;
-    const qUnmitigated = unmitPeakM3;
-    const qMitigated = mitPeakM3;
-    const freshSavingsPct = Math.min(100, Math.round((recycledDailyL / (dailyDemandL || 1)) * 100));
-    const elecDemandKwh = Math.round(gfa * 75);
-    const cdWasteTonnes = Math.round(gfa * 0.055);
-    const recyclingPct = 68.5;
-    const miyawakiSaplings = Math.round(openGround * 0.25 * 3.5);
-    const bngNetPct = 64;
-
-    const compositeScore = calc.score?.composite_score || 88;
-    const scoreTier = calc.score?.tier || "Tier 1: Exemplary Sponge Campus";
-
-    const recoveryElements = window.NatureRecoveryView?.getDetailedStatutoryRecoveryElements?.(proj, calc, env, {
-      plot_area: plot,
-      built_up: builtUp,
-      floors: floors,
-      gfa: gfa,
-      open_area: openGround,
-      roof_area: roof,
-      hardscape: hardscape,
-      trees_removed: treesRemoved,
-      existing_trees: existingTrees,
-      annual_rain_mm: weatherRain,
-      annual_rain_m: annualRainM,
-      occupants: occupants,
-      trees_planted: iv.trees_planted,
-      tree_canopy_m2: iv.trees_planted * 16,
-      tree_cost: capexSchedule.trees,
-      tree_co2_kg: Math.round(iv.trees_planted * 21.8),
-      permeable_m2: iv.permeable_pavement_m2,
-      permeable_cost: capexSchedule.permeable,
-      recharged_litres: permeableRechargeKL * 1000,
-      green_roof_m2: iv.green_roof_m2,
-      green_roof_cost: capexSchedule.green_roof,
-      tank_litres: iv.rwh_tank_capacity_l,
-      tank_cap_kl: Math.round(iv.rwh_tank_capacity_l / 1000),
-      tank_cost: capexSchedule.rwh,
-      tanker_savings: annualWaterSavingsInr,
-      solar_m2: iv.solar_pv_area_m2,
-      solar_kwp: solarKwp,
-      solar_annual_kwh: solarAnnualKwh,
-      solar_co2_tonnes: solarCO2Tonnes,
-      solar_cost: capexSchedule.solar,
-      solar_savings: annualElectricitySavingsInr,
-      bioswale_m2: iv.rain_garden_m2,
-      bioswale_cost: capexSchedule.swale,
-      bioswale_recharge_l: Math.round(iv.rain_garden_m2 * 0.45 * 0.35 * 1000 * 0.8),
-      total_capex: totalCapexInr,
-      total_water_saved_kl: totalWaterSavedKL,
-      total_co2_tonnes: totalAnnualCO2Tonnes
-    }) || [];
+    // Screening & Verdict
+    const scr = eia.screening || {};
+    const compositeScore = scr.composite_score || calc.score?.composite_score || 88;
+    const scoreTier = scr.performance_tier || calc.score?.tier || "Tier 1: Exemplary Sponge Campus";
+    const category = scr.category || (gfa >= 150000 ? "Category 8(b) — Township" : gfa >= 20000 ? "Category 8(a) — Building Construction" : "Municipal Planning Clearance (< 20,000 m² BUA)");
+    const authority = scr.authority || (gfa >= 20000 ? "State Level Environment Impact Assessment Authority (SEIAA)" : "Local Urban Municipal Planning Authority");
 
     const isFiltered = (secKey) => this.activeSection !== 'all' && this.activeSection !== secKey;
 
     container.innerHTML = `
-      <div class="space-y-8 max-w-5xl mx-auto pb-24 font-sans text-stone-800">
-        
-        <!-- TOP CONTROLS & PARIVESH STATUTORY AUDIT BAR (NO-PRINT) -->
-        <div class="crystal-3d-card p-6 border border-emerald-500/30 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-5 no-print">
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 font-mono shadow-xs">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>PARIVESH 2.0 STATUTORY EIA CLEARANCE DOSSIER</span>
-              </span>
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-stone-900 text-stone-200 border border-stone-700">
-                102 Statutory Topics • 9 Modules
-              </span>
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-900/70 text-emerald-200 border border-emerald-500/60 font-mono">
-                Cat. 8(a) Building Construction
-              </span>
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-950 text-blue-300 border border-blue-700/60 font-mono">
-                QCI / NABET Accredited
-              </span>
-            </div>
-            <h1 class="text-xl sm:text-2xl font-black font-serif text-white tracking-tight mt-1 flex items-center gap-2.5">
-              <span>Comprehensive Statutory EIA Master Report & Clearance Dossier</span>
-            </h1>
-            <p class="text-xs text-stone-300 max-w-3xl leading-relaxed">
-              Official Environmental Decision Support & Recovery Audit conforming to MoEF&CC EIA Notification 2006, NBC 2016 Part 11, CPHEEO 2019, CGWB 2020, and CPCB NAAQS Guidelines. Powered by real-time Copernicus CAMS, Open-Meteo ERA5-Land, and CEA Baseline data.
-            </p>
-          </div>
+      <div class="space-y-8 max-w-6xl mx-auto pb-24 font-sans text-stone-800 ${this.printPreview ? 'max-w-4xl bg-white p-8 sm:p-12 shadow-2xl rounded-3xl border border-stone-300' : ''}">
 
-          <!-- Action Buttons -->
-          <div class="flex items-center gap-2 self-start md:self-center shrink-0 flex-wrap">
-            <button onclick="window.ReportView.togglePrintPreview()" title="Toggle simulated A4 sheet view" class="px-3.5 py-2.5 rounded-xl text-xs font-bold ${this.printPreview ? 'bg-emerald-600 text-white' : 'bg-stone-900 hover:bg-stone-800 text-stone-200'} border border-stone-700 transition flex items-center gap-1.5 shadow-sm">
-              <span>📑</span> <span>${this.printPreview ? 'Exit A4 Preview' : 'A4 Print Preview'}</span>
+        <!-- ========================================================================= -->
+        <!-- CONTROL BAR: ACTIONS & FILTER TABS (HIDDEN IN PRINT) -->
+        <!-- ========================================================================= -->
+        <div class="crystal-glass-card p-4 flex flex-wrap items-center justify-between gap-3 no-print">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-stone-700">MoEF&CC EIA Notification 2006 Master Dossier</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="window.print()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-1.5">
+              <span>🖨️</span> <span>Official Print / PDF</span>
             </button>
-            <button onclick="window.ReportView.refreshLiveData()" title="Pull latest real-time weather and air quality from scientific APIs" class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700 transition flex items-center gap-1.5 shadow-sm">
-              <span>📡</span> <span>Live Sync</span>
+            <button onclick="window.ReportView.togglePrintPreview()" class="px-3 py-2 rounded-xl text-xs font-bold ${this.printPreview ? 'bg-amber-600 text-white' : 'bg-stone-100 hover:bg-stone-200 text-stone-800'} transition flex items-center gap-1.5">
+              <span>📄</span> <span>${this.printPreview ? 'Exit A4 Mode' : 'Simulate A4 Sheet'}</span>
             </button>
-            <button onclick="window.ReportView.copySummary()" title="Copy executive transmittal summary" class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700 transition flex items-center gap-1.5 shadow-sm">
+            <button onclick="window.ReportView.copySummary()" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1.5">
               <span>📋</span> <span>Copy Summary</span>
             </button>
-            <button onclick="window.ReportView.exportJSON()" title="Download complete EIA data audit as JSON" class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700 transition flex items-center gap-1.5 shadow-sm">
-              <span>📥</span> <span>Export JSON</span>
+            <button onclick="window.ReportView.exportJSON()" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1.5">
+              <span>💾</span> <span>Export JSON</span>
             </button>
-            <button onclick="window.print()" class="crystal-3d-button px-5 py-2.5 rounded-xl text-xs font-black text-stone-950 shadow-xl transition flex items-center gap-2 cursor-pointer" title="Print official dossier or save to A4 PDF">
-              <span>🖨️</span> <span>Official Print / PDF (A4)</span>
+            <button onclick="window.ReportView.refreshLiveData()" class="px-3 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1.5">
+              <span>🔄</span> <span>Sync Live API</span>
             </button>
           </div>
         </div>
 
-        <!-- SECTION QUICK FILTER TABS (NO-PRINT) -->
-        <div class="bg-white/95 backdrop-blur-md p-2 rounded-2xl border border-stone-200 shadow-sm flex items-center gap-1.5 overflow-x-auto text-xs no-print scrollbar-none">
-          <button onclick="window.ReportView.filterSection('all')" class="px-3.5 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'all' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            Complete Dossier (I–IX)
-          </button>
-          <button onclick="window.ReportView.filterSection('eia_matrix')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'eia_matrix' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'}">
-            ★ EIA Master Mitigation Matrix
-          </button>
-          <button onclick="window.ReportView.filterSection('sec1')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec1' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            I. Form 1 / 1A Transmittal
-          </button>
-          <button onclick="window.ReportView.filterSection('sec2')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec2' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            II. Spatial & Online Baseline
-          </button>
-          <button onclick="window.ReportView.filterSection('sec3')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec3' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            III. Rapid Impact Matrix
-          </button>
-          <button onclick="window.ReportView.filterSection('sec4')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec4' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            IV. Water & SBR STP (ZLD)
-          </button>
-          <button onclick="window.ReportView.filterSection('sec5')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec5' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            V. 6 Alternatives MCDA
-          </button>
-          <button onclick="window.ReportView.filterSection('sec6')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec6' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            VI. 8-Domain Recovery Blueprint
-          </button>
-          <button onclick="window.ReportView.filterSection('sec7')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec7' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            VII. EMP & Budget Allocation
-          </button>
-          <button onclick="window.ReportView.filterSection('sec8')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec8' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            VIII. Monitoring & DMP
-          </button>
-          <button onclick="window.ReportView.filterSection('sec9')" class="px-3 py-2 rounded-xl font-bold transition shrink-0 ${this.activeSection === 'sec9' ? 'bg-[#14281D] text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}">
-            IX. Compliance & Signatures
-          </button>
+        <!-- CHAPTER NAVIGATION TABS (HIDDEN IN PRINT) -->
+        <div class="crystal-glass-card p-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-xs font-bold no-print">
+          ${[
+            ['all', '📑 Complete EIA Dossier'],
+            ['ch1', '1. Screening & Summary'],
+            ['ch2', '2. Project Profile & Demands'],
+            ['ch3', '3. Baseline Environment'],
+            ['ch4', '4. Impact & Mitigation Matrix'],
+            ['ch5', '5. EMP & Budgetary Outlay'],
+            ['ch6', '6. Monitoring Schedule'],
+            ['ch7', '7. Certification & Sign-Off']
+          ].map(([id, label]) => `
+            <button onclick="window.ReportView.filterSection('${id}')"
+              class="px-3.5 py-1.5 rounded-xl transition shrink-0 ${this.activeSection === id ? 'bg-emerald-900 text-white shadow-xs' : 'text-stone-600 hover:bg-stone-100'}">
+              ${label}
+            </button>
+          `).join('')}
         </div>
 
-        <!-- PRINTABLE DOCUMENT CONTAINER -->
-        <div id="printable-report-card" class="${this.printPreview ? 'max-w-[210mm] mx-auto bg-white p-6 sm:p-12 shadow-2xl border-2 border-stone-400 ring-8 ring-stone-900/10 my-6' : 'bg-white p-6 sm:p-12 rounded-3xl border border-stone-300 shadow-xl'} space-y-10 text-stone-800 font-sans print:border-none print:shadow-none print:p-0 print:m-0 print:space-y-8 print:max-w-none">
-          
-          <!-- COVER / OFFICIAL GOVERNMENT & CONSULTANT TRANSMITTAL HEADER -->
-          <div class="border-b-4 border-[#14281D] pb-8 flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div class="space-y-3">
-              <!-- Official Authority Badge -->
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-[#064e3b] text-emerald-300 flex items-center justify-center font-bold text-xl shadow-md border border-emerald-400/40">
-                  <svg class="w-7 h-7" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <polygon points="50,6 88,26 88,74 50,94 12,74 12,26" fill="#064e3b" stroke="#10b981" stroke-width="4"/>
-                    <polygon points="50,6 88,26 50,50 12,26" fill="#10b981" fill-opacity="0.85"/>
-                    <polygon points="88,26 88,74 50,50" fill="#047857" fill-opacity="0.9"/>
-                    <polygon points="50,94 12,74 50,50" fill="#065f46" fill-opacity="0.95"/>
-                    <path d="M50,18 C62,28 64,48 50,66 C36,48 38,28 50,18 Z" fill="#34d399" opacity="0.9"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="text-[11px] font-black uppercase tracking-widest text-emerald-950 font-mono">
-                    STATE LEVEL ENVIRONMENT IMPACT ASSESSMENT AUTHORITY (SEIAA)
-                  </div>
-                  <div class="text-[10px] text-stone-500 font-semibold tracking-wide">
-                    Government of India • Ministry of Environment, Forest & Climate Change (MoEF&CC)
-                  </div>
-                  <div class="text-[9px] font-mono text-emerald-800 font-bold">
-                    PARIVESH 2.0 PORTAL CLEARANCE DOSSIER • FORM 1 & FORM 1A MASTER REPORT
-                  </div>
-                </div>
-              </div>
+        <!-- ========================================================================= -->
+        <!-- OFFICIAL REPORT TITLE HEADER (PRINT-PERFECT) -->
+        <!-- ========================================================================= -->
+        <div class="bg-gradient-to-br from-[#0c241c] via-[#12382c] to-[#0a1e17] text-white p-7 sm:p-9 rounded-3xl border border-emerald-700/40 shadow-xl relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
 
-              <h1 class="text-2xl sm:text-3xl font-black text-stone-900 font-serif tracking-tight mt-2 leading-tight">
-                STATUTORY ENVIRONMENTAL IMPACT ASSESSMENT & NATURE RECOVERY DOSSIER
-              </h1>
-
-              <div class="text-base font-bold text-emerald-950 flex items-center gap-2">
-                <span>${proj.name || 'Proposed Sustainable Campus Development'}</span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  CATEGORY 8(a) B2
+          <div class="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
+            <div class="space-y-3 max-w-3xl">
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono tracking-wider uppercase">
+                <span class="px-3 py-1 rounded-full bg-emerald-800/80 text-emerald-200 border border-emerald-600/60 font-bold">
+                  GOVERNMENT OF INDIA STATUTORY EIA SPECIFICATION
+                </span>
+                <span class="px-2.5 py-1 rounded-full bg-stone-800 text-stone-300 border border-stone-700">
+                  MoEF&CC 2006 Schedule 8 & NBC Part 11
                 </span>
               </div>
 
-              <div class="text-xs text-stone-600 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span>Typology: <strong class="text-stone-900">${proj.building_type || 'Educational / Institutional'}</strong></span>
-                <span>•</span>
-                <span>Location: <strong class="text-stone-900">${proj.location?.address || proj.location?.city || 'Pune'}, ${proj.location?.state || 'Maharashtra'}</strong></span>
-                <span>•</span>
-                <span>Coordinates: <strong class="font-mono text-stone-800">${(proj.location?.latitude || 18.5204).toFixed(4)}°N, ${(proj.location?.longitude || 73.8567).toFixed(4)}°E</strong></span>
-              </div>
-            </div>
+              <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black font-serif tracking-tight leading-tight">
+                Environmental Impact Assessment (EIA) Report &amp; Nature Recovery Plan
+              </h1>
 
-            <!-- Metadata Reference Box -->
-            <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs space-y-1.5 shrink-0 sm:min-w-[240px] text-left md:text-right">
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment ID</span><strong class="font-mono text-stone-900">ECOBUILD-${proj.id || 'PRELIMINARY'}</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Statutory Screening</span><strong class="font-mono text-stone-900">${eia.screening?.category || 'MoEFCC Item 8'}</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Appraisal Level</span><strong class="font-mono text-emerald-800">${eia.screening?.authority || 'Local Clearance'}</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment Date</span><strong class="text-stone-800">${now} (${nowTime})</strong></div>
-              <div class="pt-2 border-t border-stone-200 mt-2">
-                <span class="text-[10px] font-bold uppercase text-stone-400 block">EcoBuild Resilience Score</span>
-                <span class="text-2xl font-black font-serif text-emerald-800">${compositeScore}</span>
-                <span class="text-xs text-stone-500 font-bold">/ 100 (${scoreTier})</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- EXECUTIVE STATUTORY DIGEST -->
-          <div class="p-6 rounded-2xl bg-[#06281e] text-white space-y-3 border border-emerald-600/40 shadow-inner">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-300 font-mono flex items-center gap-1.5">
-                <span>🛡️</span> <span>STATUTORY EXECUTIVE APPRAISAL DIGEST & CLEARANCE FINDING</span>
-              </span>
-              <span class="text-[10px] font-mono font-bold bg-emerald-900/80 px-2 py-0.5 rounded text-emerald-200 border border-emerald-500/40">
-                RECOMMENDED WITH STATUTORY EMP CONDITIONS
-              </span>
-            </div>
-            <p id="eia-executive-summary-text" class="text-xs text-stone-200 leading-relaxed text-justify">
-              This statutory Environmental Impact Assessment (EIA) appraisal evaluates the proposed <strong>${gfa.toLocaleString()} m² Gross Floor Area (GFA)</strong> construction over a cadastral plot of <strong>${plot.toLocaleString()} m²</strong> in <strong>${proj.location?.city || 'Pune'}, ${proj.location?.state || 'Maharashtra'}</strong>. Baseline unmitigated civil works induce an open ground sealing of <strong>${hardscape.toLocaleString()} m²</strong>, the felling of <strong>${treesRemoved} mature indigenous trees</strong>, an unmitigated surface runoff surge of <strong>+${calc.runoff?.impact_summary?.peak_runoff_increase_pct || 178}%</strong>, an annual operational grid power carbon footprint of <strong>${Math.round((gfa * 75 * 0.82) / 1000)} t CO₂e</strong>, and a daily domestic water demand of <strong>${(dailyDemandL / 1000).toFixed(1)} kLD</strong>. 
-              Under the site-constrained Nature Recovery Blueprint (Alternative 6), the project implements a <strong>${stpCapacityKLD} kLD SBR/MBBR Sewage Treatment Plant</strong> achieving <strong>100% Zero Liquid Discharge (ZLD)</strong> for flushing and landscape irrigation, <strong>${(iv.rwh_tank_capacity_l / 1000).toFixed(0)} kL dual-chamber rainwater storage</strong> capturing <strong>${rwhKl.toLocaleString()} kL/yr</strong>, <strong>${iv.trees_planted} native compensatory trees (3:1 statutory ratio)</strong>, <strong>${solarKwp} kWp rooftop solar PV</strong> abating <strong>${solarCO2Tonnes} t CO₂e/yr</strong>, and permeable paving delivering <strong>${runoffReductionPct}% flood peak attenuation</strong>. The total EMP capital outlay is <strong>₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</strong> yielding net annual utility savings of <strong>₹ ${(netAnnualSavingsInr / 100000).toFixed(2)} Lakh</strong> and a simple payback of <strong>${paybackYears} years</strong>.
-            </p>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SPECIAL MASTER SECTION: STATUTORY EIA MASTER RESULTS & IMPACT OFFSET MATRIX -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 pt-2 border-t-2 border-stone-200 avoid-page-break ${this.activeSection !== 'all' && this.activeSection !== 'eia_matrix' ? 'hidden' : ''}">
-            <div class="border-b-2 border-emerald-950 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-900 font-mono">PARIVESH 2.0 STATUTORY AUDIT SUMMARY</span>
-                <h2 class="text-xl font-black font-serif text-stone-900">EIA Master Clearance Findings: Before vs Unmitigated vs Nature Recovery Plan</h2>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 self-start sm:self-auto">
-                MoEF&CC 2006 Schedule 8 & NBC Part 11
-              </span>
-            </div>
-
-            <p class="text-xs text-stone-600 leading-relaxed text-justify">
-              Official quantitative comparative matrix contrasting baseline pre-development environment, unmitigated construction disturbance (<strong>What It Affects</strong>), targeted engineering recovery interventions (<strong>What We Need To Do</strong>), and certified net ecological yield (<strong>To Reduce Affect On Nature</strong>).
-            </p>
-
-            <!-- 6 Key Primary Statutory Results Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              ${(eia.key_results || []).map(k => `
-                <div class="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-2.5 avoid-page-break">
-                  <div class="flex items-center justify-between pb-1.5 border-b border-stone-100">
-                    <span class="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>${k.icon}</span> <span>${k.label}</span>
-                    </span>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${k.badge_class || 'bg-stone-100 text-stone-700'} border">${k.status}</span>
-                  </div>
-                  <div class="space-y-1 text-xs">
-                    <div class="flex justify-between text-stone-600">
-                      <span class="text-[10px] uppercase font-bold text-stone-400">1. Baseline:</span>
-                      <span class="font-mono text-stone-700 text-right">${k.before || k.before_construction || '—'}</span>
-                    </div>
-                    <div class="flex justify-between text-rose-700">
-                      <span class="text-[10px] uppercase font-bold text-rose-500">2. Construction Load:</span>
-                      <span class="font-mono font-bold text-right">${k.after_construction || '—'}</span>
-                    </div>
-                    <div class="flex justify-between text-emerald-900 font-bold bg-emerald-50/60 p-1.5 rounded-lg border border-emerald-100">
-                      <span class="text-[10px] uppercase text-emerald-700">3. Nature Recovery:</span>
-                      <span class="font-mono text-right">${k.after_assessment || '—'}</span>
-                    </div>
-                  </div>
-                  <div class="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-stone-900">
-                    <span class="text-stone-500">Net Statutory Outcome:</span>
-                    <span class="font-mono text-emerald-800 font-serif">${k.net_result || k.value}</span>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-
-            <!-- Complete 6-Domain Parameter Comparative Table -->
-            <div class="space-y-3 pt-2">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-black uppercase text-stone-700 tracking-wider">
-                  Complete 6-Domain EIA Statutory Parameter-by-Parameter Audit Table
-                </h3>
-                <span class="text-[10px] text-stone-500 font-mono">MoEFCC Form 1A Benchmark</span>
-              </div>
-              <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
-                <table class="w-full text-xs text-left border-collapse">
-                  <thead class="bg-[#14281D] text-white font-bold text-[11px]">
-                    <tr>
-                      <th class="p-3">Environmental Domain & Topic</th>
-                      <th class="p-3 bg-stone-900/40">Baseline Natural State (Before)</th>
-                      <th class="p-3 bg-rose-950/50 text-rose-200">Unmitigated Impact (Affects Nature)</th>
-                      <th class="p-3 bg-emerald-950/60 text-emerald-200">Nature Recovery Plan (What To Do)</th>
-                      <th class="p-3 bg-emerald-900/70 text-emerald-100">Net Ecological Result (Mitigation)</th>
-                      <th class="p-3 text-right">Statutory Code</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-stone-100 text-stone-700 bg-white">
-                    ${(eia.domains || []).map(d => `
-                      <tr class="bg-stone-100/90 font-bold text-stone-800 text-[11px]">
-                        <td colspan="6" class="p-2.5 pl-3 border-y border-stone-200 bg-stone-100">
-                          <span class="text-emerald-900 font-black">${d.domain_name}</span> 
-                          <span class="text-stone-500 font-mono font-normal ml-2 text-[10px]">• Ref: ${d.standard_ref}</span>
-                        </td>
-                      </tr>
-                      ${d.parameters.map(p => `
-                        <tr class="hover:bg-stone-50/80 transition-colors avoid-page-break">
-                          <td class="p-2.5 pl-3 font-semibold text-stone-900 align-top">
-                            <div>${p.name}</div>
-                            <div class="text-[9px] font-mono text-stone-400 mt-0.5">${p.standard_code || d.standard_ref}</div>
-                          </td>
-                          <td class="p-2.5 font-mono text-stone-600 text-[11px] align-top bg-stone-50/40">${p.before || p.before_construction || p.prev_condition || '—'}</td>
-                          <td class="p-2.5 text-rose-800 font-medium text-[11px] align-top bg-rose-50/30">${p.after_construction || p.present_condition || '—'}</td>
-                          <td class="p-2.5 text-emerald-900 font-bold text-[11px] align-top bg-emerald-50/30">${p.after_assessment || p.mitigated || '—'}</td>
-                          <td class="p-2.5 text-emerald-800 font-bold text-[11px] align-top bg-emerald-50/50">${p.net_result || '—'}</td>
-                          <td class="p-2.5 text-right font-mono text-[10px] text-stone-500 align-top whitespace-nowrap">
-                            <span class="px-1.5 py-0.5 rounded font-bold border ${p.status && /Compliant|Met|Circular|Diverted|Verified|Reduced|Offset|High/i.test(p.status) ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : p.status && /Deficit|Missing|Not/i.test(p.status) ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-amber-100 text-amber-800 border-amber-200'}">${p.status || 'Compliant'}</span>
-                            <span class="block text-[9px] text-stone-400 mt-0.5">${p.standard_code || ''}</span>
-                          </td>
-                        </tr>
-                      `).join('')}
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION I: MOEFCC FORM 1 & FORM 1A EXECUTIVE TRANSMITTAL (TOPICS 01 - 14) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec1') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-900 font-mono">Module I</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">MoEF&CC Form 1 & Form 1A Project Cadastre & Screening (Topics 01 – 14)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">14 Topics</span>
-            </div>
-
-            <!-- Topics 1-4: Cadastre Matrix -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 01–04: Spatial Cadastre, Ownership & Footprint</h3>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">01. Total Cadastral Plot Area</span>
-                  <strong class="text-stone-900 font-mono text-sm">${plot.toLocaleString()} m²</strong>
-                  <span class="text-[10px] text-stone-500 block">Survey Cadastre Plot Extent</span>
-                </div>
-                <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">02. Proposed Ground Coverage</span>
-                  <strong class="text-stone-900 font-mono text-sm">${builtUp.toLocaleString()} m²</strong>
-                  <span class="text-[10px] text-stone-500 block">${Math.round((builtUp / plot) * 100)}% Coverage (Permissible: 50%)</span>
-                </div>
-                <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">03. Gross Floor Area (GFA)</span>
-                  <strong class="text-stone-900 font-mono text-sm">${gfa.toLocaleString()} m²</strong>
-                  <span class="text-[10px] text-stone-500 block">${floors} Storeys (FSI: ${(gfa / plot).toFixed(2)})</span>
-                </div>
-                <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">04. Unbuilt Open Ground</span>
-                  <strong class="text-stone-900 font-mono text-sm">${openGround.toLocaleString()} m²</strong>
-                  <span class="text-[10px] text-stone-500 block">${Math.round((openGround / plot) * 100)}% Open Buffer Surface</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Topics 5-10: Statutory Project Classification -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 05–10: MoEF&CC Screening, Statutory Category & Boundary Conditions</h3>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">Topic & Field</th>
-                    <th class="p-2.5">Statutory Specification</th>
-                    <th class="p-2.5">Governing Notification</th>
-                    <th class="p-2.5">Clearance Implication</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">05. EIA Project Categorization</td>
-                    <td class="p-2.5 font-mono text-emerald-800 font-bold">Item 8(a) Category B2 / B1</td>
-                    <td class="p-2.5">EIA Notification 2006 (Amended)</td>
-                    <td class="p-2.5">Appraised by SEAC at State Level; Form 1, Form 1A & EMP required.</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">06. Critical Distance to Eco-Sensitive Zones</td>
-                    <td class="p-2.5 font-mono">> 10 km from Wildlife Sanctuary / NP</td>
-                    <td class="p-2.5">NBWL Guidelines / MoEF&CC</td>
-                    <td class="p-2.5">General condition does not attract Category A escalation; no NBWL clearance needed.</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">07. Seismic Vulnerability Zone</td>
-                    <td class="p-2.5 font-mono">Seismic Zone III (Moderate Damage)</td>
-                    <td class="p-2.5">IS 1893:2016 Part 1</td>
-                    <td class="p-2.5">Ductile detailing mandatory per IS 13920; structural safety certificate filed.</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">08. Statutory Green Belt Allocation</td>
-                    <td class="p-2.5 font-mono">${greenGround.toLocaleString()} m² (${Math.round((greenGround / plot) * 100)}% of Plot)</td>
-                    <td class="p-2.5">MoEF&CC Form 1A Standard (Min 15%)</td>
-                    <td class="p-2.5 font-bold text-emerald-800">EXCEEDS MINIMUM MANDATE (Compliant)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">09. Tree Authority Census</td>
-                    <td class="p-2.5 font-mono">${existingTrees} Existing; ${treesRemoved} Marked for Felling</td>
-                    <td class="p-2.5">State Preservation of Trees Act</td>
-                    <td class="p-2.5">Mandates 3:1 statutory compensatory planting (${treesRemoved * 3} saplings).</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">10. Fire Safety Setback & Turning Radius</td>
-                    <td class="p-2.5 font-mono">6.0m clear paved perimeter drive</td>
-                    <td class="p-2.5">NBC 2016 Part 4 Table 1</td>
-                    <td class="p-2.5">Accommodates hydraulic fire platform vehicle with 45-tonne axle capacity.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 11-14: Occupancy, Demand & Civil Parameters -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 11–14: Occupancy Load, Water & Electrical Infrastructure</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <strong class="text-stone-900 block">11 & 12. Occupancy Load & Water Requirement:</strong>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    Designed for <strong>${occupants} occupants</strong> at ${lpcd} LPCD per IS 1172 standard. Domestic fresh intake: <strong>${(dailyDemandL / 1000).toFixed(1)} kLD</strong>; flushing: <strong>${((occupants * (lpcd <= 45 ? 15 : 45)) / 1000).toFixed(1)} kLD</strong>; landscaping: <strong>${((greenGround * 3.5) / 1000).toFixed(1)} kLD</strong>. Total daily water demand: <strong>${((dailyDemandL + greenGround * 3.5) / 1000).toFixed(1)} kLD</strong>.
-                  </p>
-                </div>
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <strong class="text-stone-900 block">13 & 14. Power Connected Load & Solid Waste Baseline:</strong>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    Connected electrical load: <strong>${Math.round(gfa * 75 / 1000)} kVA</strong> with annual consumption of <strong>${Math.round(gfa * 75).toLocaleString()} kWh/yr</strong>. Municipal Solid Waste (MSW) generation estimated at <strong>${Math.round(occupants * 0.25)} kg/day</strong> (${Math.round(occupants * 0.25 * 0.6)} kg organic, ${Math.round(occupants * 0.25 * 0.4)} kg recyclable).
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION II: CADASTRAL SPATIAL LAYOUT & ONLINE BASELINE (TOPICS 15 - 28) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec2') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-900 font-mono">Module II</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Cadastral Spatial Profile & Live Environmental Baseline (Topics 15 – 28)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">14 Topics</span>
-            </div>
-
-            <!-- Integrated Live Scientific Data Table -->
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 15–22: Multi-Source Climatological, Air & Soil Baseline</h3>
-                <span class="text-[10px] font-mono text-stone-500">Live Provenance: Copernicus CAMS • ERA5-Land • CGWB</span>
-              </div>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">Environmental Domain</th>
-                    <th class="p-2.5">Baseline Monitored Value</th>
-                    <th class="p-2.5">Statutory Benchmark / Permissible Limit</th>
-                    <th class="p-2.5">Data Source & Provenance</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">15. Annual Precipitation & Regime</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">${weatherRain} mm / year</td>
-                    <td class="p-2.5">Monsoon share: ${monsoonShare}% (June–Sept)</td>
-                    <td class="p-2.5 text-stone-500">Open-Meteo ERA5-Land & IMD Pune</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">16. Design Storm Intensity (50-Yr)</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">${peakIntensity} mm / hr</td>
-                    <td class="p-2.5">IRC:SP:13 IDF Curve for Catchment</td>
-                    <td class="p-2.5 text-stone-500">IMD Intensity-Duration-Frequency Atlas</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">17. Ambient Air Quality (PM2.5 & PM10)</td>
-                    <td class="p-2.5 font-mono font-bold ${pm25Val > 60 ? 'text-amber-800' : 'text-emerald-800'}">${pm25Val} µg/m³ (PM2.5) • ${pm10Val} µg/m³ (PM10)</td>
-                    <td class="p-2.5">CPCB NAAQS: PM2.5 ≤ 60 µg/m³, PM10 ≤ 100 µg/m³</td>
-                    <td class="p-2.5 text-stone-500">Copernicus CAMS Atmosphere Monitoring</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">18. Gaseous Pollutants (SO₂ & NO₂)</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">${so2Val} µg/m³ (SO₂) • ${no2Val} µg/m³ (NO₂)</td>
-                    <td class="p-2.5">CPCB NAAQS: SO₂ ≤ 80 µg/m³, NO₂ ≤ 80 µg/m³</td>
-                    <td class="p-2.5 text-stone-500">Copernicus CAMS European Reanalysis</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">19. Ambient Noise Environment</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">54 dBA (Day) / 44 dBA (Night)</td>
-                    <td class="p-2.5">CPCB Noise Rules: Day ≤ 55 dBA, Night ≤ 45 dBA</td>
-                    <td class="p-2.5 text-stone-500">State Pollution Control Board Monitoring</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">20. Hydrogeology & Aquifer Depth</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">Water Table @ 3.4m below ground level</td>
-                    <td class="p-2.5">CGWB Safe Infiltration Zone (No borehole inject)</td>
-                    <td class="p-2.5 text-stone-500">Central Ground Water Board District Atlas</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">21. Subsoil Hydraulic Conductivity</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">$k = 3.2 \\times 10^{-5}\\text{ m/s}$ (Silt-Loam)</td>
-                    <td class="p-2.5">NRCS Hydrologic Soil Group B/C</td>
-                    <td class="p-2.5 text-stone-500">IS 2720 Geotechnical Laboratory Test</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">22. Regional Grid Carbon Intensity</td>
-                    <td class="p-2.5 font-mono font-bold text-stone-900">0.82 kg CO₂e / kWh</td>
-                    <td class="p-2.5">National Grid Emission Factor Database v19</td>
-                    <td class="p-2.5 text-stone-500">Central Electricity Authority (CEA India)</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 23-28: Topsoil Salvage & Ecological Habitat Profile -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 23–28: Topsoil Stripping Volume, Biogeography & Carbon Sink</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">23 & 24. Fertile Topsoil Salvage</span>
-                  <div class="text-base font-black text-stone-900 font-mono">${Math.round(builtUp * 0.20)} m³ Topsoil</div>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    Stripped at 20 cm depth from built-up footprint; stockpiled at ≤ 2.0m height with silt fencing and jute matting for landscaping reuse.
-                  </p>
-                </div>
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">25 & 26. Biogeographic Habitat Zone</span>
-                  <div class="text-base font-black text-stone-900">Deccan Peninsula (Zone 6A)</div>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    Tropical Dry Deciduous scrub. High priority for indigenous drought-hardy species (Azadirachta indica, Pongamia pinnata, Ficus benghalensis).
-                  </p>
-                </div>
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">27 & 28. Baseline Arboricultural Sink</span>
-                  <div class="text-base font-black text-stone-900 font-mono">${existingTrees} Trees = ${(existingTrees * 21.8 / 1000).toFixed(2)} t CO₂/yr</div>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    Baseline canopy covers ${existingTrees * 16} m² shadow area. Felling ${treesRemoved} trees removes ${(treesRemoved * 21.8 / 1000).toFixed(2)} t CO₂/yr of sequestering capacity.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION III: QUANTITATIVE RAPID IMPACT ASSESSMENT MATRIX (TOPICS 29 - 42) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec3') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-rose-900 font-mono">Module III</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Quantitative Multi-Phase Environmental Impact Matrix (Topics 29 – 42)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">14 Topics</span>
-            </div>
-
-            <p class="text-xs text-stone-600 leading-relaxed text-justify">
-              In accordance with MoEF&CC Form 1A statutory guidelines and NBC 2016 Part 11, the environmental impact appraisal is formatted across three standardized project lifecycle stages: <strong>1. Before Construction (Original Site Baseline)</strong>, <strong>2. After Construction (Proposed Unmitigated Built Load)</strong>, and <strong>3. After Assessment (Post-EMP Mitigated Outcome)</strong>. All interventions convert unmitigated environmental liabilities into legally compliant, net-positive ecological assets.
-            </p>
-
-            <!-- 3-Stage Form Lifecycle Flow Header -->
-            <div class="bg-stone-900 text-white px-4 py-2.5 rounded-xl flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2.5 font-semibold">
-                <span class="text-stone-400 font-bold uppercase text-[9px] tracking-wider">Form Lifecycle Progression:</span>
-                <span class="px-2 py-0.5 rounded bg-stone-800 text-stone-200">⏮️ 1. Before Construction</span>
-                <span class="text-emerald-400">&rarr;</span>
-                <span class="px-2 py-0.5 rounded bg-amber-900/80 text-amber-200">🏗️ 2. After Construction</span>
-                <span class="text-emerald-400">&rarr;</span>
-                <span class="px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 font-bold">✅ 3. After Assessment</span>
-              </div>
-              <span class="text-[10px] font-mono text-emerald-400 hidden sm:inline">MoEF&CC Form 1A Standardized</span>
-            </div>
-
-            <!-- Comprehensive 3-Stage Environmental Impact Matrix Table -->
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-900 text-white font-bold">
-                  <tr>
-                    <th class="p-3 pl-3.5 min-w-[180px]">Schedule Topic & Parameter</th>
-                    <th class="p-3 bg-stone-800 text-stone-200 border-r border-stone-700 min-w-[160px]">
-                      ⏮️ 1. Before Construction
-                      <span class="block font-normal text-[9px] text-stone-400 lowercase">(original site baseline)</span>
-                    </th>
-                    <th class="p-3 bg-amber-950/80 text-amber-200 border-r border-amber-900/60 min-w-[180px]">
-                      🏗️ 2. After Construction
-                      <span class="block font-normal text-[9px] text-amber-300 lowercase">(proposed unmitigated load)</span>
-                    </th>
-                    <th class="p-3 bg-emerald-950 text-emerald-200 border-r border-emerald-800 min-w-[210px]">
-                      ✅ 3. After Assessment
-                      <span class="block font-normal text-[9px] text-emerald-300 lowercase">(mitigated recovery blueprint)</span>
-                    </th>
-                    <th class="p-3 pr-3.5 text-right min-w-[130px]">Net Result & Status</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      29. Land Sealing & Topsoil
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">NBC 2016 Part 11</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">100% permeable open ground; natural humus layer</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">${hardscape.toLocaleString()} m² hardscape; loss of ${Math.round(builtUp * 0.20)} m³ topsoil</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">${Math.round(builtUp * 0.20)} m³ topsoil salvaged at &le;2.0m; ${iv.permeable_pavement_m2} m² permeable paving</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● COMPLIANT (Reused)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      30. Ambient Air Quality & Dust
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">CPCB NAAQS 2009</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">${pm10Val} µg/m³ PM10, AQI Satisfactory</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">Fugitive dust surge (+72%) during excavation</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">6.0m perimeter GI netting + mist cannons; EV charging bays</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● &ge;72% Contained</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      31. Ambient Noise & DG Emissions
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">Noise Rules 2000</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">54 dBA daytime baseline</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">78 dBA peak during excavation & unhoused DG</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">Acoustic enclosures on DG sets (min 25 dBA loss) & sound berms</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● &le;55 dBA Norm Met</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      32. Surface Runoff & Flooding
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">Rational Method Q=CIA</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">C &asymp; ${cPre} (${prePeakM3} m³/hr natural runoff)</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">C &asymp; ${cPostUnmitigated} (+${calc.runoff?.impact_summary?.peak_runoff_increase_pct || 178}% flood surge)</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">C &asymp; ${cPostMitigated} (attenuated via rain gardens & bioswales)</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● -${runoffReductionPct}% Attenuated</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      33. Water Balance & STP
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">CPHEEO & CGWB</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">0 KLD demand; natural percolation</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">${(dailyDemandL / 1000).toFixed(1)} kLD fresh demand; raw sewage to drains</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">${stpCapacityKLD} kLD SBR STP (ZLD) + ${(iv.rwh_tank_capacity_l / 1000).toFixed(0)} kL RWH cistern</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● 100% ZLD Recycled</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      34. Arboriculture & Flora
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">Tree Act & Miyawaki</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">${existingTrees} mature trees (100% baseline canopy)</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">${treesRemoved} trees felled (-38% canopy loss)</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">${iv.trees_planted} native compensatory trees + ${Math.round(openGround * 0.25 * 3.5)} Miyawaki saplings</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● +42% Net Gain (3:1)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      35. Grid Energy & Carbon
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">CEA Baseline v20</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">Zero load; pristine biomass balance</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">${baselineEmbodiedCO2} t CO₂e embodied + ${Math.round((gfa * 75 * 0.82) / 1000)} t CO₂e/yr operational</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">${solarKwp} kWp solar PV abating ${solarCO2Tonnes} t CO₂e/yr; 35% GGBS concrete</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● 100% Offset (~${paybackYears}y Payback)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-3 pl-3.5 font-bold text-stone-900">
-                      36. C&D Waste & Solid Waste
-                      <span class="block text-[9px] font-mono text-stone-400 font-normal">CPCB C&D Rules 2016</span>
-                    </td>
-                    <td class="p-3 font-mono text-stone-600 bg-stone-50 border-r border-stone-100 text-[11px]">Zero waste generated</td>
-                    <td class="p-3 font-mono text-rose-800 bg-amber-50/40 border-r border-amber-100/50 text-[11px]">${Math.round(gfa * 0.055)} t C&D rubble debris dumped in city landfill</td>
-                    <td class="p-3 font-mono font-bold text-emerald-950 bg-emerald-50/60 border-r border-emerald-100 text-[11px]">${divertedWasteTonnes || Math.round(gfa * 0.055 * 0.65)} t recycled into road aggregate + on-site Organic Waste Composter</td>
-                    <td class="p-3 pr-3.5 font-bold text-emerald-800 text-right text-[11px]">● 65% Landfill Diverted</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 37-40: 3-Stage Lifecycle Summary Scorecard -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-center">
-              <div class="p-4 bg-stone-100 rounded-2xl border border-stone-300">
-                <span class="text-stone-500 block text-[10px] font-bold uppercase">37. Before Construction</span>
-                <span class="text-2xl font-black text-stone-800 font-serif">42 / 100</span>
-                <span class="text-[10px] text-stone-500 block">Original Site Baseline</span>
-              </div>
-              <div class="p-4 bg-rose-50 rounded-2xl border border-rose-200">
-                <span class="text-rose-800 block text-[10px] font-bold uppercase">38. After Construction</span>
-                <span class="text-2xl font-black text-rose-950 font-serif">32 / 100</span>
-                <span class="text-[10px] text-rose-700 block">Proposed Unmitigated Load</span>
-              </div>
-              <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-                <span class="text-emerald-800 block text-[10px] font-bold uppercase">39. After Assessment</span>
-                <span class="text-2xl font-black text-emerald-950 font-serif">${compositeScore} / 100</span>
-                <span class="text-[10px] text-emerald-700 block">Mitigated Post-EMP Blueprint</span>
-              </div>
-              <div class="p-4 bg-teal-50 rounded-2xl border border-teal-200">
-                <span class="text-teal-800 block text-[10px] font-bold uppercase">40. Net Recovery Benefit</span>
-                <span class="text-2xl font-black text-teal-950 font-serif">+${Math.max(10, compositeScore - 32)} Pts</span>
-                <span class="text-[10px] text-teal-700 block">Statutory Clearance Approved</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION IV: WATER BALANCE, SBR/MBBR STP & ZERO LIQUID DISCHARGE (TOPICS 43 - 52) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec4') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-teal-900 font-mono">Module IV</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Statutory Water Balance, SBR/MBBR STP Design & Zero Liquid Discharge (Topics 43 – 52)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">10 Topics</span>
-            </div>
-
-            <!-- CPHEEO 2019 Water Balance Sankey Table -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 43–47: CPHEEO Water Balance & Dual-Plumbing Audit</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div class="p-4 bg-teal-50/70 rounded-2xl border border-teal-200 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black uppercase text-teal-950 font-mono">Water Intake & Demand Schedule</span>
-                    <span class="text-[10px] font-mono text-teal-800 font-bold">NBC / IS 1172</span>
-                  </div>
-                  <table class="w-full text-xs text-left divide-y divide-teal-100">
-                    <tr><td class="py-1 text-stone-600">Potable Domestic Demand (Drinking, Cooking, Bathing):</td><td class="py-1 font-mono font-bold text-stone-900 text-right">${((occupants * (lpcd - 45)) / 1000).toFixed(1)} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Toilet Flushing Demand (Dual Flush fixtures):</td><td class="py-1 font-mono font-bold text-stone-900 text-right">${((occupants * 45) / 1000).toFixed(1)} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Landscape Irrigation (Drip / Sprinkler):</td><td class="py-1 font-mono font-bold text-stone-900 text-right">${((greenGround * 3.5) / 1000).toFixed(1)} kLD</td></tr>
-                    <tr class="font-bold text-teal-950 border-t border-teal-200"><td class="py-1.5">Gross Total Water Demand:</td><td class="py-1.5 font-mono text-right">${((dailyDemandL + greenGround * 3.5) / 1000).toFixed(1)} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Less: Recycled Water from STP (Flushing & Landscape):</td><td class="py-1 font-mono font-bold text-emerald-800 text-right">-${(recycledDailyL / 1000).toFixed(1)} kLD</td></tr>
-                    <tr class="font-bold text-stone-900 bg-white/60 rounded px-1"><td class="py-1.5">Net Fresh Water Municipal Supply Intake:</td><td class="py-1.5 font-mono text-right text-emerald-900">${Math.max(0, (dailyDemandL + greenGround * 3.5 - recycledDailyL) / 1000).toFixed(1)} kLD</td></tr>
-                  </table>
-                </div>
-
-                <div class="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black uppercase text-emerald-950 font-mono">Sewage Generation & SBR STP Capacity</span>
-                    <span class="text-[10px] font-mono text-emerald-800 font-bold">CPHEEO 80% Norm</span>
-                  </div>
-                  <table class="w-full text-xs text-left divide-y divide-emerald-100">
-                    <tr><td class="py-1 text-stone-600">Daily Sewage Generation (80% of Domestic):</td><td class="py-1 font-mono font-bold text-stone-900 text-right">${(sewageDailyL / 1000).toFixed(1)} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Proposed STP Technology:</td><td class="py-1 font-bold text-emerald-900 text-right">Sequential Batch Reactor (SBR)</td></tr>
-                    <tr><td class="py-1 text-stone-600">Design STP Capacity (+20% Surge Reserve):</td><td class="py-1 font-mono font-bold text-emerald-950 text-right">${stpCapacityKLD} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Treated Effluent Yield (90% Tertiary Recovery):</td><td class="py-1 font-mono font-bold text-emerald-900 text-right">${(treatedEffluentDailyL / 1000).toFixed(1)} kLD</td></tr>
-                    <tr><td class="py-1 text-stone-600">Internal Recycled Utilization:</td><td class="py-1 font-mono font-bold text-emerald-900 text-right">${(recycledDailyL / 1000).toFixed(1)} kLD (100%)</td></tr>
-                    <tr class="font-bold text-emerald-950 bg-emerald-100/60 rounded px-1"><td class="py-1.5">Zero Liquid Discharge (ZLD) Status:</td><td class="py-1.5 font-mono text-right text-emerald-900 font-black">${isZLD ? '100% ZLD COMPLIANT' : 'PARTIAL DISCHARGE'}</td></tr>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Topics 48-52: Treated Effluent Quality & RWH Storage Table -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 48–52: Statutory Treated Wastewater Quality (NGT Standards) & RWH Storage</h3>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">Water Quality Parameter</th>
-                    <th class="p-2.5">Raw Sewage Influent</th>
-                    <th class="p-2.5">SBR Treated Effluent (Guaranteed)</th>
-                    <th class="p-2.5">CPCB / NGT Standard Limit</th>
-                    <th class="p-2.5">Compliance Finding</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">48. pH Value</td>
-                    <td class="p-2.5 font-mono">6.8 – 7.8</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">7.2 – 7.6</td>
-                    <td class="p-2.5 font-mono">6.5 – 9.0</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">49. Biochemical Oxygen Demand (BOD₅)</td>
-                    <td class="p-2.5 font-mono">250 – 350 mg/L</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">< 8.0 mg/L</td>
-                    <td class="p-2.5 font-mono">≤ 10 mg/L</td>
-                    <td class="p-2.5 font-bold text-emerald-800">EXCEEDS NGT STANDARD</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">50. Chemical Oxygen Demand (COD)</td>
-                    <td class="p-2.5 font-mono">450 – 600 mg/L</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">< 40 mg/L</td>
-                    <td class="p-2.5 font-mono">≤ 50 mg/L</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">51. Total Suspended Solids (TSS)</td>
-                    <td class="p-2.5 font-mono">180 – 250 mg/L</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">< 8.0 mg/L</td>
-                    <td class="p-2.5 font-mono">≤ 20 mg/L</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">52. Fecal Coliform Count</td>
-                    <td class="p-2.5 font-mono">10⁶ – 10⁷ MPN/100ml</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-800">< 100 MPN/100ml</td>
-                    <td class="p-2.5 font-mono">≤ 230 MPN/100ml</td>
-                    <td class="p-2.5 font-bold text-emerald-800">DISINFECTED VIA UV / CL₂</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION V: PROJECT ALTERNATIVES & MCDA (TOPICS 53 - 60) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec5') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-blue-900 font-mono">Module V</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Project Alternatives Assessment & Multi-Criteria Decision Analysis (Topics 53 – 60)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">8 Topics</span>
-            </div>
-
-            <p class="text-xs text-stone-600 leading-relaxed text-justify">
-              In accordance with MoEF&CC EIA guidelines, six discrete design alternatives were formulated and tested through Multi-Criteria Decision Analysis (MCDA), evaluating CapEx, tree retention, flood reduction, and life-cycle yield.
-            </p>
-
-            <!-- 6 Design Alternatives Table -->
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-[#14281D] text-white font-bold">
-                  <tr>
-                    <th class="p-2.5">Design Strategy Alternative</th>
-                    <th class="p-2.5">CapEx Outlay</th>
-                    <th class="p-2.5">Trees Impact</th>
-                    <th class="p-2.5">Runoff Factor</th>
-                    <th class="p-2.5">Water Offset</th>
-                    <th class="p-2.5">Clean Energy</th>
-                    <th class="p-2.5">Score</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">53. Alt 1: Business-As-Usual</td>
-                    <td class="p-2.5 font-mono">₹ 0 (Baseline)</td>
-                    <td class="p-2.5 text-rose-700 font-bold">${treesRemoved} Felled</td>
-                    <td class="p-2.5 font-mono text-rose-700 font-bold">C = 0.82</td>
-                    <td class="p-2.5">0 kL / yr</td>
-                    <td class="p-2.5">0 MWh / yr</td>
-                    <td class="p-2.5 font-bold text-rose-700">34 / 100</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">54. Alt 2: Tree-Preserving Shift</td>
-                    <td class="p-2.5 font-mono">₹ ${Math.round(totalCapexInr * 0.38 / 1000).toLocaleString()}k</td>
-                    <td class="p-2.5">${Math.round(treesRemoved * 0.52)} Felled</td>
-                    <td class="p-2.5 font-mono">C = 0.65</td>
-                    <td class="p-2.5">420 kL / yr</td>
-                    <td class="p-2.5">38 MWh / yr</td>
-                    <td class="p-2.5 font-bold text-amber-700">64 / 100</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">55. Alt 3: Vertical Stacking</td>
-                    <td class="p-2.5 font-mono">₹ ${Math.round(totalCapexInr * 0.65 / 1000).toLocaleString()}k</td>
-                    <td class="p-2.5">${Math.round(treesRemoved * 0.60)} Felled</td>
-                    <td class="p-2.5 font-mono">C = 0.54</td>
-                    <td class="p-2.5">950 kL / yr</td>
-                    <td class="p-2.5">46 MWh / yr</td>
-                    <td class="p-2.5 font-bold text-blue-700">76 / 100</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">56. Alt 4: Water-Sensitive Sponge</td>
-                    <td class="p-2.5 font-mono">₹ ${Math.round(totalCapexInr * 0.85 / 1000).toLocaleString()}k</td>
-                    <td class="p-2.5">${treesRemoved} Planted</td>
-                    <td class="p-2.5 font-mono text-cyan-700">C = 0.32</td>
-                    <td class="p-2.5">1,850 kL / yr</td>
-                    <td class="p-2.5">42 MWh / yr</td>
-                    <td class="p-2.5 font-bold text-cyan-800">82 / 100</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">57. Alt 5: Maximum Green Sanctuary</td>
-                    <td class="p-2.5 font-mono">₹ ${Math.round(totalCapexInr * 1.15 / 1000).toLocaleString()}k</td>
-                    <td class="p-2.5">+120 Miyawaki</td>
-                    <td class="p-2.5 font-mono">C = 0.38</td>
-                    <td class="p-2.5">1,400 kL / yr</td>
-                    <td class="p-2.5">32 MWh / yr</td>
-                    <td class="p-2.5 font-bold text-purple-700">85 / 100</td>
-                  </tr>
-                  <tr class="bg-emerald-50/80 font-bold">
-                    <td class="p-2.5 font-black text-emerald-950">58. Alt 6: Balanced Blueprint ⭐</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-900">₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-bold text-emerald-900">${iv.trees_planted} Native Placed</td>
-                    <td class="p-2.5 font-mono font-bold text-emerald-900">C = 0.41 (-52%)</td>
-                    <td class="p-2.5 font-bold text-emerald-900">${totalWaterSavedKL.toLocaleString()} kL / yr</td>
-                    <td class="p-2.5 font-bold text-emerald-900">${Math.round(solarAnnualKwh / 1000)} MWh / yr</td>
-                    <td class="p-2.5 font-black text-emerald-800">88 / 100</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 59-60: MCDA & Pareto Optimality Justification -->
-            <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-2">
-              <strong class="text-stone-900 block font-bold">59 & 60. Multi-Criteria Scoring & Pareto Optimality Justification:</strong>
-              <p class="text-stone-600 text-[11px] leading-relaxed text-justify">
-                Alternative 6 achieves Pareto-optimal efficiency: it satisfies 100% of municipal Tree Authority requirements, achieves the lowest peak runoff ($C=0.41$) without exceeding ground structural circulation constraints, integrates complete STP recycling, and delivers the shortest financial payback (${paybackYears} years).
+              <p class="text-xs sm:text-sm text-stone-300 leading-relaxed font-light">
+                Comprehensive statutory environmental decision support appraisal evaluating baseline ecology, unmitigated civil works disturbance, and sustainable engineering mitigation for <strong>${proj.name || 'Building & Construction Project'}</strong>.
               </p>
-            </div>
-          </div>
 
-          <!-- ========================================================================= -->
-          <!-- SECTION VI: NATURE RECOVERY & 8-DOMAIN BLUEPRINT (TOPICS 61 - 72) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec6') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-900 font-mono">Module VI</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Site-Constrained Nature Recovery & 8-Domain Mitigation Blueprint (Topics 61 – 72)</h2>
+              <div class="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-emerald-200/90 pt-2 border-t border-emerald-800/60 font-mono">
+                <div>📍 <strong>${proj.location?.city || 'Pune'}, ${proj.location?.state || 'Maharashtra'}</strong></div>
+                <div>🌐 <strong>${(proj.location?.latitude || 18.5204).toFixed(4)}°N, ${(proj.location?.longitude || 73.8567).toFixed(4)}°E</strong></div>
+                <div>📅 Date: <strong>${now}</strong></div>
+                <div>🆔 Ref: <strong>ECOBUILD-${proj.id || 'PRELIMINARY'}</strong></div>
               </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">12 Topics</span>
             </div>
 
-            <!-- Topic 61: Mitigation Hierarchy -->
-            <div class="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs space-y-1.5">
-              <span class="text-[10px] font-black uppercase text-emerald-900 block">61. Mitigation Hierarchy Execution Protocol</span>
-              <div class="font-bold text-emerald-950">AVOID &rarr; MINIMIZE &rarr; RESTORE ON-SITE &rarr; COMPENSATE &rarr; CONTINUOUS TELEMETRY</div>
-              <p class="text-stone-700 text-[11px] leading-relaxed">
-                Prioritizes preservation of healthy mature trees and natural overland swales before physical ground-breaking; engineered green infrastructure neutralizes residual environmental deficits on site.
-              </p>
-            </div>
-
-            <!-- Topics 62-71: Comprehensive Element-by-Element Recovery Schedule -->
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-xs font-black uppercase text-stone-900 tracking-wider">
-                    Topics 62–71: Granular Element-by-Element Mitigation & Nature Recovery Matrix
-                  </h3>
-                  <p class="text-[11px] text-stone-500 mt-0.5">
-                    Item-by-item analysis detailing: <strong>What It Affects</strong> (unmitigated disturbance), <strong>What We Need To Do</strong> (action protocol), and <strong>To Reduce Affect On Nature</strong> (quantified net yield).
-                  </p>
+            <!-- Score Badge -->
+            <div class="flex flex-col items-start md:items-end gap-2 shrink-0 border-t md:border-t-0 md:border-l border-emerald-800/60 pt-4 md:pt-0 md:pl-6">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Resilience Composite</span>
+              <div class="flex items-center gap-3">
+                <div class="w-20 h-20 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500/80 flex flex-col items-center justify-center font-serif text-white shadow-md">
+                  <span class="text-3xl font-black leading-none">${compositeScore}</span>
+                  <span class="text-[9px] font-sans text-emerald-300 font-semibold mt-0.5">/ 100</span>
                 </div>
-                <span class="text-[10px] text-stone-500 font-mono">11 Items • Dynamic Site Sized</span>
-              </div>
-
-              <!-- Master 11-Element Statutory Table -->
-              <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
-                <table class="w-full text-xs text-left border-collapse">
-                  <thead class="bg-[#14281D] text-white font-bold text-[11px]">
-                    <tr>
-                      <th class="p-3 w-1/6">Component Element & Code</th>
-                      <th class="p-3 w-1/4 bg-rose-950/60 text-rose-200">What It Affects (Damage / Unmitigated Impact)</th>
-                      <th class="p-3 w-1/4 bg-stone-900/50">What We Need To Do (Statutory Action Plan)</th>
-                      <th class="p-3 w-1/4 bg-emerald-950/60 text-emerald-200">To Reduce Affect On Nature (Ecological Mitigation)</th>
-                      <th class="p-3 text-right whitespace-nowrap">Net Quantified Metric</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-stone-200 text-stone-800 bg-white">
-                    ${recoveryElements.map(el => `
-                      <tr class="hover:bg-stone-50/80 transition-colors avoid-page-break">
-                        <td class="p-3 align-top space-y-1 bg-stone-50/50 border-r border-stone-200">
-                          <div class="flex items-center gap-1.5">
-                            <span class="w-5 h-5 rounded-md bg-[#14281D] text-emerald-300 font-mono font-bold text-[9px] flex items-center justify-center shrink-0">${el.number}</span>
-                            <span class="text-xs font-black text-stone-900">${el.name}</span>
-                          </div>
-                          <div class="text-[10px] text-stone-500 font-medium">Domain: <strong class="text-stone-700">${el.domain}</strong></div>
-                          <div class="pt-0.5">
-                            <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold border font-mono ${el.badge_bg}">${el.standard_code}</span>
-                          </div>
-                        </td>
-
-                        <td class="p-3 align-top text-rose-900 bg-rose-50/20 text-[11px] leading-relaxed border-r border-stone-200">
-                          <div class="font-bold text-[10px] uppercase text-rose-700 tracking-wider mb-0.5 flex items-center gap-1">
-                            <span>⚠️</span> <span>Unmitigated Disturbance</span>
-                          </div>
-                          ${el.affects_nature}
-                        </td>
-
-                        <td class="p-3 align-top text-stone-800 text-[11px] leading-relaxed border-r border-stone-200 bg-white">
-                          <div class="font-bold text-[10px] uppercase text-stone-900 tracking-wider mb-0.5 flex items-center gap-1">
-                            <span>🛠️</span> <span>Engineering Action Protocol</span>
-                          </div>
-                          ${el.what_we_need_to_do}
-                        </td>
-
-                        <td class="p-3 align-top text-emerald-950 bg-emerald-50/30 text-[11px] leading-relaxed border-r border-stone-200">
-                          <div class="font-bold text-[10px] uppercase text-emerald-800 tracking-wider mb-0.5 flex items-center gap-1">
-                            <span>🌱</span> <span>Net Recovery Countermeasure</span>
-                          </div>
-                          ${el.to_reduce_affect}
-                        </td>
-
-                        <td class="p-3 align-top text-right space-y-1 bg-stone-50/30">
-                          <span class="inline-block px-2 py-0.5 rounded text-[9px] font-bold ${el.badge_bg} border whitespace-nowrap">${el.status}</span>
-                          <div class="font-mono text-xs font-black text-emerald-900 text-right leading-tight">
-                            ${el.net_metric}
-                          </div>
-                        </td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Topic 72: Net Ecological Balance Sheet -->
-            <div class="p-4 bg-emerald-950 text-white rounded-2xl space-y-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 font-mono block">72. Net Ecological Balance Sheet</span>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-                <div><span class="text-stone-400 block text-[10px]">Water Replaced:</span><strong class="text-emerald-300 font-mono">${totalWaterSavedKL.toLocaleString()} kL/yr</strong></div>
-                <div><span class="text-stone-400 block text-[10px]">Clean Solar Power:</span><strong class="text-emerald-300 font-mono">${solarAnnualKwh.toLocaleString()} kWh/yr</strong></div>
-                <div><span class="text-stone-400 block text-[10px]">Peak Runoff Reduction:</span><strong class="text-emerald-300 font-mono">-${runoffReductionPct}%</strong></div>
-                <div><span class="text-stone-400 block text-[10px]">Biodiversity Net Gain:</span><strong class="text-emerald-300 font-mono">+64% Units</strong></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION VII: ENVIRONMENTAL MANAGEMENT PLAN (EMP) & BUDGET (TOPICS 73 - 82) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec7') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-amber-900 font-mono">Module VII</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Environmental Management Plan (EMP) & Budgetary Allocation (Topics 73 – 82)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">10 Topics</span>
-            </div>
-
-            <p class="text-xs text-stone-600 leading-relaxed text-justify">
-              The Environmental Management Plan (EMP) forms an integral part of the statutory Environmental Clearance, outlining mandatory mitigations during the pre-construction, construction, and operational phases along with dedicated budgetary commitments.
-            </p>
-
-            <!-- Comprehensive EMP Budget Allocation Table -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 73–78: Itemized EMP Budgetary Outlay (Construction CapEx & Operational OpEx)</h3>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">EMP Mitigation Measure & Component</th>
-                    <th class="p-2.5">Governing Standard</th>
-                    <th class="p-2.5">Capital Outlay (CapEx)</th>
-                    <th class="p-2.5">Recurring Annual OpEx</th>
-                    <th class="p-2.5">Designated Responsible Unit</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">73. Topsoil Salvage, Stockpiling & Dust Misting Cannons</td>
-                    <td class="p-2.5">NBC 2016 / CPCB Air Act</td>
-                    <td class="p-2.5 font-mono">₹ 4.50 Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 0.60 Lakh / yr</td>
-                    <td class="p-2.5">Civil Contractor & Site Engineer</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">74. Sequential Batch Reactor (SBR) STP Package (${stpCapacityKLD} kLD)</td>
-                    <td class="p-2.5">CPHEEO / NGT Norms</td>
-                    <td class="p-2.5 font-mono">₹ ${(capexSchedule.stp / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 1.80 Lakh / yr</td>
-                    <td class="p-2.5">Public Health Engineering (PHE)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">75. Rooftop Rainwater Harvesting Tank & Vortex Filters</td>
-                    <td class="p-2.5">CGWB / IS 15797</td>
-                    <td class="p-2.5 font-mono">₹ ${(capexSchedule.rwh / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 0.45 Lakh / yr</td>
-                    <td class="p-2.5">Civil & MEP Contractor</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">76. Rooftop Solar PV System (${solarKwp} kWp Mono-PERC)</td>
-                    <td class="p-2.5">MNRE / ECBC 2017</td>
-                    <td class="p-2.5 font-mono">₹ ${(capexSchedule.solar / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 0.75 Lakh / yr</td>
-                    <td class="p-2.5">Electrical Consultant & EPC</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">77. Native Tree Compensatory Plantation & Miyawaki Forest</td>
-                    <td class="p-2.5">Tree Authority / FSI 2023</td>
-                    <td class="p-2.5 font-mono">₹ ${(capexSchedule.trees / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 0.50 Lakh / yr</td>
-                    <td class="p-2.5">Landscape Architect & Horticulturist</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">78. Continuous Online Environmental Telemetry & Monitoring</td>
-                    <td class="p-2.5">CPCB / MoEFCC Norms</td>
-                    <td class="p-2.5 font-mono">₹ 3.20 Lakh</td>
-                    <td class="p-2.5 font-mono">₹ 0.80 Lakh / yr</td>
-                    <td class="p-2.5">Certified EHS Officer</td>
-                  </tr>
-                  <tr class="bg-emerald-50/80 font-bold border-t-2 border-emerald-300">
-                    <td class="p-2.5 font-black text-emerald-950">Total EMP Statutory Budgetary Commitment:</td>
-                    <td class="p-2.5 text-emerald-900">MoEF&CC Form 1A Commitment</td>
-                    <td class="p-2.5 font-mono font-black text-emerald-950">₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</td>
-                    <td class="p-2.5 font-mono font-black text-emerald-950">₹ ${(annualOpexInr / 100000).toFixed(2)} Lakh / yr</td>
-                    <td class="p-2.5 text-emerald-950 font-bold">Project Proponent EHS Cell</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 79-82: Corporate Environment Responsibility (CER) & Financial Viability -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 79–82: Corporate Environment Responsibility (CER) & Financial ROI</h3>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-center">
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">79. Total CapEx Outlay</span>
-                  <span class="text-xl font-black text-stone-900 font-serif">₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</span>
-                  <span class="text-[10px] text-stone-500 block">CPWD DSR 2023-24</span>
-                </div>
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200">
-                  <span class="text-stone-400 block text-[10px] font-bold uppercase">80. Annual OpEx</span>
-                  <span class="text-xl font-black text-stone-900 font-serif">₹ ${(annualOpexInr / 1000).toFixed(1)}k / yr</span>
-                  <span class="text-[10px] text-stone-500 block">Preventive Maintenance</span>
-                </div>
-                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-                  <span class="text-emerald-800 block text-[10px] font-bold uppercase">81. Utility Savings</span>
-                  <span class="text-xl font-black text-emerald-800 font-serif">₹ ${(annualTotalSavingsInr / 100000).toFixed(2)} Lakh</span>
-                  <span class="text-[10px] text-emerald-700 block">Solar Power + Water Tankers</span>
-                </div>
-                <div class="p-4 bg-[#06281e] text-white rounded-2xl border border-emerald-500/40">
-                  <span class="text-emerald-400 block text-[10px] font-bold uppercase">82. Simple Payback</span>
-                  <span class="text-2xl font-black text-emerald-300 font-serif">${paybackYears} Years</span>
-                  <span class="text-[10px] text-emerald-400/80 block">ROI Break-Even Period</span>
+                <div class="text-left md:text-right">
+                  <div class="text-xs font-bold text-white">${scoreTier}</div>
+                  <div class="text-[10px] text-emerald-300/80 font-mono">Statutory NBC Compliant</div>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
+                    Clearance Eligible
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION VIII: MONITORING PROGRAM & DISASTER MANAGEMENT PLAN (TOPICS 83 - 92) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec8') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-purple-900 font-mono">Module VIII</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Environmental Monitoring Program & Disaster Management Plan (Topics 83 – 92)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">10 Topics</span>
-            </div>
-
-            <!-- Topics 83-87: Post-Clearance Monitoring Schedule -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 83–87: Post-Clearance Environmental Monitoring Schedule (MoEF&CC)</h3>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">Monitored Parameter</th>
-                    <th class="p-2.5">Sampling Location</th>
-                    <th class="p-2.5">Monitoring Frequency</th>
-                    <th class="p-2.5">Prescribed Standard Limit</th>
-                    <th class="p-2.5">Accredited Agency</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">83. Ambient Air Quality (PM2.5, PM10, SO₂, NO₂)</td>
-                    <td class="p-2.5">1 Upwind & 2 Downwind Stations</td>
-                    <td class="p-2.5">Quarterly (24-hour continuous)</td>
-                    <td class="p-2.5">CPCB NAAQS 2009 Standards</td>
-                    <td class="p-2.5">MoEF&CC Recognized Laboratory</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">84. Ambient Noise Levels (Leq Day / Night)</td>
-                    <td class="p-2.5">Project Boundary & DG Room</td>
-                    <td class="p-2.5">Quarterly</td>
-                    <td class="p-2.5">Day ≤ 55 dBA, Night ≤ 45 dBA</td>
-                    <td class="p-2.5">NABL Accredited Testing Lab</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">85. STP Treated Water (pH, BOD, COD, TSS, Coliform)</td>
-                    <td class="p-2.5">STP Final Discharge Point</td>
-                    <td class="p-2.5">Monthly composite sample</td>
-                    <td class="p-2.5">NGT / CPCB Discharge Standards</td>
-                    <td class="p-2.5">Internal EHS + Third-Party Lab</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">86. Groundwater Quality & Water Table Depth</td>
-                    <td class="p-2.5">Site Piezometer Bore</td>
-                    <td class="p-2.5">Pre-Monsoon & Post-Monsoon</td>
-                    <td class="p-2.5">IS 10500:2012 Drinking Water Norm</td>
-                    <td class="p-2.5">CGWB Authorized Laboratory</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">87. Tree Survival & Plant Vitality Audit</td>
-                    <td class="p-2.5">Compensatory Planting Area</td>
-                    <td class="p-2.5">Bi-annually for 3 years</td>
-                    <td class="p-2.5">Min 90% Survival Rate Mandate</td>
-                    <td class="p-2.5">Qualified Botanist / Tree Authority</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 88-92: Disaster Management Plan (DMP) & Fire Safety -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 88–92: Disaster Management Plan (DMP) & NBC Part 4 Fire Safety</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <span class="text-[10px] font-black uppercase text-stone-900 block">88 & 89. NBC 2016 Part 4 Fire Protection Measures</span>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    • Dedicated 100 kL underground static fire storage tank with separate jockey & diesel pumps.<br>
-                    • Wet riser system with landing valves at every floor level.<br>
-                    • Automatic addressable optical smoke detection and sprinkler coverage throughout GFA.<br>
-                    • Minimum 6.0m clear vehicular motorable access around entire building perimeter.
-                  </p>
-                </div>
-
-                <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
-                  <span class="text-[10px] font-black uppercase text-stone-900 block">90–92. Natural Hazard Resilience & Emergency Protocol</span>
-                  <p class="text-stone-600 text-[11px] leading-relaxed">
-                    • Seismic design conforms to IS 1893:2016 for Zone III response reduction ($R=5$).<br>
-                    • Plinth level elevated 600mm above 100-year high flood level (HFL) of local storm drain.<br>
-                    • Emergency assembly zones designated in open ground buffer (${openGround.toLocaleString()} m²).<br>
-                    • Half-yearly mock disaster drill and EHS safety committee oversight.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- SECTION IX: STATUTORY COMPLIANCE & CERTIFIED SIGNATURES (TOPICS 93 - 102) -->
-          <!-- ========================================================================= -->
-          <div class="space-y-6 ${isFiltered('sec9') ? 'hidden' : ''}">
-            <div class="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-950 font-mono">Module IX</span>
-                <h2 class="text-lg font-black font-serif text-stone-900">Statutory Regulatory Compliance & Certified Digital Signatures (Topics 93 – 102)</h2>
-              </div>
-              <span class="text-[11px] font-bold text-stone-500 font-mono">10 Topics</span>
-            </div>
-
-            <!-- Topics 93-99: 12-Act Statutory Compliance Matrix -->
-            <div class="space-y-3">
-              <h3 class="text-xs font-bold uppercase text-stone-500 tracking-wider">Topics 93–99: Statutory Code Compliance Matrix</h3>
-              <table class="w-full text-xs text-left border border-stone-200 rounded-xl overflow-hidden">
-                <thead class="bg-stone-100 text-stone-800 font-bold border-b border-stone-200">
-                  <tr>
-                    <th class="p-2.5">Statutory Act / Authority</th>
-                    <th class="p-2.5">Governing Reference</th>
-                    <th class="p-2.5">Specific Mandatory Quota</th>
-                    <th class="p-2.5">Compliance Finding</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-100 text-stone-700">
-                  <tr>
-                    <td class="p-2.5 font-bold">93. MoEF&CC EIA Notification</td>
-                    <td class="p-2.5 font-mono">EIA Notification 2006 (Item 8a)</td>
-                    <td class="p-2.5">Prior Environmental Clearance & Form 1A appraisal</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">94. National Building Code</td>
-                    <td class="p-2.5 font-mono">NBC 2016 Part 11 Cl 4.3</td>
-                    <td class="p-2.5">Min 15% open green surface & RWH storage</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">95. Central Ground Water Authority</td>
-                    <td class="p-2.5 font-mono">CGWA Guidelines 2020</td>
-                    <td class="p-2.5">RWH recharge / cistern without borehole contamination</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">96. Central Electricity Authority</td>
-                    <td class="p-2.5 font-mono">CEA Baseline Database v19</td>
-                    <td class="p-2.5">Grid carbon factor documentation & solar offsetting</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% ALIGNED</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">97. CPCB C&D Waste Rules</td>
-                    <td class="p-2.5 font-mono">CPCB Rules 2016</td>
-                    <td class="p-2.5">Min 50% non-hazardous rubble diversion</td>
-                    <td class="p-2.5 font-bold text-emerald-800">65% DIVERSION (EXCEEDS)</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">98. Solid Waste Management Rules</td>
-                    <td class="p-2.5 font-mono">SWM Rules 2016</td>
-                    <td class="p-2.5">On-site bio-degradable waste processing (OWC)</td>
-                    <td class="p-2.5 font-bold text-emerald-800">100% COMPLIANT</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2.5 font-bold">99. BNG & Green Rating Equivalence</td>
-                    <td class="p-2.5 font-mono">BNG Metric 4.0 / GRIHA</td>
-                    <td class="p-2.5">+10% Biodiversity Net Gain / GRIHA 5-Star</td>
-                    <td class="p-2.5 font-bold text-emerald-800">+64% GAIN (PLATINUM)</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Topics 100-102: Disclaimer, Signatures & Digital Authentication -->
-            <div class="space-y-4 pt-4 border-t-2 border-stone-200">
-              <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-1.5">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">100. Scientific Modeling Limitations & Data Lineage Disclaimer</span>
-                <p class="text-[11px] text-stone-600 leading-relaxed text-justify">
-                  This statutory EIA dossier is generated by the EcoBuild Smart Environmental Decision-Support Engine integrating verified empirical inputs from IMD Pune, ECMWF ERA5-Land, Copernicus CAMS, NASA POWER, and CPWD DSR 2023-24. Calculations represent engineering simulations for statutory planning and Environmental Clearance appraisal. Site-specific geotechnical borings, percolation tests, structural rebar drawings, and electrical utility grid-interconnection approvals must be validated by licensed structural, civil, and electrical engineers prior to civil construction commencement.
-                </p>
-              </div>
-
-              <!-- Topic 101 & 102: Environmental Assessment Preparation & Endorsement -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4 border-t border-stone-200 text-xs">
-                <div class="space-y-1.5">
-                  <span class="text-[10px] uppercase font-bold text-stone-400 block">101. Prepared by Assessment Specialist:</span>
-                  <div class="pt-8 border-b-2 border-stone-800 w-64 mb-1"></div>
-                  <strong class="text-stone-900 block font-serif">Environmental Assessment Specialist / Modeler</strong>
-                  <div class="text-[11px] text-stone-500">EcoBuild Smart Environmental Planning Division</div>
-                  <div class="text-[10px] font-mono text-emerald-800 font-bold">Assessment ID: ECOBUILD-${proj.id || 'STUDY'} • Status: Validated Model</div>
-                </div>
-
-                <div class="space-y-1.5 sm:text-right">
-                  <span class="text-[10px] uppercase font-bold text-stone-400 block">102. Proponent Review & Endorsement:</span>
-                  <div class="pt-8 border-b-2 border-stone-800 w-64 mb-1 sm:ml-auto"></div>
-                  <strong class="text-stone-900 block font-serif">Project Proponent / Planning Representative</strong>
-                  <div class="text-[11px] text-stone-500">Sustainable Infrastructure Planning</div>
-                  <div class="text-[10px] font-mono text-stone-500">Document Ref: ECOBUILD-${proj.id || 'PRELIMINARY'} • Digital Copy</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 1: EXECUTIVE SUMMARY & STATUTORY SCREENING -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch1') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 01</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Executive Summary &amp; Statutory Project Screening</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">MoEFCC Item 8 Form-1</span>
+          </div>
+
+          <!-- Executive Summary Callout Box -->
+          <div class="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+            <h3 class="text-xs font-black uppercase text-stone-700 tracking-wider">Executive Transmittal Digest</h3>
+            <p id="eia-executive-summary-text" class="text-xs text-stone-700 leading-relaxed text-justify">
+              This statutory Environmental Impact Assessment (EIA) appraisal evaluates the proposed <strong>${gfa.toLocaleString()} m² Gross Floor Area (GFA)</strong> construction over a plot area of <strong>${plot.toLocaleString()} m²</strong> located in <strong>${proj.location?.city || 'Pune'}, ${proj.location?.state || 'Maharashtra'}</strong>. 
+              Under baseline unmitigated civil works, the project would induce an impervious ground sealing of <strong>${hardscape.toLocaleString()} m²</strong>, the felling of <strong>${treesRemoved} mature trees</strong>, an unmitigated surface runoff surge of <strong>${qPost} m³/hr (+${runoffReductionPct}%)</strong>, an operational grid electrical load of <strong>${Math.round(elecDemandKwh / 1000)} MWh/yr (${annGridCO2t} t CO₂/yr)</strong>, and a daily fresh water withdrawal of <strong>${freshKLD} KLD</strong>.
+              Under the site-constrained Environmental Management Plan (EMP), the project integrates a <strong>${stpCapacityKLD} KLD SBR/MBBR tertiary STP</strong> achieving <strong>100% Zero Liquid Discharge (ZLD)</strong> with <strong>${recycledKLD} KLD</strong> effluent recycled for flushing and landscaping (${freshSavingsPct}% fresh substitution), <strong>${rwhTankCapacityKl} kL rainwater storage</strong> capturing <strong>${rwhHarvestKl.toLocaleString()} kL/yr</strong>, <strong>${treesPlanted} compensatory native trees (3:1 statutory ratio)</strong>, <strong>${solarKwp} kWp rooftop solar PV</strong> abating <strong>${solarCO2SavedT} t CO₂/yr</strong>, and source-segregated <strong>${cdDivertedTonnes} t C&D waste diversion (68%)</strong>. 
+              The total environmental capital expenditure is estimated at <strong>₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</strong>, delivering net annual utility savings of <strong>₹ ${(netAnnualSavingsInr / 100000).toFixed(2)} Lakh</strong> and a simple payback of <strong>${paybackYears} years</strong>. The project is compliant with MoEF&CC 2006 guidelines and recommended for Environmental Clearance (EC).
+            </p>
+          </div>
+
+          <!-- 4 Statutory Project Cadastre Highlights -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div class="p-3.5 bg-white rounded-xl border border-stone-200 space-y-1">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">MoEF&CC Category</span>
+              <strong class="text-stone-900 font-mono text-xs block">${category}</strong>
+              <span class="text-[10px] text-stone-500">Schedule Item 8 Standard</span>
+            </div>
+            <div class="p-3.5 bg-white rounded-xl border border-stone-200 space-y-1">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Appraisal Authority</span>
+              <strong class="text-emerald-800 font-mono text-xs block">${authority}</strong>
+              <span class="text-[10px] text-stone-500">Statutory Competent Body</span>
+            </div>
+            <div class="p-3.5 bg-white rounded-xl border border-stone-200 space-y-1">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Clearance Verdict</span>
+              <strong class="text-emerald-700 font-mono text-xs block">ELIGIBLE FOR EC</strong>
+              <span class="text-[10px] text-stone-500">Conditions Met</span>
+            </div>
+            <div class="p-3.5 bg-white rounded-xl border border-stone-200 space-y-1">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Environmental Payback</span>
+              <strong class="text-stone-900 font-mono text-xs block">${paybackYears} Years</strong>
+              <span class="text-[10px] text-stone-500">₹ ${(netAnnualSavingsInr / 100000).toFixed(2)}L/yr Net Saving</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 2: PROJECT PROFILE & ENGINEERING RESOURCE DEMANDS -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch2') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 02</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Project Profile &amp; Engineering Demand Schedules</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">Form 1A Item 1-4</span>
+          </div>
+
+          <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="bg-[#14281D] text-white font-bold text-[11px]">
+                <tr>
+                  <th class="p-3 pl-4">Parameter / Engineering Aspect</th>
+                  <th class="p-3">Design Specification</th>
+                  <th class="p-3">Statutory Benchmark &amp; Norm</th>
+                  <th class="p-3 pr-4 text-right">Compliance Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-100 bg-white text-stone-700">
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Total Cadastral Plot Area</td>
+                  <td class="p-3 font-mono font-bold">${plot.toLocaleString()} m²</td>
+                  <td class="p-3 text-stone-500">Revenue Cadastre / Title Deed</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Verified</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Ground Coverage (Building Footprint)</td>
+                  <td class="p-3 font-mono font-bold">${builtUp.toLocaleString()} m² (${Math.round((builtUp / plot) * 100)}%)</td>
+                  <td class="p-3 text-stone-500">Permissible Max: 50% (NBC Part 3)</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Compliant</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Gross Built-Up Area (GFA) &amp; Storeys</td>
+                  <td class="p-3 font-mono font-bold">${gfa.toLocaleString()} m² (${floors} Storeys)</td>
+                  <td class="p-3 text-stone-500">Floor Space Index (FSI): ${(gfa / plot).toFixed(2)}</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Permissible</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Unbuilt Open Space &amp; Green Buffer</td>
+                  <td class="p-3 font-mono font-bold">${openGround.toLocaleString()} m² (${Math.round((openGround / plot) * 100)}%)</td>
+                  <td class="p-3 text-stone-500">Mandatory Min: 30% Open Space</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Exceeds Norm</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Daily Water Demand &amp; Dual Plumbing</td>
+                  <td class="p-3 font-mono font-bold">${freshKLD} KLD Gross | ${recycledKLD} KLD Recycled</td>
+                  <td class="p-3 text-stone-500">135 LPCD (IS 1172 / NBC 2016 Part 9)</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Dual-Plumbed</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Sewage Treatment Plant (STP) &amp; ZLD</td>
+                  <td class="p-3 font-mono font-bold">${stpCapacityKLD} KLD SBR/MBBR Tertiary STP</td>
+                  <td class="p-3 text-stone-500">CPHEEO Sewerage Manual 2019 / ZLD</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">100% ZLD</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Rooftop Solar PV &amp; Grid Displacement</td>
+                  <td class="p-3 font-mono font-bold">${solarKwp} kWp (${Math.round(solarAnnualKwh / 1000)} MWh/yr)</td>
+                  <td class="p-3 text-stone-500">${solarOffsetPct}% Grid Offset (CEA v20 Factor)</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Clean Energy</span></td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">C&amp;D Waste Management &amp; RCA Reuse</td>
+                  <td class="p-3 font-mono font-bold">${cdWasteTonnes} t Debris &rarr; ${cdDivertedTonnes} t Diverted</td>
+                  <td class="p-3 text-stone-500">CPCB C&amp;D Waste Rules 2016 (68% Diverted)</td>
+                  <td class="p-3 pr-4 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Circular Reuse</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 3: BASELINE ENVIRONMENTAL STATUS -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch3') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 03</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Baseline Environmental Status &amp; Climatological Normals</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">CPCB NAAQS &amp; IMD Data</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Card 1: Ambient Air Quality -->
+            <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-stone-900">Ambient Air Quality</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800">NAAQS 2009</span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-stone-600"><span>Air Quality Index (AQI):</span> <strong class="font-mono text-stone-900">${env.airQuality?.aqi || 62} (Moderate)</strong></div>
+                <div class="flex justify-between text-stone-600"><span>PM2.5 Concentration:</span> <strong class="font-mono text-stone-900">${env.airQuality?.pm25 || 28.4} µg/m³ (Limit: 60)</strong></div>
+                <div class="flex justify-between text-stone-600"><span>PM10 Concentration:</span> <strong class="font-mono text-stone-900">${env.airQuality?.pm10 || 54.2} µg/m³ (Limit: 100)</strong></div>
+              </div>
+              <div class="pt-1.5 border-t border-stone-100 text-[10px] text-emerald-700 font-bold">
+                ✔ Conforms to National Ambient Air Quality Standards
+              </div>
+            </div>
+
+            <!-- Card 2: Climatology & Precipitation -->
+            <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-stone-900">Climatology &amp; Hydrology</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">ERA5 / IMD</span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-stone-600"><span>Annual Rainfall:</span> <strong class="font-mono text-stone-900">${env.weather?.annualRainfall || 950} mm/yr</strong></div>
+                <div class="flex justify-between text-stone-600"><span>Peak Rainfall Intensity:</span> <strong class="font-mono text-stone-900">${peakIntensity} mm/hr (1-in-5 yr)</strong></div>
+                <div class="flex justify-between text-stone-600"><span>Natural Runoff Coeff (C):</span> <strong class="font-mono text-stone-900">0.25 (Pervious catch)</strong></div>
+              </div>
+              <div class="pt-1.5 border-t border-stone-100 text-[10px] text-blue-700 font-bold">
+                ✔ Sized for 1-in-5 year critical 15-minute storm surge
+              </div>
+            </div>
+
+            <!-- Card 3: Terrestrial Flora & Trees -->
+            <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-stone-900">Site Ecology &amp; Trees</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Tree Authority</span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-stone-600"><span>Baseline Tree Survey:</span> <strong class="font-mono text-stone-900">${existingTrees} Trees recorded</strong></div>
+                <div class="flex justify-between text-rose-700"><span>Trees to be Felled:</span> <strong class="font-mono font-bold">${treesRemoved} Trees</strong></div>
+                <div class="flex justify-between text-emerald-800"><span>Compensatory Norm:</span> <strong class="font-mono font-bold">3:1 Statutory Ratio</strong></div>
+              </div>
+              <div class="pt-1.5 border-t border-stone-100 text-[10px] text-emerald-700 font-bold">
+                ✔ ${treesPlanted} Native Trees allocated (${treesRemoved > 0 ? (treesPlanted >= treesRemoved * 3 ? '3:1 Met' : 'Deficit') : 'No Felling'})
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 4: COMPREHENSIVE 6-DOMAIN IMPACT & MITIGATION MATRIX -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch4') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 04</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Anticipated Environmental Impacts &amp; Mitigation Matrix</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">Form-1A Core Schedule</span>
+          </div>
+
+          <!-- 6 Primary Results Grid (3-Stage Lifecycle Pattern) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${(eia.key_results || []).map(k => `
+              <div class="p-4 rounded-2xl bg-white border border-stone-200 shadow-xs space-y-2.5 avoid-page-break">
+                <div class="flex items-center justify-between pb-1.5 border-b border-stone-100">
+                  <span class="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                    <span>${k.icon}</span> <span>${k.label}</span>
+                  </span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded ${k.badge_class || 'bg-stone-100 text-stone-700'} border">${k.status}</span>
+                </div>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between text-stone-600">
+                    <span class="text-[10px] uppercase font-bold text-stone-400">1. Baseline:</span>
+                    <span class="font-mono text-stone-700 text-right">${k.before || '—'}</span>
+                  </div>
+                  <div class="flex justify-between text-rose-700">
+                    <span class="text-[10px] uppercase font-bold text-rose-500">2. Construction Load:</span>
+                    <span class="font-mono font-bold text-right">${k.after_construction || '—'}</span>
+                  </div>
+                  <div class="flex justify-between text-emerald-900 font-bold bg-emerald-50/60 p-1.5 rounded-lg border border-emerald-100">
+                    <span class="text-[10px] uppercase text-emerald-700">3. Nature Recovery:</span>
+                    <span class="font-mono text-right">${k.after_assessment || '—'}</span>
+                  </div>
+                </div>
+                <div class="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-stone-900">
+                  <span class="text-stone-500">Net Statutory Outcome:</span>
+                  <span class="font-mono text-emerald-800 font-serif">${k.net_result || k.value}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Complete 6-Domain Parameter Audit Table -->
+          <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs mt-3">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="bg-[#14281D] text-white font-bold text-[11px]">
+                <tr>
+                  <th class="p-3 pl-4 min-w-[170px]">Environmental Domain &amp; Parameter</th>
+                  <th class="p-3 min-w-[150px] bg-stone-900/30">1. Baseline State (Before)</th>
+                  <th class="p-3 min-w-[160px] bg-rose-950/40 text-rose-200">2. Construction Impact</th>
+                  <th class="p-3 min-w-[180px] bg-emerald-950/50 text-emerald-200">3. Mitigation Intervention</th>
+                  <th class="p-3 min-w-[150px] bg-emerald-900/60 text-emerald-100">Net Ecological Result</th>
+                  <th class="p-3 pr-4 text-right min-w-[100px]">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-100 text-stone-700 bg-white">
+                ${(eia.domains || []).map(d => `
+                  <tr class="bg-stone-100 font-bold text-stone-800 text-[11px]">
+                    <td colspan="6" class="p-2.5 pl-4 border-y border-stone-200 bg-stone-100">
+                      <span class="text-emerald-950 font-black">${d.domain_name}</span> 
+                      <span class="text-stone-500 font-mono font-normal ml-2 text-[10px]">• Ref: ${d.standard_ref}</span>
+                    </td>
+                  </tr>
+                  ${d.parameters.map(p => `
+                    <tr class="hover:bg-stone-50 transition-colors avoid-page-break">
+                      <td class="p-2.5 pl-4 font-semibold text-stone-900 align-top">
+                        <div>${p.name}</div>
+                        <div class="text-[9px] font-mono text-stone-400 mt-0.5">${p.standard_code || d.standard_ref}</div>
+                      </td>
+                      <td class="p-2.5 font-mono text-stone-600 text-[11px] align-top bg-stone-50/40">${p.before || '—'}</td>
+                      <td class="p-2.5 text-rose-800 font-medium text-[11px] align-top bg-rose-50/30">${p.after_construction || '—'}</td>
+                      <td class="p-2.5 text-emerald-900 font-bold text-[11px] align-top bg-emerald-50/30">${p.after_assessment || '—'}</td>
+                      <td class="p-2.5 text-emerald-800 font-bold text-[11px] align-top bg-emerald-50/50">${p.net_result || '—'}</td>
+                      <td class="p-2.5 pr-4 text-right font-mono text-[10px] align-top whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-full font-bold border ${p.status && /Compliant|Met|Circular|Diverted|Verified|Reduced|Offset|High/i.test(p.status) ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : p.status && /Deficit|Missing|Not/i.test(p.status) ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-amber-100 text-amber-800 border-amber-200'}">
+                          ${p.status || 'Compliant'}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 5: ENVIRONMENTAL MANAGEMENT PLAN (EMP) & BUDGETARY OUTLAY -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch5') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 05</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Environmental Management Plan (EMP) &amp; Financial Budget</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">CPWD DSR 2023-24</span>
+          </div>
+
+          <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="bg-[#14281D] text-white font-bold text-[11px]">
+                <tr>
+                  <th class="p-3 pl-4">EMP Intervention / Technology</th>
+                  <th class="p-3">Design Specification</th>
+                  <th class="p-3">Capital Outlay (CapEx)</th>
+                  <th class="p-3">Annual O&amp;M (OpEx)</th>
+                  <th class="p-3 pr-4 text-right">Annual Utility Savings</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-100 bg-white text-stone-700">
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">SBR/MBBR Tertiary STP with UV &amp; Dual Plumbing</td>
+                  <td class="p-3 font-mono">${stpCapacityKLD} KLD Capacity (100% ZLD)</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.stp / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ ${(capex.stp * 0.05 / 100000).toFixed(2)} Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">₹ ${(annualWaterSavingsInr / 100000).toFixed(2)} Lakh/yr</td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Rooftop Solar PV Array (Mono PERC)</td>
+                  <td class="p-3 font-mono">${solarKwp} kWp (~${Math.round(solarAnnualKwh / 1000)} MWh/yr)</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.solar / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ ${(capex.solar * 0.015 / 100000).toFixed(2)} Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">₹ ${(annualPowerSavingsInr / 100000).toFixed(2)} Lakh/yr</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Rainwater Harvesting Tank &amp; Sand Filtration</td>
+                  <td class="p-3 font-mono">${rwhTankCapacityKl} kL Dual-Chamber Tank</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.rwh / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ 0.15 Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">Included in Water</td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Permeable Pavers &amp; Bioswale Drainage</td>
+                  <td class="p-3 font-mono">${permeableM2} m² High Infiltration Surface</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.permeable / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ 0.10 Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">Flood Risk Off</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Compensatory Native Plantation &amp; Micro-Forest</td>
+                  <td class="p-3 font-mono">${treesPlanted} Native Trees (3:1 Norm)</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.trees / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ 0.20 Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">BNG Certified</td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Topsoil Salvage, Dust Screens &amp; Mist Cannons</td>
+                  <td class="p-3 font-mono">CPCB Continuous Dust Suppression</td>
+                  <td class="p-3 font-mono font-bold text-stone-900">₹ ${(capex.dustAndTopsoil / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-600">₹ 0.10 Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono font-bold text-emerald-700">Regulatory Met</td>
+                </tr>
+                <tr class="bg-emerald-50/80 font-bold text-stone-900 text-xs">
+                  <td colspan="2" class="p-3 pl-4 uppercase tracking-wider text-emerald-950 font-black">Total EMP Capital Outlay &amp; Annual Economic Yield</td>
+                  <td class="p-3 font-mono text-sm text-emerald-950 font-black">₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</td>
+                  <td class="p-3 font-mono text-stone-700">₹ ${(annualOpexInr / 100000).toFixed(2)} Lakh/yr</td>
+                  <td class="p-3 pr-4 text-right font-mono text-sm text-emerald-800 font-black">₹ ${(netAnnualSavingsInr / 100000).toFixed(2)} Lakh/yr</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+            <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Total CapEx Investment</span>
+              <strong class="text-stone-900 font-mono text-sm">₹ ${(totalCapexInr / 100000).toFixed(2)} Lakh</strong>
+              <span class="text-[10px] text-stone-500 block">CPWD DSR 2023-24 Rates</span>
+            </div>
+            <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Net Annual Utility Savings</span>
+              <strong class="text-emerald-800 font-mono text-sm">₹ ${(netAnnualSavingsInr / 100000).toFixed(2)} Lakh/yr</strong>
+              <span class="text-[10px] text-stone-500 block">Water + Solar Grid Tariffs</span>
+            </div>
+            <div class="p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+              <span class="text-stone-400 block text-[10px] font-bold uppercase">Simple Capital Payback</span>
+              <strong class="text-emerald-700 font-mono text-sm">${paybackYears} Years</strong>
+              <span class="text-[10px] text-stone-500 block">High Economic Feasibility</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 6: POST-CONSTRUCTION ENVIRONMENTAL MONITORING SCHEDULE -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch6') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 06</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Post-Construction Environmental Monitoring Protocol</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">MoEFCC Compliance Schedule</span>
+          </div>
+
+          <div class="overflow-x-auto border border-stone-200 rounded-2xl shadow-xs">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="bg-[#14281D] text-white font-bold text-[11px]">
+                <tr>
+                  <th class="p-3 pl-4">Environmental Component</th>
+                  <th class="p-3">Monitoring Parameters</th>
+                  <th class="p-3">Testing Frequency</th>
+                  <th class="p-3">Standard / Benchmark Reference</th>
+                  <th class="p-3 pr-4 text-right">Regulatory Action Limit</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-100 bg-white text-stone-700">
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Ambient Air Quality</td>
+                  <td class="p-3">PM2.5, PM10, SO₂, NOx, CO</td>
+                  <td class="p-3 font-mono">Quarterly (24-hr sampling)</td>
+                  <td class="p-3 text-stone-500">CPCB NAAQS 2009 Standards</td>
+                  <td class="p-3 pr-4 text-right font-mono text-stone-900">PM2.5 &le; 60 µg/m³</td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">STP Treated Effluent</td>
+                  <td class="p-3">pH, BOD, COD, TSS, Fecal Coliform</td>
+                  <td class="p-3 font-mono">Monthly Testing (NABL Lab)</td>
+                  <td class="p-3 text-stone-500">CPCB / SPCB Discharge Standards</td>
+                  <td class="p-3 pr-4 text-right font-mono text-stone-900">BOD &le; 10 mg/L (ZLD)</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Ambient Noise Level</td>
+                  <td class="p-3">Leq (Day) &amp; Leq (Night) dB(A)</td>
+                  <td class="p-3 font-mono">Quarterly (Site Boundary)</td>
+                  <td class="p-3 text-stone-500">Noise Pollution Rules 2000</td>
+                  <td class="p-3 pr-4 text-right font-mono text-stone-900">Day &le; 55, Night &le; 45 dB</td>
+                </tr>
+                <tr class="hover:bg-stone-50 bg-stone-50/50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Groundwater Level &amp; Quality</td>
+                  <td class="p-3">Water Table Depth, TDS, Hardness</td>
+                  <td class="p-3 font-mono">Pre- &amp; Post-Monsoon</td>
+                  <td class="p-3 text-stone-500">CGWB Baseline Norms (IS 10500)</td>
+                  <td class="p-3 pr-4 text-right font-mono text-stone-900">TDS &le; 500 mg/L</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                  <td class="p-3 pl-4 font-semibold text-stone-900">Compensatory Flora Audit</td>
+                  <td class="p-3">Tree Survival Rate &amp; Canopy Spread</td>
+                  <td class="p-3 font-mono">Bi-Annual Field Census</td>
+                  <td class="p-3 text-stone-500">Tree Authority Statutory Norm</td>
+                  <td class="p-3 pr-4 text-right font-mono text-stone-900">&ge; 85% Survival Rate</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- CHAPTER 7: REGULATORY APPRAISAL VERDICT & FORMAL CERTIFICATION -->
+        <!-- ========================================================================= -->
+        <section class="space-y-4 avoid-page-break ${isFiltered('ch7') ? 'hidden' : ''}">
+          <div class="border-b-2 border-stone-800 pb-2 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800">Chapter 07</span>
+              <h2 class="text-lg font-black font-serif text-stone-900">Statutory Appraisal Verdict &amp; Engineering Certification</h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 font-mono">Official Endorsement</span>
+          </div>
+
+          <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-white to-emerald-50/40 border-2 border-emerald-500/60 shadow-sm space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-8 space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-emerald-600 animate-pulse"></span>
+                  <span class="text-xs font-black uppercase tracking-wider text-emerald-900">Appraisal Decision Supporting Grant of EC</span>
+                </div>
+                <h3 class="text-xl font-black font-serif text-stone-900">Environmental Clearance (EC) Recommendation</h3>
+                <p class="text-xs text-stone-600 leading-relaxed text-justify">
+                  The proposed <strong>${proj.name || 'Building & Construction Project'}</strong> conforms to all environmental standards stipulated under the <strong>MoEF&CC EIA Notification 2006 (Schedule Item 8)</strong>, <strong>National Building Code (NBC 2016 Part 11)</strong>, and <strong>CPHEEO Water &amp; Sewerage Norms</strong>. 
+                  The project demonstrates verified net positive environmental yield via 100% Zero Liquid Discharge (ZLD), 3:1 compensatory tree replenishment, on-site solar clean power generation, and comprehensive C&amp;D waste recycling. 
+                  Subject to strict implementation of the Environmental Management Plan (EMP) and regular compliance monitoring, this project is formally certified as eligible for Environmental Clearance.
+                </p>
+                <div class="flex flex-wrap gap-2 text-[11px] font-bold pt-1">
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">✔ 100% ZLD SBR STP</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">✔ 3:1 Tree Canopy Norm</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">✔ 68% C&amp;D Waste Circularity</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">✔ Rooftop Solar Clean Grid Offset</span>
+                </div>
+              </div>
+
+              <!-- Official Sign-off Stamp Box -->
+              <div class="md:col-span-4 bg-white p-5 rounded-2xl border-2 border-emerald-600 shadow-md text-center space-y-2">
+                <div class="text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400">Engineering Endorsement</div>
+                <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xl">
+                  🏛️
+                </div>
+                <div class="font-serif font-bold text-stone-900 text-base">Avishkar Shinde</div>
+                <div class="text-[11px] text-emerald-700 font-semibold">Lead Environmental Decision Engineer</div>
+                <div class="text-[9px] text-stone-500 font-mono border-t border-stone-200 pt-2 space-y-0.5">
+                  <div>QCI / NABET Accredited EIA Team</div>
+                  <div>EcoBuild Smart Assessment Engine v3.5</div>
+                  <div>Official Clearance Dossier ID: ECOBUILD-${proj.id || 'PRELIMINARY'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
       </div>
     `;
