@@ -328,8 +328,8 @@ window.EIAResultsView = {
             </div>
             <div class="md:col-span-4 bg-white p-5 rounded-2xl border-2 border-emerald-500/60 shadow-sm text-center space-y-1.5">
               <div class="text-[9px] font-bold uppercase tracking-wider text-stone-400">Engineering Sign-Off</div>
-              <div class="font-serif font-bold text-stone-900 text-sm">Avishkar Shinde</div>
-              <div class="text-[11px] text-emerald-700 font-semibold">Lead Environmental Decision Engineer</div>
+              <div class="font-serif font-bold text-stone-900 text-sm">Lead Environmental Assessor</div>
+              <div class="text-[11px] text-emerald-700 font-semibold">Chartered Environmental Engineer</div>
               <div class="text-[9px] text-stone-400 font-mono border-t border-stone-200 pt-1.5 mt-1">
                 EcoBuild Smart — Automated EIA Engine<br>
                 PARIVESH 2.0 Audit Spec V3.4

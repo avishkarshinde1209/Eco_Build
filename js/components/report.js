@@ -921,8 +921,8 @@ window.ReportView = {
               </div>
 
               <div class="bg-stone-50 px-5 py-3 rounded-2xl border border-stone-200 text-center sm:text-right shrink-0">
-                <div class="font-serif font-bold text-stone-900 text-sm">Avishkar Shinde</div>
-                <div class="text-[11px] text-emerald-800 font-semibold">Lead Environmental Decision Engineer</div>
+                <div class="font-serif font-bold text-stone-900 text-sm">Lead Environmental Assessor</div>
+                <div class="text-[11px] text-emerald-800 font-semibold">Chartered Environmental Engineer</div>
                 <div class="text-[9px] text-stone-400 font-mono">QCI / NABET Accredited EIA Team</div>
               </div>
             </div>
