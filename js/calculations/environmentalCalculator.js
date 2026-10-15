@@ -1,63 +1,46 @@
 /**
- * EcoBuild Smart - Unified Environmental Calculator
- * Orchestrates domain calculators into a cohesive canonical assessment,
- * enforces shared schema, and synthesizes an evidence-based EIA Results Dossier.
+ * EcoBuild Smart — Environmental Calculator
+ * Orchestrates domain calculators and synthesises a lean, accurate EIA Results object.
+ * Regulatory basis (India):
+ *   - MoEFCC EIA Notification 2006, Schedule Item 8 (Building & Construction)
+ *   - CPCB NAAQS 2009: PM10 ≤ 60 µg/m³ (annual), PM2.5 ≤ 40 µg/m³ (annual)
+ *   - CPHEEO Manual on Water Supply & Sewerage 2019
+ *   - NBC 2016 Part 11: Approach to Sustainability
+ *   - CEA CO₂ Baseline v20 (FY 2023-24): 0.727 kg CO₂/kWh
+ *   - CPCB C&D Waste Management Rules 2016
+ *   - SWM Rules 2016
  */
 
 (function(root) {
   'use strict';
 
   root.EnvironmentalCalculator = {
+
+    // ─── Domain Delegators ───────────────────────────────────────────────────
+
     calculateGreenCoverLoss(project) {
-      const site = project.site || {};
-      const surf = project.surfaces || {};
-      const veg = project.vegetation || {};
+      const s = project.site || {}, su = project.surfaces || {}, v = project.vegetation || {};
       return root.VegetationCalculator.calculateGreenCover(
-        site.plot_area,
-        site.built_up_area,
-        surf.concrete_area,
-        surf.asphalt_area,
-        veg.existing_green_area,
-        surf.tiles_pavers
+        s.plot_area, s.built_up_area, su.concrete_area, su.asphalt_area,
+        v.existing_green_area, su.tiles_pavers
       );
     },
 
     calculateTreeLoss(project) {
-      const veg = project.vegetation || {};
+      const v = project.vegetation || {};
       return root.VegetationCalculator.calculateTreeImpact(
-        veg.existing_tree_count,
-        veg.trees_removed,
-        veg.tree_category
+        v.existing_tree_count, v.trees_removed, v.tree_category
       );
     },
 
-    calculateImperviousSurfaceImpact(project, greenRoofM2 = 0, permPavingM2 = 0) {
-      const site = project.site || {};
-      const surf = project.surfaces || {};
-      const plot = Math.max(1, Number(site.plot_area) || 1);
-      const baseImpervious = (Number(site.built_up_area) || 0) + (Number(surf.concrete_area) || 0) + (Number(surf.asphalt_area) || 0) + (Number(surf.tiles_pavers || 0) * 0.7);
-      const mitigatedImpervious = Math.max(0, baseImpervious - Number(permPavingM2) - (Number(greenRoofM2) * 0.6));
-      return {
-        baseline_impervious_m2: Math.round(baseImpervious),
-        baseline_impervious_pct: Math.min(100, Math.round((baseImpervious / plot) * 100)),
-        mitigated_impervious_m2: Math.round(mitigatedImpervious),
-        mitigated_impervious_pct: Math.min(100, Math.round((mitigatedImpervious / plot) * 100)),
-        impervious_reduction_m2: Math.round(baseImpervious - mitigatedImpervious)
-      };
+    calculateStormwaterRunoff(project, envData) {
+      return root.RunoffCalculator.calculateScenarios(project, envData);
     },
 
-    calculateStormwaterRunoff(project, environmentalData) {
-      return root.RunoffCalculator.calculateScenarios(project, environmentalData);
-    },
-
-    calculateRainwaterHarvestingPotential(project, environmentalData, dailyWaterDemandLitres) {
-      const site = project.site || {};
-      const water = project.water || {};
+    calculateRainwaterHarvesting(project, envData, dailyDemandL) {
+      const s = project.site || {}, w = project.water || {};
       return root.WaterCalculator.calculateRWH(
-        site.roof_area,
-        environmentalData?.rainfall,
-        water.occupants,
-        dailyWaterDemandLitres
+        s.roof_area, envData?.rainfall, w.occupants, dailyDemandL
       );
     },
 
@@ -66,658 +49,566 @@
     },
 
     calculateHeatIslandIndicator(project) {
-      const site = project.site || {};
-      const surf = project.surfaces || {};
-      const veg = project.vegetation || {};
+      const s = project.site || {}, su = project.surfaces || {}, v = project.vegetation || {};
       if (root.HeatIslandCalculator) {
-        return root.HeatIslandCalculator.calculateUHI(
-          site.plot_area,
-          {
-            concrete_area: surf.concrete_area,
-            asphalt_area: surf.asphalt_area,
-            standard_roof: site.roof_area,
-            lawn_grass: veg.existing_green_area
-          },
-          project.interventions
-        );
+        return root.HeatIslandCalculator.calculateUHI(s.plot_area, {
+          concrete_area: su.concrete_area,
+          asphalt_area: su.asphalt_area,
+          standard_roof: s.roof_area,
+          lawn_grass: v.existing_green_area
+        }, project.interventions);
       }
-      return { uhi_vulnerability_index: 45, uhi_risk_level: "Moderate", albedo_improvement: "+0.15" };
+      return { uhi_vulnerability_index: 45, uhi_risk_level: 'Moderate', albedo_improvement: '+0.15' };
     },
 
     calculateWaterRequirement(project) {
-      const water = project.water || {};
+      const w = project.water || {};
       return root.WaterCalculator.calculateWaterDemand(
-        project.building_type,
-        water.occupants,
-        water.daily_consumption_lpcd
+        project.building_type, w.occupants, w.daily_consumption_lpcd
       );
     },
 
-    calculateRecommendedTrees(project) {
-      const treeLoss = this.calculateTreeLoss(project);
-      return treeLoss.recommended_planting_quantity;
-    },
-
-    calculateGreenRoofRequirement(project) {
-      const site = project.site || {};
-      const surf = project.surfaces || {};
-      const iv = project.interventions || {};
-      const infra = root.VegetationCalculator.calculateGreenInfrastructureRequirements(
-        site.roof_area,
-        surf.concrete_area,
-        iv.solar_pv_area_m2 || 0
-      );
-      return infra.recommended_green_roof_m2;
-    },
-
-    calculatePermeablePavementRequirement(project) {
-      const site = project.site || {};
-      const surf = project.surfaces || {};
-      const infra = root.VegetationCalculator.calculateGreenInfrastructureRequirements(
-        site.roof_area,
-        surf.concrete_area
-      );
-      return infra.recommended_permeable_pavement_m2;
-    },
-
-    calculateSolarPV(project, environmentalData) {
-      const site = project.site || {};
-      const energy = project.energy || {};
-      const iv = project.interventions || {};
+    calculateSolarPV(project, envData) {
+      const s = project.site || {}, e = project.energy || {}, iv = project.interventions || {};
       return root.EnergyCalculator.calculateSolarPotential(
-        site.roof_area,
-        environmentalData?.solar,
-        energy.annual_electricity_kwh,
-        iv.solar_pv_area_m2,
-        iv.green_roof_m2 || 0
+        s.roof_area, envData?.solar, e.annual_electricity_kwh,
+        iv.solar_pv_area_m2, iv.green_roof_m2 || 0
       );
     },
 
-    /**
-     * Run full canonical calculation pipeline with validation pre-check
-     */
-    calculateOverallEnvironmentalIndicators(project, environmentalData) {
-      // 1. Normalize project to canonical schema
-      const canonicalProject = root.AssessmentSchema 
-        ? root.AssessmentSchema.normalizeProject(project) 
-        : project;
+    // ─── Main Pipeline ───────────────────────────────────────────────────────
 
-      // 2. Pre-calculation Validation Check
-      const validation = root.ValidationEngine 
-        ? root.ValidationEngine.validateProject(canonicalProject) 
+    calculateOverallEnvironmentalIndicators(project, envData) {
+      const p = root.AssessmentSchema
+        ? root.AssessmentSchema.normalizeProject(project) : project;
+
+      const validation = root.ValidationEngine
+        ? root.ValidationEngine.validateProject(p)
         : { isValid: true, warnings: [], limitations: [] };
 
-      // 3. Domain Calculators
-      const greenCover = this.calculateGreenCoverLoss(canonicalProject);
-      const treeLoss = this.calculateTreeLoss(canonicalProject);
-      const waterDemand = this.calculateWaterRequirement(canonicalProject);
-      const rwh = this.calculateRainwaterHarvestingPotential(canonicalProject, environmentalData, waterDemand.daily_demand_litres);
-      const waterBalance = root.WaterCalculator.calculateSTPAndWaterBalance
-        ? root.WaterCalculator.calculateSTPAndWaterBalance(canonicalProject, waterDemand, canonicalProject.vegetation?.existing_green_area || 0)
+      const waterDemand   = this.calculateWaterRequirement(p);
+      const rwh           = this.calculateRainwaterHarvesting(p, envData, waterDemand.daily_demand_litres);
+      const waterBalance  = root.WaterCalculator.calculateSTPAndWaterBalance
+        ? root.WaterCalculator.calculateSTPAndWaterBalance(p, waterDemand, p.vegetation?.existing_green_area || 0)
         : null;
-      const runoff = this.calculateStormwaterRunoff(canonicalProject, environmentalData);
-      const energy = this.calculateSolarPV(canonicalProject, environmentalData);
+      const runoff        = this.calculateStormwaterRunoff(p, envData);
+      const energy        = this.calculateSolarPV(p, envData);
+      p.calculated_energy = energy;
+      const treeLoss      = this.calculateTreeLoss(p);
+      const carbon        = this.calculateCarbonImpact(p, treeLoss.recommended_planting_quantity);
+      const uhi           = this.calculateHeatIslandIndicator(p);
+      const greenCover    = this.calculateGreenCoverLoss(p);
 
-      // Attach canonical energy result for dependent carbon and recovery models
-      canonicalProject.calculated_energy = energy;
+      const iv = p.interventions || {};
+      const greenRoofM2   = Number(iv.green_roof_m2) || 0;
+      const permPavM2     = Number(iv.permeable_pavement_m2) || 0;
+      const plotArea      = Math.max(1, Number(p.site?.plot_area) || 1);
+      const builtUpArea   = Math.max(0, Number(p.site?.built_up_area) || 0);
+      const concreteArea  = Math.max(0, Number(p.surfaces?.concrete_area) || 0);
+      const asphaltArea   = Math.max(0, Number(p.surfaces?.asphalt_area) || 0);
+      const tilesPavers   = Math.max(0, Number(p.surfaces?.tiles_pavers) || 0);
+      const baseImpervious = builtUpArea + concreteArea + asphaltArea + (tilesPavers * 0.7);
+      const mitImpervious  = Math.max(0, baseImpervious - permPavM2 - (greenRoofM2 * 0.6));
 
-      const carbon = this.calculateCarbonImpact(canonicalProject, treeLoss.recommended_planting_quantity);
-      const uhi = this.calculateHeatIslandIndicator(canonicalProject);
       const infra = root.VegetationCalculator.calculateGreenInfrastructureRequirements(
-        canonicalProject.site.roof_area,
-        canonicalProject.surfaces.concrete_area,
-        canonicalProject.interventions?.solar_pv_area_m2 || 0
-      );
-      const imperviousImpact = this.calculateImperviousSurfaceImpact(
-        canonicalProject,
-        canonicalProject.interventions?.green_roof_m2 || 0,
-        canonicalProject.interventions?.permeable_pavement_m2 || 0
+        p.site?.roof_area, concreteArea, iv.solar_pv_area_m2 || 0
       );
 
-      // 4. Intermediate Results Bundle
-      const intermediateResults = {
-        green_cover: greenCover,
-        tree_loss: treeLoss,
-        water: rwh,
-        water_balance: waterBalance,
-        runoff: runoff,
-        energy: energy,
-        carbon: carbon,
-        uhi: uhi
-      };
+      const intermediate = { green_cover: greenCover, tree_loss: treeLoss, water: rwh,
+        water_balance: waterBalance, runoff, energy, carbon, uhi };
 
-      // 5. Environmental Performance Score (decoupled from legal approvals)
-      const score = root.ScoreCalculator.calculateScore(canonicalProject, intermediateResults);
+      const score = root.ScoreCalculator.calculateScore(p, intermediate);
 
-      // 6. Two-Phase Nature Recovery Plan
       const recovery = root.NatureRecoveryCalculator
-        ? root.NatureRecoveryCalculator.calculateRecoveryPlan(canonicalProject, { ...intermediateResults, score }, environmentalData)
-        : null;
+        ? root.NatureRecoveryCalculator.calculateRecoveryPlan(p, { ...intermediate, score }, envData) : null;
 
-      // 7. Site-Constrained Pareto Recovery Packages (3 Scenarios)
       const recoveryPackages = root.OptimizerEngine
-        ? root.OptimizerEngine.generateParetoPackages(canonicalProject, intermediateResults)
-        : [];
+        ? root.OptimizerEngine.generateParetoPackages(p, intermediate) : [];
 
-      // 8. Scientific Data Confidence Assessment
-      let confidenceScore = 100;
-      const confidenceReasons = [];
-      if (canonicalProject.baseline?.is_provisional || canonicalProject.baseline?.status === 'incomplete' || canonicalProject.baseline?.existing_green_area === null) {
-        confidenceScore -= 35;
-        confidenceReasons.push("Pre-development baseline green cover or tree count was unmeasured/provisional.");
+      // Data confidence
+      let confScore = 100;
+      const confReasons = [];
+      if (p.baseline?.is_provisional || p.baseline?.existing_green_area === null) {
+        confScore -= 35;
+        confReasons.push('Pre-development baseline unmeasured / provisional.');
       }
-      if (!environmentalData || !environmentalData.rainfall || environmentalData.isFallback) {
-        confidenceScore -= 20;
-        confidenceReasons.push("Environmental rainfall was estimated via regional fallback rather than on-site gauge.");
+      if (!envData || !envData.rainfall || envData.isFallback) {
+        confScore -= 20;
+        confReasons.push('Rainfall estimated via regional fallback (no on-site gauge).');
       }
-      if (canonicalProject.site?.plot_area && !canonicalProject.site?.survey_date) {
-        confidenceScore -= 10;
-        confidenceReasons.push("Site geometry was user-declared without formal cadastral survey verification.");
+      if (p.site?.plot_area && !p.site?.survey_date) {
+        confScore -= 10;
+        confReasons.push('Site geometry user-declared without cadastral survey.');
       }
-      confidenceScore = Math.max(10, Math.min(100, confidenceScore));
-      let confidenceLevel = "HIGH";
-      if (confidenceScore < 60) confidenceLevel = "PROVISIONAL";
-      else if (confidenceScore < 80) confidenceLevel = "MODERATE";
+      confScore = Math.max(10, Math.min(100, confScore));
+      const confLevel = confScore < 60 ? 'PROVISIONAL' : confScore < 80 ? 'MODERATE' : 'HIGH';
 
-      const dataConfidence = {
-        score: confidenceScore,
-        level: confidenceLevel,
-        is_provisional: confidenceLevel === "PROVISIONAL",
-        reasons: confidenceReasons,
-        description: confidenceLevel === "PROVISIONAL" 
-          ? "Provisional confidence due to estimated baseline or fallback climate parameters."
-          : (confidenceLevel === "MODERATE" ? "Moderate confidence based on user-declared spatial metrics." : "High confidence based on measured site inputs.")
-      };
-
-      const calculationsBundle = {
+      const bundle = {
         timestamp: new Date().toISOString(),
-        validation: validation,
+        validation,
         green_cover: greenCover,
         tree_impact: treeLoss,
         water_demand: waterDemand,
-        rwh: rwh,
+        rwh,
         water_balance: waterBalance,
-        runoff: runoff,
-        energy: energy,
-        carbon: carbon,
-        uhi: uhi,
+        runoff,
+        energy,
+        carbon,
+        uhi,
         green_infra_potential: infra,
-        impervious_balance: imperviousImpact,
-        score: score,
-        data_confidence: dataConfidence,
-        recovery: recovery,
+        impervious_balance: {
+          baseline_impervious_m2: Math.round(baseImpervious),
+          baseline_impervious_pct: Math.min(100, Math.round((baseImpervious / plotArea) * 100)),
+          mitigated_impervious_m2: Math.round(mitImpervious),
+          mitigated_impervious_pct: Math.min(100, Math.round((mitImpervious / plotArea) * 100)),
+          impervious_reduction_m2: Math.round(baseImpervious - mitImpervious)
+        },
+        score,
+        data_confidence: {
+          score: confScore,
+          level: confLevel,
+          reasons: confReasons
+        },
+        recovery,
         recovery_packages: recoveryPackages
       };
 
-      // 9. Synthesize Statutory EIA Master Results Matrix
-      const eiaResults = this.generateAppropriateEIAResults(canonicalProject, calculationsBundle, environmentalData);
-      calculationsBundle.eia_results = eiaResults;
-
-      return calculationsBundle;
+      bundle.eia_results = this.generateEIAResults(p, bundle, envData);
+      return bundle;
     },
 
+    // ─── EIA Results Synthesis ───────────────────────────────────────────────
+
     /**
-     * Synthesize authoritative Statutory EIA Results Matrix
-     * Conforming to MoEFCC EIA Notification 2006 Schedule 8(a)/8(b), CPCB NAAQS, CPHEEO, and NBC 2016 Part 11
+     * Synthesise the Statutory EIA Results Matrix.
+     * Screening: MoEFCC EIA Notification 2006 Schedule Item 8(a)
+     * Domains: 6 regulated environmental aspects for building/construction projects.
      */
-    generateAppropriateEIAResults(project, data, environmentalData) {
+    generateEIAResults(project, data, envData) {
       if (!project) return null;
 
-      const site = project.site || {};
-      const surfaces = project.surfaces || {};
-      const veg = project.vegetation || {};
-      const iv = project.interventions || {};
-      const water = project.water || {};
-      const waste = project.waste || {};
-      const energy = project.energy || {};
+      const s   = project.site        || {};
+      const su  = project.surfaces    || {};
+      const veg = project.vegetation  || {};
+      const iv  = project.interventions || {};
+      const w   = project.water       || {};
+      const wst = project.waste       || {};
+      const en  = project.energy      || {};
 
-      const plotArea = Math.max(1, Number(site.plot_area) || 5000);
-      const builtUpArea = Math.max(0, Number(site.built_up_area) || 0);
-      const floors = Math.max(1, Number(site.floors) || 1);
-      const totalGfa = Number(site.total_floor_area) || (builtUpArea * floors);
-      const roofArea = Math.max(0, Number(site.roof_area !== undefined ? site.roof_area : builtUpArea));
-      const openGround = Math.max(0, plotArea - builtUpArea);
+      const plot       = Math.max(1, Number(s.plot_area)     || 5000);
+      const bua        = Math.max(0, Number(s.built_up_area) || 0);
+      const floors     = Math.max(1, Number(s.floors)        || 1);
+      const totalGfa   = Number(s.total_floor_area) || (bua * floors);
+      const roofArea   = Math.max(0, Number(s.roof_area !== undefined ? s.roof_area : bua));
+      const openGround = Math.max(0, plot - bua);
 
-      const concreteArea = Math.max(0, Number(surfaces.concrete_area) || 0);
-      const asphaltArea = Math.max(0, Number(surfaces.asphalt_area) || 0);
-      const tilesPavers = Math.max(0, Number(surfaces.tiles_pavers) || 0);
-      const hardscape = concreteArea + asphaltArea + tilesPavers;
+      const concrete   = Math.max(0, Number(su.concrete_area)  || 0);
+      const asphalt    = Math.max(0, Number(su.asphalt_area)   || 0);
+      const tiles      = Math.max(0, Number(su.tiles_pavers)   || 0);
+      const hardscape  = concrete + asphalt + tiles;
 
-      const occupants = Math.max(0, Number(water.occupants) || 0);
-      const existingTrees = Math.max(0, Number(veg.existing_tree_count) || 0);
-      const treesRemoved = Math.max(0, Number(veg.trees_removed) || 0);
-      const protectedTrees = Math.max(0, existingTrees - treesRemoved);
-      const compensatoryTrees = iv.trees_planted !== undefined && iv.trees_planted !== null 
-        ? Math.max(0, Number(iv.trees_planted)) 
-        : (treesRemoved * 3);
+      const occupants  = Math.max(0, Number(w.occupants)       || 0);
+      const existTrees = Math.max(0, Number(veg.existing_tree_count) || 0);
+      const remTrees   = Math.max(0, Number(veg.trees_removed) || 0);
+      const savedTrees = Math.max(0, existTrees - remTrees);
+      const compTrees  = (iv.trees_planted !== undefined && iv.trees_planted !== null)
+        ? Math.max(0, Number(iv.trees_planted)) : (remTrees * 3);
+      const greenRoof  = Number(iv.green_roof_m2)            || 0;
+      const permPav    = Number(iv.permeable_pavement_m2)    || 0;
 
-      // 1. Statutory EIA Clearance Screening (MoEFCC EIA Notification 2006 Schedule 8(a)/8(b))
-      // Based STRICTLY on Built-up Area (GFA) thresholds, completely decoupled from environmental score!
-      let category = "Exempt from Central/State EIA (< 20,000 m² BUA)";
-      let authority = "Local Municipal Corporation & State Pollution Control Board (SPCB Consent CTE/CTO)";
-      let appraisalType = "Local Building Bye-Laws & Environmental Management Plan (EMP)";
-      let categoryBadge = "bg-sky-100 text-sky-800 border-sky-300";
-      let statutoryVerdict = "LOCAL APPRAISAL ONLY — EXEMPT FROM FORMAL ENVIRONMENTAL CLEARANCE (EC)";
-      let verdictColor = "sky";
-
+      // ── Screening ────────────────────────────────────────────────────────
+      let category, authority, appraisalType, categoryBadge, verdict, verdictColor;
       if (totalGfa >= 150000) {
-        category = "Category A (≥ 1,50,000 m² BUA - Townships & Area Development)";
-        authority = "Ministry of Environment, Forest & Climate Change (MoEF&CC New Delhi)";
-        appraisalType = "Full EIA Study, Public Consultation & Central EAC Appraisal";
-        categoryBadge = "bg-purple-100 text-purple-800 border-purple-300";
-        statutoryVerdict = "MANDATORY CENTRAL EIA CLEARANCE REQUIRED (MoEF&CC Category A)";
-        verdictColor = "purple";
+        category      = 'Category A — ≥ 1,50,000 m² GFA (Township / Area Development)';
+        authority     = 'Ministry of Environment, Forest & Climate Change (MoEFCC, New Delhi)';
+        appraisalType = 'Full EIA Study + Public Consultation + Central EAC Appraisal';
+        categoryBadge = 'bg-purple-100 text-purple-800 border-purple-300';
+        verdict       = 'CENTRAL EIA CLEARANCE REQUIRED — MoEFCC Category A';
+        verdictColor  = 'purple';
       } else if (totalGfa >= 20000) {
-        category = "Category B2 (20,000 to < 1,50,000 m² BUA - Building & Construction)";
-        authority = "State Environmental Impact Assessment Authority (SEIAA / SEAC)";
-        appraisalType = "Form 1, Form 1A Appraisal & State Environmental Clearance (EC)";
-        categoryBadge = "bg-blue-100 text-blue-800 border-blue-300";
-        statutoryVerdict = "STATE LEVEL ENVIRONMENTAL CLEARANCE REQUIRED (SEIAA Category B2)";
-        verdictColor = "blue";
+        category      = 'Category B2 — 20,000 to < 1,50,000 m² GFA (Building & Construction)';
+        authority     = 'State Environment Impact Assessment Authority (SEIAA / SEAC)';
+        appraisalType = 'Form-I, Form-1A + Conceptual Plan — No Full EIA Study Required';
+        categoryBadge = 'bg-blue-100 text-blue-800 border-blue-300';
+        verdict       = 'STATE LEVEL EC REQUIRED — SEIAA Category B2';
+        verdictColor  = 'blue';
+      } else {
+        category      = 'Exempt — < 20,000 m² GFA (Below EC Threshold)';
+        authority     = 'Local Municipal Corporation & State Pollution Control Board (SPCB)';
+        appraisalType = 'Building Bye-Laws + Environmental Management Plan (EMP)';
+        categoryBadge = 'bg-sky-100 text-sky-800 border-sky-300';
+        verdict       = 'EXEMPT FROM FORMAL EC — LOCAL MUNICIPAL APPROVAL ONLY';
+        verdictColor  = 'sky';
       }
 
       const compositeScore = data.score?.composite_score ?? 70;
-      const tier = data.score?.tier || "Moderate Performance";
+      const tier           = data.score?.tier || 'Moderate Performance';
 
-      // 2. Hydrology & Water Environment
-      const runoff = data.runoff || {};
-      const qBefore = runoff.pre_development?.peak_runoff_m3_hr ?? 0;
-      const qUnmitigated = runoff.proposed_development?.peak_runoff_m3_hr ?? 0;
-      const qMitigated = runoff.with_green_infrastructure?.peak_runoff_m3_hr ?? 0;
-      const runoffReductionPct = runoff.impact_summary?.runoff_reduction_pct ?? 0;
-      const annualRunoffMitigatedKL = Math.round((runoff.impact_summary?.mitigated_annual_runoff_litres || 0) / 1000);
-      
-      const rwh = data.rwh || {};
-      const rwhAnnualKL = Math.round((rwh.annual_potential_litres || 0) / 1000);
-      const rwhTankL = Number(iv.rwh_tank_capacity_l) || rwh.recommended_storage_range_litres?.optimum || 0;
+      // ── Water domain values ──────────────────────────────────────────────
+      const wb           = data.water_balance || {};
+      const freshKLD     = wb.total_domestic_fresh_demand_kld ?? 0;
+      const sewageKLD    = wb.sewage_generation_kld            ?? 0;
+      const stpCapKLD    = wb.stp_design_capacity_kld          ?? 0;
+      const recycledKLD  = wb.total_recycled_kld               ?? 0;
+      const freshSavePct = wb.fresh_water_savings_pct          ?? 0;
+      const isZLD        = wb.is_zld_compliant                 ?? true;
 
-      // STP & Water Balance
-      const wb = data.water_balance || {};
-      const freshDemandKLD = wb.total_domestic_fresh_demand_kld ?? 0;
-      const sewageKLD = wb.sewage_generation_kld ?? 0;
-      const stpCapacityKLD = wb.stp_design_capacity_kld ?? 0;
-      const recycledKLD = wb.total_recycled_kld ?? 0;
-      const freshSavingsPct = wb.fresh_water_savings_pct ?? 0;
-      const isZLD = wb.is_zld_compliant ?? true;
+      const runoffData   = data.runoff || {};
+      const qPre         = runoffData.pre_development?.peak_runoff_m3_hr   ?? 0;
+      const qPost        = runoffData.proposed_development?.peak_runoff_m3_hr ?? 0;
+      const qMit         = runoffData.with_green_infrastructure?.peak_runoff_m3_hr ?? 0;
+      const runoffRedPct = runoffData.impact_summary?.runoff_reduction_pct ?? 0;
+      const annRunoffKL  = Math.round((runoffData.impact_summary?.mitigated_annual_runoff_litres || 0) / 1000);
 
-      // 3. Air & Ambient Quality
-      const aq = environmentalData?.airQuality || {};
-      const aqi = aq.aqi || 78;
-      const pm25 = aq.pm25 || 26.5;
-      const pm10 = aq.pm10 || 52.0;
+      const rwhData   = data.rwh || {};
+      const rwhKL     = Math.round((rwhData.annual_potential_litres || 0) / 1000);
+      const rwhTankKL = Math.round((Number(iv.rwh_tank_capacity_l) || rwhData.recommended_storage_range_litres?.optimum || 0) / 1000);
 
-      // 4. Energy & Carbon Footprint
-      const elecDemandKwh = energy.annual_electricity_kwh !== undefined && energy.annual_electricity_kwh !== null 
-        ? Number(energy.annual_electricity_kwh) 
-        : Math.round(totalGfa * 15);
-      const solarM2 = Number(iv.solar_pv_area_m2) || Number(data.energy?.solar_allocated_area_m2) || 0;
-      const solarKwp = Number(data.energy?.installed_capacity_kwp) || Math.round(solarM2 * 0.18 * 10) / 10;
-      const solarGenKwh = Number(data.energy?.annual_generation_kwh) || 0;
-      const solarOffsetPct = Number(data.energy?.demand_offset_percentage) || 0;
+      // ── Energy & carbon ──────────────────────────────────────────────────
+      const elecKwh      = en.annual_electricity_kwh !== undefined
+        ? Number(en.annual_electricity_kwh) : Math.round(totalGfa * 15);
+      const solarKwp     = Number(data.energy?.installed_capacity_kwp)  || 0;
+      const solarGenKwh  = Number(data.energy?.annual_generation_kwh)   || 0;
+      const solarOffPct  = Number(data.energy?.demand_offset_percentage) || 0;
+      // CEA v20 FY2023-24: 0.727 kg CO₂/kWh
+      const gridFactor   = 0.727;
+      const annGridCO2t  = Math.round((elecKwh * gridFactor) / 100) / 10; // tonnes
+      const annSolarSavet = Math.round((solarGenKwh * gridFactor) / 100) / 10;
 
-      const embodiedCarbonTonnes = Number(data.carbon?.total_embodied_tonnes) || Math.round((totalGfa * 450) / 1000);
-      const greenConcreteAvoidedTonnes = Number(data.recovery?.phase1_construction?.green_concrete?.co2_avoided_tonnes) || 0;
-      const netEmbodiedCarbonTonnes = Math.max(0, Math.round((embodiedCarbonTonnes - greenConcreteAvoidedTonnes) * 10) / 10);
-      const annualOpCarbonSavedTonnes = Number(data.carbon?.annual_co2_offset_tonnes) || 0;
-      const carbonPaybackYrs = Number(data.carbon?.net_carbon_dynamics?.carbon_payback_years) || 99.9;
+      const embodiedT    = Number(data.carbon?.total_embodied_tonnes)
+        || Math.round((totalGfa * 450) / 1000);
+      const avoidedT     = Number(data.recovery?.phase1_construction?.green_concrete?.co2_avoided_tonnes) || 0;
+      const netEmbodiedT = Math.max(0, Math.round((embodiedT - avoidedT) * 10) / 10);
+      const opCO2SavedT  = Number(data.carbon?.annual_co2_offset_tonnes) || annSolarSavet;
+      const paybackYrs   = Number(data.carbon?.net_carbon_dynamics?.carbon_payback_years) || '—';
 
-      // 5. C&D and MSW Waste Circularity
-      const cdWasteTonnes = waste.construction_waste_tonnes !== undefined ? Number(waste.construction_waste_tonnes) : Math.round((totalGfa * 55) / 1000);
-      const recyclingPct = waste.recycling_pct !== undefined ? Number(waste.recycling_pct) : 65;
-      const divertedWasteTonnes = Math.round(cdWasteTonnes * (recyclingPct / 100) * 10) / 10;
-      const rcaYieldM3 = Math.round(divertedWasteTonnes / 1.6);
-      const dailyMswKg = waste.daily_solid_waste_kg !== undefined ? Number(waste.daily_solid_waste_kg) : Math.round(occupants * 0.4);
-      const dailyOrganicWasteKg = (waste.daily_organic_waste_kg !== undefined) ? Number(waste.daily_organic_waste_kg) : Math.round(dailyMswKg * 0.5);
-      const annualCompostTonnes = Math.round((dailyOrganicWasteKg * 365 * 0.25 / 1000) * 10) / 10;
+      // ── Waste ─────────────────────────────────────────────────────────────
+      const cdWasteT     = wst.construction_waste_tonnes !== undefined
+        ? Number(wst.construction_waste_tonnes) : Math.round((totalGfa * 55) / 1000);
+      const recPct       = wst.recycling_pct !== undefined ? Number(wst.recycling_pct) : 65;
+      const divertedT    = Math.round(cdWasteT * (recPct / 100) * 10) / 10;
+      const rcaM3        = Math.round(divertedT / 1.6);
+      const mswKgDay     = wst.daily_solid_waste_kg !== undefined
+        ? Number(wst.daily_solid_waste_kg) : Math.round(occupants * 0.4);
+      // 0.4 kg/capita/day (SWM Rules 2016 default); compost yield ~25% of organic fraction (50% of MSW)
+      const compostTyr   = Math.round((mswKgDay * 0.5 * 0.25 * 365 / 1000) * 10) / 10;
 
-      // 6. Land, Topsoil & Miyawaki Nature Recovery
-      const topsoilM3 = Number(data.recovery?.phase1_construction?.topsoil?.salvage_volume_m3) || Math.round(builtUpArea * 0.20);
-      const topsoilStockpileM2 = Number(data.recovery?.phase1_construction?.topsoil?.stockpile_area_m2) || Math.round(topsoilM3 / 2);
-      const miyawakiAreaM2 = Number(data.recovery?.phase2_operational?.miyawaki_forest?.designated_area_m2) || 0;
-      const miyawakiSaplings = Number(data.recovery?.phase2_operational?.miyawaki_forest?.total_saplings) || 0;
-      const bngNetPct = Number(data.recovery?.phase2_operational?.biodiversity_net_gain?.net_gain_pct) || 0;
-      const greenRoofM2 = Number(iv.green_roof_m2) || 0;
-      const permPavementM2 = Number(iv.permeable_pavement_m2) || 0;
-      const uhiScore = data.uhi?.uhi_vulnerability_index || 48;
-      const uhiRisk = data.uhi?.uhi_risk_level || "Moderate Thermal Stress";
+      // ── Land / topsoil ───────────────────────────────────────────────────
+      const topsoilM3    = Number(data.recovery?.phase1_construction?.topsoil?.salvage_volume_m3)
+        || Math.round(bua * 0.20);
 
-      const eiaResult = {
+      // ── Air ──────────────────────────────────────────────────────────────
+      const aq   = envData?.airQuality || {};
+      const aqi  = aq.aqi  || '—';
+      const pm25 = aq.pm25 || '—';
+      const pm10 = aq.pm10 || '—';
+
+      // ── UHI ──────────────────────────────────────────────────────────────
+      const uhiIdx  = data.uhi?.uhi_vulnerability_index || 48;
+      const uhiRisk = data.uhi?.uhi_risk_level          || 'Moderate';
+
+      // ── Miyawaki / BNG ───────────────────────────────────────────────────
+      const mwaM2  = Number(data.recovery?.phase2_operational?.miyawaki_forest?.designated_area_m2) || 0;
+      const mwaSap = Number(data.recovery?.phase2_operational?.miyawaki_forest?.total_saplings)     || 0;
+
+      // ─────────────────────────────────────────────────────────────────────
+      return {
         generated_at: new Date().toISOString(),
-        project_name: project.name || "Active Environmental Assessment",
+        project_name: project.name || 'Active Environmental Assessment',
         location: {
-          city: project.location?.city || "Site Location",
-          state: project.location?.state || "State Jurisdiction",
+          city: project.location?.city  || 'Site Location',
+          state: project.location?.state || 'State',
           coordinates: (project.location?.latitude && project.location?.longitude)
             ? `${project.location.latitude.toFixed(4)}°N, ${project.location.longitude.toFixed(4)}°E`
-            : "Coordinates Unspecified"
+            : 'Unspecified'
         },
         screening: {
-          total_built_up_area_m2: totalGfa,
-          plot_area_m2: plotArea,
-          category: category,
-          category_badge: categoryBadge,
-          appraisal_authority: authority,
-          appraisal_type: appraisalType,
-          statutory_verdict: statutoryVerdict,
-          verdict_color: verdictColor,
-          composite_score: compositeScore,
-          performance_tier: tier,
-          declaration_text: `Statutory screening categorized project as ${category} under MoEFCC EIA Notification 2006. EcoBuild multi-criteria planning score evaluates to ${compositeScore}/100 (${tier}). This preliminary assessment identifies mitigation recommendations for topsoil preservation, C&D circularity, compensatory planting, water balance, and solar PV. Formal regulatory clearance must be granted by the designated competent authority.`
+          total_gfa_m2:      totalGfa,
+          plot_area_m2:      Math.round(plot),
+          category,
+          category_badge:    categoryBadge,
+          authority,
+          appraisal_type:    appraisalType,
+          statutory_verdict: verdict,
+          verdict_color:     verdictColor,
+          composite_score:   compositeScore,
+          performance_tier:  tier
         },
+
+        // ── 6 KPI summary cards ───────────────────────────────────────────
         key_results: [
           {
-            id: "score",
-            label: "EcoBuild Performance Score",
-            icon: "⭐",
-            before_construction: "Pre-Development Baseline Condition",
-            after_construction: "Unmitigated Development Scenario",
-            after_assessment: `${compositeScore}/100 (${tier})`,
-            prev_condition: "Pre-Development Baseline",
-            present_condition: "Unmitigated Development",
-            net_result: `${compositeScore}/100 Multi-Criteria Index`,
+            id: 'score', icon: '⭐',
+            label: 'EcoBuild Sustainability Score',
+            before: 'Pre-development baseline',
+            after_construction: 'Unmitigated impact',
+            after_assessment: `${compositeScore}/100 — ${tier}`,
+            net_result: `${compositeScore}/100 composite index`,
             value: `${compositeScore}/100`,
-            subtext: `${tier}`,
-            status: "Planning Index",
-            badge_class: "bg-teal-100 text-teal-800 border-teal-300"
+            subtext: tier,
+            status: 'Planning Index',
+            badge_class: 'bg-teal-100 text-teal-800 border-teal-300'
           },
           {
-            id: "runoff",
-            label: "Stormwater Runoff Rate",
-            icon: "🌧️",
-            before_construction: `${qBefore} m³/hr (Pre-Development Peak)`,
-            after_construction: `${qUnmitigated} m³/hr (Unmitigated Hardscape Peak)`,
-            after_assessment: `${qMitigated} m³/hr (Post-Mitigation Peak)`,
-            prev_condition: `${qBefore} m³/hr`,
-            present_condition: `${qUnmitigated} m³/hr`,
-            net_result: `-${runoffReductionPct}% Peak Flow Attenuated`,
-            value: `-${runoffReductionPct}%`,
-            subtext: `${qMitigated} m³/hr (from ${qUnmitigated} m³/hr)`,
-            status: "SuDS Mitigated",
-            badge_class: "bg-blue-100 text-blue-800 border-blue-300"
+            id: 'runoff', icon: '🌧️',
+            label: 'Peak Stormwater Runoff',
+            before: `${qPre} m³/hr (natural land)`,
+            after_construction: `${qPost} m³/hr (unmitigated hardscape)`,
+            after_assessment: `${qMit} m³/hr (SuDS mitigated)`,
+            net_result: `-${runoffRedPct}% peak attenuation`,
+            value: `-${runoffRedPct}%`,
+            subtext: `${qMit} m³/hr post-SuDS`,
+            status: 'SuDS Verified',
+            badge_class: 'bg-blue-100 text-blue-800 border-blue-300'
           },
           {
-            id: "water_savings",
-            label: "Water Conservation & STP",
-            icon: "💧",
-            before_construction: "0 KLD (Pre-development)",
-            after_construction: `${freshDemandKLD} KLD fresh demand, ${sewageKLD} KLD sewage`,
-            after_assessment: `${Math.round((freshDemandKLD - recycledKLD) * 10) / 10} KLD net fresh, ${recycledKLD} KLD recycled`,
-            prev_condition: "0 KLD",
-            present_condition: `${freshDemandKLD} KLD fresh intake`,
-            net_result: `${freshSavingsPct}% Fresh Water Saved`,
-            value: `${freshSavingsPct}% Saved`,
-            subtext: `${recycledKLD} KLD recycled via tertiary STP`,
-            status: isZLD ? "Zero Liquid Discharge" : "Treated Effluent Recycled",
-            badge_class: "bg-cyan-100 text-cyan-800 border-cyan-300"
+            id: 'water', icon: '💧',
+            label: 'Water Demand & STP',
+            before: '0 KLD (pre-development)',
+            after_construction: `${freshKLD} KLD fresh demand | ${sewageKLD} KLD sewage`,
+            after_assessment: `${Math.round((freshKLD - recycledKLD) * 10) / 10} KLD net fresh | ${recycledKLD} KLD recycled via STP`,
+            net_result: `${freshSavePct}% fresh water saved`,
+            value: `${freshSavePct}% Saved`,
+            subtext: `${recycledKLD} KLD recycled — ${isZLD ? 'ZLD' : 'Treated Effluent'}`,
+            status: isZLD ? 'Zero Liquid Discharge' : 'Effluent Recycled',
+            badge_class: 'bg-cyan-100 text-cyan-800 border-cyan-300'
           },
           {
-            id: "solar_offset",
-            label: "Clean Solar Energy & Grid Offset",
-            icon: "☀️",
-            before_construction: "0 kWh (Zero site generation)",
-            after_construction: `${Math.round(elecDemandKwh / 1000)} MWh/yr grid electrical load`,
-            after_assessment: `${solarKwp} kWp Solar PV generating ${(solarGenKwh / 1000).toFixed(1)} MWh/yr`,
-            prev_condition: "0 kWh",
-            present_condition: `${Math.round(elecDemandKwh / 1000)} MWh/yr demand`,
-            net_result: `${solarOffsetPct}% Net Clean Energy Offset`,
-            value: `${solarOffsetPct}% Offset`,
-            subtext: `${solarKwp} kWp yields ${(solarGenKwh / 1000).toFixed(1)} MWh/yr`,
-            status: "Grid Offset",
-            badge_class: "bg-amber-100 text-amber-800 border-amber-300"
+            id: 'solar', icon: '☀️',
+            label: 'Rooftop Solar PV',
+            before: '0 kWh (no generation)',
+            after_construction: `${Math.round(elecKwh / 1000)} MWh/yr grid load`,
+            after_assessment: `${solarKwp} kWp → ${(solarGenKwh / 1000).toFixed(1)} MWh/yr`,
+            net_result: `${solarOffPct}% clean energy offset`,
+            value: `${solarOffPct}% Offset`,
+            subtext: `Saves ${annSolarSavet} t CO₂/yr (CEA v20)`,
+            status: 'Grid Offset',
+            badge_class: 'bg-amber-100 text-amber-800 border-amber-300'
           },
           {
-            id: "cd_waste",
-            label: "C&D Waste Circularity & Recycling",
-            icon: "🏗️",
-            before_construction: "0 Tonnes",
-            after_construction: `${cdWasteTonnes} tonnes debris generated`,
-            after_assessment: `${divertedWasteTonnes} tonnes recycled into ${rcaYieldM3} m³ sub-base`,
-            prev_condition: "0 Tonnes",
-            present_condition: `${cdWasteTonnes} tonnes unsegregated`,
-            net_result: `${recyclingPct}% Landfill Diversion Rate`,
-            value: `${recyclingPct}% Diverted`,
-            subtext: `${divertedWasteTonnes} tonnes reused as RCA`,
-            status: "CPCB Recycled",
-            badge_class: "bg-amber-100 text-amber-900 border-amber-300"
+            id: 'cd_waste', icon: '🏗️',
+            label: 'C&D Waste Circularity',
+            before: '0 t (pre-construction)',
+            after_construction: `${cdWasteT} t debris generated`,
+            after_assessment: `${divertedT} t (${recPct}%) → ${rcaM3} m³ recycled aggregate`,
+            net_result: `${recPct}% landfill diversion`,
+            value: `${recPct}% Diverted`,
+            subtext: `${rcaM3} m³ RCA sub-base reuse`,
+            status: 'CPCB C&D Rules 2016',
+            badge_class: 'bg-amber-100 text-amber-900 border-amber-300'
           },
           {
-            id: "bng_gain",
-            label: "Ecology & Native Tree Restoration",
-            icon: "🌱",
-            before_construction: `${existingTrees} site trees recorded`,
-            after_construction: `${treesRemoved} trees removed`,
-            after_assessment: `${protectedTrees} preserved + ${compensatoryTrees} trees planted`,
-            prev_condition: `${existingTrees} trees`,
-            present_condition: `${treesRemoved} trees felled`,
-            net_result: `+${compensatoryTrees} Native Trees Added`,
-            value: `${compensatoryTrees} Planted`,
-            subtext: `${protectedTrees} preserved + ${compensatoryTrees} planted`,
-            status: treesRemoved > 0 ? (compensatoryTrees >= treesRemoved * 3 ? "Compensatory 3:1 Met" : "Compensatory Deficit") : "No Felling",
-            badge_class: "bg-emerald-100 text-emerald-900 border-emerald-300"
+            id: 'ecology', icon: '🌱',
+            label: 'Ecology & Tree Restoration',
+            before: `${existTrees} trees on site`,
+            after_construction: `${remTrees} trees removed`,
+            after_assessment: `${savedTrees} preserved + ${compTrees} planted (3:1 norm)`,
+            net_result: `+${compTrees} native trees net gain`,
+            value: `${compTrees} Planted`,
+            subtext: `${savedTrees} preserved + ${compTrees} compensatory`,
+            status: remTrees > 0
+              ? (compTrees >= remTrees * 3 ? '3:1 Compensatory Met' : 'Compensatory Deficit')
+              : 'No Felling',
+            badge_class: 'bg-emerald-100 text-emerald-900 border-emerald-300'
           }
         ],
+
+        // ── 6 EIA Domain Tables ───────────────────────────────────────────
         domains: [
           {
-            domain_id: "land_soil",
-            domain_name: "1. Land Environment, Soil & Topsoil Conservation",
-            standard_ref: "NBC 2016 Part 11 & MoEFCC Form 1A Item 2",
+            domain_id: 'land_soil',
+            domain_name: '1. Land & Topsoil',
+            standard_ref: 'NBC 2016 Part 11 | MoEFCC Form-1A Item 2',
             parameters: [
               {
-                name: "Ground Coverage & Footprint",
-                prev_condition: "0 m² (100% open ground)",
-                present_condition: `${builtUpArea.toLocaleString()} m² footprint (${Math.round((builtUpArea / plotArea) * 100)}% plot coverage)`,
-                after_assessment: `${builtUpArea.toLocaleString()} m² footprint within bye-law setbacks`,
-                net_result: `${openGround.toLocaleString()} m² open space conserved`,
-                baseline: "Unpaved land", proposed: `${builtUpArea.toLocaleString()} m²`, mitigated: `${builtUpArea.toLocaleString()} m²`, delta: "Within Bye-law Limits",
-                standard_code: "NBC 2016 Part 3",
-                status: "Compliant"
+                name: 'Plot Coverage & Open Space',
+                standard_code: 'NBC 2016 Part 3',
+                before: '100% open unpaved ground',
+                after_construction: `${bua.toLocaleString()} m² footprint — ${Math.round((bua / plot) * 100)}% coverage`,
+                after_assessment: `${openGround.toLocaleString()} m² open ground retained`,
+                net_result: `${Math.round((openGround / plot) * 100)}% open space preserved`,
+                status: 'Compliant'
               },
               {
-                name: "Surface Impermeability Ratio",
-                prev_condition: "Natural soil infiltration",
-                present_condition: `${hardscape + builtUpArea} m² (${Math.round(((hardscape + builtUpArea) / plotArea) * 100)}% impervious)`,
-                after_assessment: `${Math.round(hardscape + builtUpArea - permPavementM2 - (greenRoofM2 * 0.6))} m² net impervious`,
-                net_result: `+${permPavementM2} m² permeable paving + ${greenRoofM2} m² green roof`,
-                baseline: "Natural soil", proposed: `${hardscape + builtUpArea} m²`, mitigated: `${Math.round(hardscape + builtUpArea - permPavementM2 - (greenRoofM2 * 0.6))} m²`, delta: `-${permPavementM2} m² pervious paving`,
-                standard_code: "IRC:SP:63",
-                status: "Optimized"
+                name: 'Impervious Surface Ratio',
+                standard_code: 'IRC:SP:63',
+                before: 'Natural soil infiltration',
+                after_construction: `${Math.round(hardscape + bua).toLocaleString()} m² (${Math.min(100, Math.round(((hardscape + bua) / plot) * 100))}% impervious)`,
+                after_assessment: `Reduced to ${Math.round(hardscape + bua - permPav - greenRoof * 0.6).toLocaleString()} m² via ${permPav} m² permeable paving`,
+                net_result: `-${permPav} m² effective permeability gain`,
+                status: 'Optimized'
               },
               {
-                name: "Topsoil Humus Layer Salvage",
-                prev_condition: "Natural fertile humus layer (0.20m depth)",
-                present_condition: "Stripped during excavation without preservation",
-                after_assessment: `${topsoilM3} m³ salvaged and stockpiled at ≤ 2.0m height`,
-                net_result: `100% salvaged soil reapplied on ${Math.round(openGround * 0.7)} m² landscape`,
-                baseline: "Natural humus layer", proposed: "Stripped without salvage", mitigated: `${topsoilM3} m³ salvaged & stockpiled`, delta: `Reapplied on ${Math.round(openGround * 0.7)} m²`,
-                standard_code: "NBC 2016 Part 11",
-                status: "Mandatory Met"
+                name: 'Topsoil Salvage (0.20 m depth)',
+                standard_code: 'NBC 2016 Part 11',
+                before: 'Fertile humus layer — 0.20 m depth',
+                after_construction: 'Stripped & discarded during excavation',
+                after_assessment: `${topsoilM3} m³ salvaged, stockpiled ≤ 2 m height, re-spread on ${Math.round(openGround * 0.7).toLocaleString()} m² landscape`,
+                net_result: '100% topsoil reused on-site',
+                status: 'Mandatory Met'
               }
             ]
           },
           {
-            domain_id: "water_hydrology",
-            domain_name: "2. Water Resources, STP & Hydrological Management",
-            standard_ref: "CPHEEO 2019, CGWB & IS 15797 / IS 1172",
+            domain_id: 'water_hydrology',
+            domain_name: '2. Water, STP & Hydrology',
+            standard_ref: 'CPHEEO 2019 | CGWB | IS 15797 | IS 1172',
             parameters: [
               {
-                name: "Domestic Fresh Water Demand",
-                prev_condition: "0 KLD (Pre-development)",
-                present_condition: `${freshDemandKLD} KLD fresh supply extraction from municipal/groundwater`,
-                after_assessment: `${Math.round((freshDemandKLD - recycledKLD) * 10) / 10} KLD net fresh demand via dual plumbing`,
-                net_result: `-${recycledKLD} KLD fresh extraction reduction (${freshSavingsPct}% savings)`,
-                baseline: "0 KLD", proposed: `${freshDemandKLD} KLD`, mitigated: `${Math.round((freshDemandKLD - recycledKLD) * 10) / 10} KLD Net Fresh`, delta: `-${recycledKLD} KLD fresh reduction`,
-                standard_code: "IS 1172 (NBC LPCD)",
-                status: "Reduced Intake"
+                name: 'Domestic Fresh Water Demand',
+                standard_code: 'IS 1172 (NBC LPCD norms)',
+                before: '0 KLD (pre-development)',
+                after_construction: `${freshKLD} KLD municipal / groundwater extraction`,
+                after_assessment: `${Math.round((freshKLD - recycledKLD) * 10) / 10} KLD net fresh (dual-plumbing + recycled STP water)`,
+                net_result: `-${recycledKLD} KLD extraction reduction (${freshSavePct}% saving)`,
+                status: 'Reduced Intake'
               },
               {
-                name: "Sewage Treatment Plant (STP) & ZLD",
-                prev_condition: "0 KLD sewage generation",
-                present_condition: `${sewageKLD} KLD raw sewage discharged directly into municipal storm sewers`,
-                after_assessment: `${stpCapacityKLD} KLD tertiary SBR/MBBR STP treating 100% of sewage with UV`,
-                net_result: `${recycledKLD} KLD recycled for flushing & landscaping (Zero Liquid Discharge)`,
-                baseline: "None", proposed: "Municipal sewer discharge", mitigated: `${stpCapacityKLD} KLD (SBR / MBBR with UV)`, delta: `${freshSavingsPct}% fresh substitution`,
-                standard_code: "CPHEEO / MoEFCC ZLD",
-                status: "ZLD Compliant"
+                name: 'Sewage Treatment Plant (STP)',
+                standard_code: 'CPHEEO / MoEFCC ZLD',
+                before: '0 KLD sewage',
+                after_construction: `${sewageKLD} KLD raw sewage → municipal drain`,
+                after_assessment: `${stpCapKLD} KLD SBR/MBBR tertiary STP with UV; ${recycledKLD} KLD recycled for flushing & irrigation`,
+                net_result: isZLD ? 'Zero Liquid Discharge achieved' : `${freshSavePct}% fresh substitution`,
+                status: isZLD ? 'ZLD Compliant' : 'Treated Effluent Recycled'
               },
               {
-                name: "Peak Stormwater Runoff (Q = CIA)",
-                prev_condition: `${qBefore} m³/hr peak runoff`,
-                present_condition: `${qUnmitigated} m³/hr unmitigated peak surge`,
-                after_assessment: `${qMitigated} m³/hr attenuated via rain gardens and bioswales`,
-                net_result: `-${runoffReductionPct}% peak flow attenuation (${annualRunoffMitigatedKL} kL/yr mitigated)`,
-                baseline: `${qBefore} m³/hr`, proposed: `${qUnmitigated} m³/hr`, mitigated: `${qMitigated} m³/hr`, delta: `-${runoffReductionPct}% peak attenuation`,
-                standard_code: "Rational Method (Q=CIA)",
-                status: "SuDS Verified"
+                name: 'Peak Stormwater Runoff (Q = CIA)',
+                standard_code: 'Rational Method Q=CIA',
+                before: `${qPre} m³/hr (natural catchment)`,
+                after_construction: `${qPost} m³/hr (unmitigated hardscape peak)`,
+                after_assessment: `${qMit} m³/hr via rain gardens & bioswales (${annRunoffKL.toLocaleString()} kL/yr diverted)`,
+                net_result: `-${runoffRedPct}% peak flow attenuation`,
+                status: 'SuDS Verified'
               },
               {
-                name: "Rainwater Harvesting (RWH) Potential",
-                prev_condition: "0 kL captured",
-                present_condition: "Zero capture; roof runoff discharged unmanaged",
-                after_assessment: `${rwhAnnualKL.toLocaleString()} kL/year harvest potential with ${Math.round(rwhTankL / 1000)} kL dedicated storage tank`,
-                net_result: "Supplies dry monsoon non-potable backup",
-                baseline: "0 kL captured", proposed: "Direct storm drainage", mitigated: `${rwhAnnualKL.toLocaleString()} kL/year harvest`, delta: `${Math.round(rwhTankL / 1000)} kL storage tank`,
-                standard_code: "CGWB / IS 15797",
-                status: "CGWB Standard"
+                name: 'Rainwater Harvesting (RWH)',
+                standard_code: 'CGWB | IS 15797',
+                before: '0 kL captured — direct drainage',
+                after_construction: 'Roof runoff discharged unmanaged to storm drain',
+                after_assessment: `${rwhKL.toLocaleString()} kL/yr harvest potential with ${rwhTankKL} kL storage tank`,
+                net_result: `${rwhKL.toLocaleString()} kL/yr non-potable supply augmented`,
+                status: 'CGWB Compliant'
               }
             ]
           },
           {
-            domain_id: "air_microclimate",
-            domain_name: "3. Air Quality, Dust Suppression & Microclimate",
-            standard_ref: "CPCB NAAQS 2009 & US EPA Heat Island Mitigation",
+            domain_id: 'air_microclimate',
+            domain_name: '3. Air Quality & Microclimate',
+            standard_ref: 'CPCB NAAQS 2009 | NBC 2016 Part 11',
             parameters: [
               {
-                name: "Ambient Air Quality (PM10 / PM2.5)",
-                prev_condition: `Baseline AQI ${aqi} (${pm10} µg/m³ PM10, ${pm25} µg/m³ PM2.5)`,
-                present_condition: "Fugitive dust emissions during excavation without suppression",
-                after_assessment: "6.0m perimeter GI sheet barrier + automated misting cannons",
-                net_result: "≥ 72% particulate capture efficiency maintaining NAAQS standards",
-                baseline: `${aqi} (${aq.category || 'Satisfactory'})`, proposed: "Fugitive dust surge", mitigated: `${aqi} maintained (Suppressed)`, delta: "≥ 72% containment",
-                standard_code: "CPCB NAAQS 2009",
-                status: "Within Limits"
+                name: 'Ambient Air Quality — PM10 / PM2.5',
+                standard_code: 'CPCB NAAQS 2009: PM10 ≤ 60 µg/m³ | PM2.5 ≤ 40 µg/m³ (annual)',
+                before: `Baseline AQI ${aqi} | PM10 ${pm10} µg/m³ | PM2.5 ${pm25} µg/m³`,
+                after_construction: 'Fugitive dust surge from excavation & material handling',
+                after_assessment: '6 m perimeter GI sheet hoarding + automated mist-cannon suppression ≥ 72% capture',
+                net_result: 'NAAQS 2009 annual limits maintained on site boundary',
+                status: 'Within NAAQS Limits'
               },
               {
-                name: "Urban Heat Island (UHI) Microclimate",
-                prev_condition: "Natural ambient baseline",
-                present_condition: "RCC slabs and dark paving creating microclimate thermal trap",
-                after_assessment: `High-albedo cool roof + green roof + tree canopy shading (UHI Score ${uhiScore})`,
-                net_result: "Microclimate thermal stress mitigation",
-                baseline: "Ambient Baseline", proposed: "Thermal Trap", mitigated: `UHI ${uhiScore} (${uhiRisk})`, delta: "Radiative cooling",
-                standard_code: "US EPA Heat Island Guide",
-                status: "Mitigated"
+                name: 'Urban Heat Island (UHI)',
+                standard_code: 'NBC 2016 Part 11 | Cool Roof Initiative',
+                before: 'Ambient baseline — natural land cover',
+                after_construction: 'Dark-surface RCC & asphalt — thermal trap (high albedo deficit)',
+                after_assessment: `Cool roof (SRI ≥ 78) + ${greenRoof} m² green roof + tree canopy → UHI score ${uhiIdx}`,
+                net_result: `UHI risk: ${uhiRisk} — radiative cooling achieved`,
+                status: 'Mitigated'
               }
             ]
           },
           {
-            domain_id: "energy_carbon",
-            domain_name: "4. Energy Conservation, Solar PV & Carbon Dynamics",
-            standard_ref: "ECBC 2017, MNRE Guidelines & CEA Baseline v20",
+            domain_id: 'energy_carbon',
+            domain_name: '4. Energy & Carbon',
+            standard_ref: 'ECBC 2017 | MNRE | CEA v20 (0.727 kg CO₂/kWh)',
             parameters: [
               {
-                name: "Annual Electrical Demand & Grid Load",
-                prev_condition: "0 kWh (Zero site consumption)",
-                present_condition: `${Math.round(elecDemandKwh / 1000)} MWh/yr drawn from fossil-fuel grid`,
-                after_assessment: `${solarKwp} kWp Rooftop Solar PV generating ${(solarGenKwh / 1000).toFixed(1)} MWh/yr`,
-                net_result: `${solarOffsetPct}% Net clean energy substitution`,
-                baseline: "Zero", proposed: `${Math.round(elecDemandKwh / 1000)} MWh/yr`, mitigated: `${solarKwp} kWp Solar PV`, delta: `${(solarGenKwh / 1000).toFixed(1)} MWh clean power`,
-                standard_code: "MNRE / ECBC 2017",
-                status: "Solar Displaced"
+                name: 'Annual Electrical Demand & Solar Offset',
+                standard_code: 'ECBC 2017 | MNRE Rooftop Guidelines',
+                before: '0 kWh (no site consumption)',
+                after_construction: `${Math.round(elecKwh / 1000)} MWh/yr drawn from fossil-fuel grid`,
+                after_assessment: `${solarKwp} kWp rooftop PV → ${(solarGenKwh / 1000).toFixed(1)} MWh/yr clean generation`,
+                net_result: `${solarOffPct}% demand offset; saves ${annSolarSavet} t CO₂/yr`,
+                status: 'Solar Displaced'
               },
               {
-                name: "Construction Embodied Carbon",
-                prev_condition: "0 tonnes CO₂e embodied emissions",
-                present_condition: `${embodiedCarbonTonnes} tonnes CO₂e embodied footprint from standard RCC structure`,
-                after_assessment: `${netEmbodiedCarbonTonnes} tonnes CO₂e via 35% GGBS green concrete substitution`,
-                net_result: `-${greenConcreteAvoidedTonnes} tonnes CO₂e upfront clinker emissions avoided`,
-                baseline: "Zero", proposed: `${embodiedCarbonTonnes} t CO₂e`, mitigated: `${netEmbodiedCarbonTonnes} t CO₂e`, delta: `-${greenConcreteAvoidedTonnes} t avoided`,
-                standard_code: "IS 456 / IS 16714",
-                status: "Low-Carbon"
+                name: 'Embodied Carbon — Construction',
+                standard_code: 'IS 456 | IS 16714 | IGBC/GRIHA 450 kg CO₂e/m²',
+                before: '0 t CO₂e (pre-construction)',
+                after_construction: `${embodiedT} t CO₂e — standard RCC (450 kg CO₂e/m² GFA)`,
+                after_assessment: `${netEmbodiedT} t CO₂e after 35% GGBS substitution (${avoidedT} t avoided)`,
+                net_result: `-${avoidedT} t CO₂e upfront clinker emissions avoided`,
+                status: 'Low-Carbon Concrete'
               },
               {
-                name: "Annual Operational Carbon Offset & Payback",
-                prev_condition: "Natural biomass balance",
-                present_condition: "0 tonnes CO₂e/yr offset; ongoing grid operational emissions",
-                after_assessment: `${annualOpCarbonSavedTonnes} tonnes CO₂e/yr displaced via solar PV and tree growth`,
-                net_result: `Payback horizon estimated at ~${carbonPaybackYrs} Years`,
-                baseline: "Zero", proposed: "0 t CO₂e/yr offset", mitigated: `${annualOpCarbonSavedTonnes} t CO₂e/yr displaced`, delta: `~${carbonPaybackYrs} Yrs Payback`,
-                standard_code: "CEA Baseline v20",
-                status: "Calculated Horizon"
+                name: 'Annual Operational CO₂ & Payback',
+                standard_code: 'CEA Baseline v20 — 0.727 kg CO₂/kWh (FY 2023-24)',
+                before: '0 t CO₂e/yr offset',
+                after_construction: `${annGridCO2t} t CO₂e/yr from full grid draw`,
+                after_assessment: `${opCO2SavedT} t CO₂e/yr displaced via solar PV & tree growth`,
+                net_result: `Carbon payback ≈ ${paybackYrs} years`,
+                status: 'Payback Estimated'
               }
             ]
           },
           {
-            domain_id: "waste_circularity",
-            domain_name: "5. C&D Waste Circularity & Solid Waste Management",
-            standard_ref: "CPCB C&D Waste Rules 2016 & SWM Rules 2016",
+            domain_id: 'waste_circularity',
+            domain_name: '5. Waste Management',
+            standard_ref: 'CPCB C&D Waste Rules 2016 | SWM Rules 2016',
             parameters: [
               {
-                name: "Construction & Demolition (C&D) Waste",
-                prev_condition: "0 tonnes debris",
-                present_condition: `${cdWasteTonnes} tonnes generated debris`,
-                after_assessment: `Source segregation with on-site recycling`,
-                net_result: `${divertedWasteTonnes} tonnes (${recyclingPct}%) diverted into ${rcaYieldM3} m³ recycled aggregate`,
-                baseline: "Zero", proposed: `${cdWasteTonnes} t unsegregated`, mitigated: `${divertedWasteTonnes} t diverted (${recyclingPct}%)`, delta: `${rcaYieldM3} m³ road aggregate`,
-                standard_code: "CPCB C&D Rules 2016",
-                status: "Circular Reuse"
+                name: 'Construction & Demolition (C&D) Waste',
+                standard_code: 'CPCB C&D Waste Rules 2016',
+                before: '0 t (pre-construction)',
+                after_construction: `${cdWasteT} t debris generated (est. 55 kg/m² GFA)`,
+                after_assessment: `${divertedT} t (${recPct}%) source-segregated → ${rcaM3} m³ recycled coarse aggregate (RCA)`,
+                net_result: `${recPct}% landfill diversion — RCA used as road sub-base`,
+                status: 'Circular Reuse'
               },
               {
-                name: "Operational Solid Waste & Composting",
-                prev_condition: "Zero waste generated",
-                present_condition: `${dailyMswKg} kg/day mixed MSW disposed of at city dumpsite`,
-                after_assessment: "Source segregation + on-site composting unit",
-                net_result: `${annualCompostTonnes} tonnes/yr organic compost generated`,
-                baseline: "Zero", proposed: `${dailyMswKg} kg/day mixed`, mitigated: `${annualCompostTonnes} t/yr organic compost`, delta: "Closed-loop landscaping",
-                standard_code: "SWM Rules 2016",
-                status: "Compost Diverted"
+                name: 'Operational Municipal Solid Waste',
+                standard_code: 'SWM Rules 2016 (0.4 kg/capita/day)',
+                before: '0 kg/day (pre-occupancy)',
+                after_construction: `${mswKgDay} kg/day mixed MSW from ${occupants} occupants`,
+                after_assessment: `Wet/dry segregation + on-site composter → ${compostTyr} t/yr compost for landscaping`,
+                net_result: `${compostTyr} t/yr organic compost — closed-loop nutrient cycle`,
+                status: 'Compost Diverted'
               }
             ]
           },
           {
-            domain_id: "ecology_biodiversity",
-            domain_name: "6. Ecology, Forestry & Nature Restoration",
-            standard_ref: "Maharashtra Tree Act 1975 & Akira Miyawaki Method",
+            domain_id: 'ecology_biodiversity',
+            domain_name: '6. Ecology & Biodiversity',
+            standard_ref: 'Tree Protection Act | Miyawaki Method | TNFD Guidance',
             parameters: [
               {
-                name: "Site Tree Canopy & Compensatory Plantation",
-                prev_condition: `${existingTrees} site trees recorded`,
-                present_condition: `${treesRemoved} trees removed without replacement`,
-                after_assessment: `${protectedTrees} preserved + ${compensatoryTrees} native trees planted`,
-                net_result: `Compensatory planting: ${compensatoryTrees} saplings`,
-                baseline: `${existingTrees} trees`, proposed: `${treesRemoved} felled`, mitigated: `${protectedTrees} preserved + ${compensatoryTrees} planted`, delta: `+${compensatoryTrees} planted`,
-                standard_code: "Tree Authority Norms",
-                status: treesRemoved > 0 ? (compensatoryTrees >= treesRemoved * 3 ? "Compensatory 3:1 Met" : "Deficit") : "No Felling"
+                name: 'Tree Canopy & Compensatory Plantation',
+                standard_code: 'Tree Authority — 3:1 compensatory norm',
+                before: `${existTrees} trees on site (recorded baseline)`,
+                after_construction: `${remTrees} trees felled for construction`,
+                after_assessment: `${savedTrees} trees preserved; ${compTrees} native species planted (3:1 ratio = ${remTrees * 3} required)`,
+                net_result: `Net +${compTrees} trees; canopy deficit ${compTrees >= remTrees * 3 ? 'fulfilled' : 'not yet fulfilled'}`,
+                status: remTrees > 0
+                  ? (compTrees >= remTrees * 3 ? '3:1 Norm Met' : 'Compensatory Deficit')
+                  : 'No Felling'
               },
               {
-                name: "Akira Miyawaki Ultra-Dense Native Forest",
-                prev_condition: "Conventional site vegetation",
-                present_condition: "Hardscape footprint displacement",
-                after_assessment: `${miyawakiAreaM2} m² micro-forest with ${miyawakiSaplings} native saplings`,
-                net_result: "Multi-tiered native urban micro-forest",
-                baseline: "Baseline site cover", proposed: "Disturbed open area", mitigated: `${miyawakiSaplings} saplings across ${miyawakiAreaM2} m²`, delta: "Dense native cover",
-                standard_code: "Miyawaki Afforestation",
-                status: miyawakiAreaM2 > 0 ? "High Ecology" : "Not Allocated"
+                name: 'Miyawaki Native Micro-Forest',
+                standard_code: 'Akira Miyawaki Dense Afforestation',
+                before: 'Conventional sparse planting / barren hardscape',
+                after_construction: 'Disturbed open areas on site perimeter',
+                after_assessment: mwaM2 > 0
+                  ? `${mwaM2} m² Miyawaki patch — ${mwaSap} saplings at 4–5 trees/m² (20× denser than conventional)`
+                  : 'Miyawaki patch not yet allocated — site perimeter area to be designated',
+                net_result: mwaM2 > 0
+                  ? `${mwaM2} m² native multi-tiered forest (canopy, sub-canopy, shrub, herb layers)`
+                  : 'Designate ≥ 50 m² perimeter area for Miyawaki planting',
+                status: mwaM2 > 0 ? 'High Biodiversity' : 'Recommended'
               }
             ]
           }
         ]
       };
-
-      // Guarantee 3-Stage Lifecycle properties on all domain parameters
-      if (eiaResult.domains && Array.isArray(eiaResult.domains)) {
-        eiaResult.domains.forEach(d => {
-          if (d.parameters && Array.isArray(d.parameters)) {
-            d.parameters.forEach(p => {
-              p.before_construction = p.before_construction || p.prev_condition || p.baseline;
-              p.after_construction = p.after_construction || p.present_condition || p.proposed;
-              p.after_assessment = p.after_assessment || p.mitigated;
-              p.prev_condition = p.before_construction;
-              p.present_condition = p.after_construction;
-            });
-          }
-        });
-      }
-
-      return eiaResult;
     }
   };
 

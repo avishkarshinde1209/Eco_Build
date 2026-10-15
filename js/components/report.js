@@ -115,7 +115,7 @@ window.ReportView = {
     // Ensure EIA Results Master Bundle is available
     let eia = calc.eia_results;
     if (!eia && window.EnvironmentalCalculator) {
-      calc.eia_results = window.EnvironmentalCalculator.generateAppropriateEIAResults(proj, calc, env);
+      calc.eia_results = window.EnvironmentalCalculator.generateEIAResults(proj, calc, env);
       eia = calc.eia_results;
     }
     if (!eia) eia = {};
@@ -456,7 +456,7 @@ window.ReportView = {
             <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs space-y-1.5 shrink-0 sm:min-w-[240px] text-left md:text-right">
               <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment ID</span><strong class="font-mono text-stone-900">ECOBUILD-${proj.id || 'PRELIMINARY'}</strong></div>
               <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Statutory Screening</span><strong class="font-mono text-stone-900">${eia.screening?.category || 'MoEFCC Item 8'}</strong></div>
-              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Appraisal Level</span><strong class="font-mono text-emerald-800">${eia.screening?.appraisal_authority ? 'Official Review Required' : 'Local Clearance'}</strong></div>
+              <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Appraisal Level</span><strong class="font-mono text-emerald-800">${eia.screening?.authority || 'Local Clearance'}</strong></div>
               <div><span class="text-stone-400 text-[10px] block font-bold uppercase">Assessment Date</span><strong class="text-stone-800">${now} (${nowTime})</strong></div>
               <div class="pt-2 border-t border-stone-200 mt-2">
                 <span class="text-[10px] font-bold uppercase text-stone-400 block">EcoBuild Resilience Score</span>
@@ -502,119 +502,34 @@ window.ReportView = {
 
             <!-- 6 Key Primary Statutory Results Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- KPI 1: Stormwater Peak Runoff -->
-              <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/90 space-y-2.5 avoid-page-break">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-                    <span>🌧️</span> <span>Stormwater Peak Runoff</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200/80 text-blue-900">Rational Q=CIA</span>
+              ${(eia.key_results || []).map(k => `
+                <div class="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-2.5 avoid-page-break">
+                  <div class="flex items-center justify-between pb-1.5 border-b border-stone-100">
+                    <span class="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                      <span>${k.icon}</span> <span>${k.label}</span>
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${k.badge_class || 'bg-stone-100 text-stone-700'} border">${k.status}</span>
+                  </div>
+                  <div class="space-y-1 text-xs">
+                    <div class="flex justify-between text-stone-600">
+                      <span class="text-[10px] uppercase font-bold text-stone-400">1. Baseline:</span>
+                      <span class="font-mono text-stone-700 text-right">${k.before || k.before_construction || '—'}</span>
+                    </div>
+                    <div class="flex justify-between text-rose-700">
+                      <span class="text-[10px] uppercase font-bold text-rose-500">2. Construction Load:</span>
+                      <span class="font-mono font-bold text-right">${k.after_construction || '—'}</span>
+                    </div>
+                    <div class="flex justify-between text-emerald-900 font-bold bg-emerald-50/60 p-1.5 rounded-lg border border-emerald-100">
+                      <span class="text-[10px] uppercase text-emerald-700">3. Nature Recovery:</span>
+                      <span class="font-mono text-right">${k.after_assessment || '—'}</span>
+                    </div>
+                  </div>
+                  <div class="pt-1.5 border-t border-stone-100 flex items-center justify-between text-[11px] font-bold text-stone-900">
+                    <span class="text-stone-500">Net Statutory Outcome:</span>
+                    <span class="font-mono text-emerald-800 font-serif">${k.net_result || k.value}</span>
+                  </div>
                 </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-600"><span class="text-[10px] uppercase font-bold text-stone-400">Before Construction:</span> <span class="font-mono text-stone-800">${qBefore} m³/hr (C ≈ 0.25)</span></div>
-                  <div class="flex justify-between text-rose-700"><span class="text-[10px] uppercase font-bold text-rose-500">Unmitigated Surge:</span> <span class="font-mono font-bold">${qUnmitigated} m³/hr (C ≈ 0.82)</span></div>
-                  <div class="flex justify-between text-emerald-900 font-bold bg-white p-1.5 rounded-lg border border-blue-200"><span class="text-[10px] uppercase text-emerald-700">Nature Recovery:</span> <span class="font-mono">${qMitigated} m³/hr (C ≈ 0.41)</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-blue-200/80 flex items-center justify-between text-[11px] font-bold text-blue-900">
-                  <span>Net Runoff Attenuation:</span>
-                  <span class="font-mono text-emerald-700">-${runoffReductionPct}% Peak Mitigated</span>
-                </div>
-              </div>
-
-              <!-- KPI 2: Water Balance & SBR STP (ZLD) -->
-              <div class="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/90 space-y-2.5 avoid-page-break">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-cyan-950 flex items-center gap-1.5">
-                    <span>💧</span> <span>Water Cycle & 100% ZLD</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-200/80 text-cyan-900">CPHEEO 2019</span>
-                </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-600"><span class="text-[10px] uppercase font-bold text-stone-400">Before Construction:</span> <span class="font-mono text-stone-800">0 KLD (Vacant Site)</span></div>
-                  <div class="flex justify-between text-rose-700"><span class="text-[10px] uppercase font-bold text-rose-500">Unmitigated Extraction:</span> <span class="font-mono font-bold">${(dailyDemandL / 1000).toFixed(1)} KLD Fresh Supply</span></div>
-                  <div class="flex justify-between text-emerald-900 font-bold bg-white p-1.5 rounded-lg border border-cyan-200"><span class="text-[10px] uppercase text-emerald-700">Nature Recovery:</span> <span class="font-mono">${stpCapacityKLD} kLD SBR STP (100% ZLD)</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-cyan-200/80 flex items-center justify-between text-[11px] font-bold text-cyan-900">
-                  <span>Net Fresh Water Offset:</span>
-                  <span class="font-mono text-emerald-700">${freshSavingsPct}% Substituted</span>
-                </div>
-              </div>
-
-              <!-- KPI 3: Clean Solar Energy Offset -->
-              <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-2.5 avoid-page-break">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                    <span>☀️</span> <span>Clean Solar Energy & Grid Offset</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200/80 text-amber-900">CEA Baseline v20</span>
-                </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-600"><span class="text-[10px] uppercase font-bold text-stone-400">Before Construction:</span> <span class="font-mono text-stone-800">0 kWh (Zero Consumption)</span></div>
-                  <div class="flex justify-between text-rose-700"><span class="text-[10px] uppercase font-bold text-rose-500">Unmitigated Grid Load:</span> <span class="font-mono font-bold">${Math.round(elecDemandKwh / 1000)} MWh/yr Fossil Grid</span></div>
-                  <div class="flex justify-between text-emerald-900 font-bold bg-white p-1.5 rounded-lg border border-amber-200"><span class="text-[10px] uppercase text-emerald-700">Nature Recovery:</span> <span class="font-mono">${solarKwp} kWp Solar PERC Array</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-amber-200/80 flex items-center justify-between text-[11px] font-bold text-amber-900">
-                  <span>Annual Clean Generation:</span>
-                  <span class="font-mono text-emerald-700">${Math.round(solarAnnualKwh / 1000)} MWh (${solarCO2Tonnes} t CO₂)</span>
-                </div>
-              </div>
-
-              <!-- KPI 4: C&D Waste & Material Circularity -->
-              <div class="p-4 rounded-2xl bg-stone-50 border border-stone-300 space-y-2.5 avoid-page-break">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                    <span>🏗️</span> <span>C&D Waste Circularity</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-800">CPCB 2016</span>
-                </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-600"><span class="text-[10px] uppercase font-bold text-stone-400">Before Construction:</span> <span class="font-mono text-stone-800">0 Tonnes (Zero Debris)</span></div>
-                  <div class="flex justify-between text-rose-700"><span class="text-[10px] uppercase font-bold text-rose-500">Unmitigated Dump:</span> <span class="font-mono font-bold">${cdWasteTonnes} t Landfill Dumping</span></div>
-                  <div class="flex justify-between text-emerald-900 font-bold bg-white p-1.5 rounded-lg border border-stone-200"><span class="text-[10px] uppercase text-emerald-700">Nature Recovery:</span> <span class="font-mono">${divertedWasteTonnes} t RCA Aggregate Crushing</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-stone-200 flex items-center justify-between text-[11px] font-bold text-stone-900">
-                  <span>Landfill Diversion Rate:</span>
-                  <span class="font-mono text-emerald-700">${recyclingPct}% Recycled</span>
-                </div>
-              </div>
-
-              <!-- KPI 5: Ecology & Biodiversity Net Gain -->
-              <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 space-y-2.5 avoid-page-break">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                    <span>🌱</span> <span>Biodiversity Net Gain (BNG)</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200/80 text-emerald-900">BNG Metric 4.0</span>
-                </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-600"><span class="text-[10px] uppercase font-bold text-stone-400">Before Construction:</span> <span class="font-mono text-stone-800">${existingTrees} Trees (Native Canopy)</span></div>
-                  <div class="flex justify-between text-rose-700"><span class="text-[10px] uppercase font-bold text-rose-500">Unmitigated Loss:</span> <span class="font-mono font-bold">${treesRemoved} Trees Felled (-38% Canopy)</span></div>
-                  <div class="flex justify-between text-emerald-900 font-bold bg-white p-1.5 rounded-lg border border-emerald-200"><span class="text-[10px] uppercase text-emerald-700">Nature Recovery:</span> <span class="font-mono">${iv.trees_planted} Trees + ${miyawakiSaplings} Miyawaki</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-emerald-200/80 flex items-center justify-between text-[11px] font-bold text-emerald-900">
-                  <span>Net Ecological Gain:</span>
-                  <span class="font-mono text-emerald-700">+${bngNetPct}% BNG Units</span>
-                </div>
-              </div>
-
-              <!-- KPI 6: Overall Sustainability Score -->
-              <div class="p-4 rounded-2xl bg-gradient-to-br from-[#06281E] to-[#0A3A2C] text-white space-y-2.5 avoid-page-break border border-emerald-600/40">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                    <span>⭐</span> <span>Certified Sustainability Index</span>
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-200 font-mono">NBC Part 11</span>
-                </div>
-                <div class="space-y-1 text-xs">
-                  <div class="flex justify-between text-stone-300"><span class="text-[10px] uppercase font-bold text-stone-400">Baseline Natural State:</span> <span class="font-mono text-stone-200">42 / 100</span></div>
-                  <div class="flex justify-between text-rose-300"><span class="text-[10px] uppercase font-bold text-rose-400">Unmitigated Deficit:</span> <span class="font-mono font-bold">32 / 100</span></div>
-                  <div class="flex justify-between text-emerald-200 font-bold bg-emerald-950/80 p-1.5 rounded-lg border border-emerald-700/60"><span class="text-[10px] uppercase text-emerald-400">Recovered Blueprint:</span> <span class="font-mono text-white text-sm font-black">${compositeScore} / 100</span></div>
-                </div>
-                <div class="pt-1.5 border-t border-emerald-700/60 flex items-center justify-between text-[11px] font-bold text-emerald-300">
-                  <span>Rating Classification:</span>
-                  <span class="font-mono text-emerald-400">${scoreTier}</span>
-                </div>
-              </div>
+              `).join('')}
             </div>
 
             <!-- Complete 6-Domain Parameter Comparative Table -->
@@ -647,14 +562,17 @@ window.ReportView = {
                       </tr>
                       ${d.parameters.map(p => `
                         <tr class="hover:bg-stone-50/80 transition-colors avoid-page-break">
-                          <td class="p-2.5 pl-3 font-semibold text-stone-900 align-top">${p.name}</td>
-                          <td class="p-2.5 font-mono text-stone-600 text-[11px] align-top bg-stone-50/40">${p.prev_condition || p.baseline}</td>
-                          <td class="p-2.5 text-rose-800 font-medium text-[11px] align-top bg-rose-50/30">${p.present_condition || p.proposed}</td>
-                          <td class="p-2.5 text-emerald-900 font-bold text-[11px] align-top bg-emerald-50/30">${p.after_assessment || p.mitigated}</td>
-                          <td class="p-2.5 text-emerald-800 font-bold text-[11px] align-top bg-emerald-50/50">${p.net_result || p.delta}</td>
+                          <td class="p-2.5 pl-3 font-semibold text-stone-900 align-top">
+                            <div>${p.name}</div>
+                            <div class="text-[9px] font-mono text-stone-400 mt-0.5">${p.standard_code || d.standard_ref}</div>
+                          </td>
+                          <td class="p-2.5 font-mono text-stone-600 text-[11px] align-top bg-stone-50/40">${p.before || p.before_construction || p.prev_condition || '—'}</td>
+                          <td class="p-2.5 text-rose-800 font-medium text-[11px] align-top bg-rose-50/30">${p.after_construction || p.present_condition || '—'}</td>
+                          <td class="p-2.5 text-emerald-900 font-bold text-[11px] align-top bg-emerald-50/30">${p.after_assessment || p.mitigated || '—'}</td>
+                          <td class="p-2.5 text-emerald-800 font-bold text-[11px] align-top bg-emerald-50/50">${p.net_result || '—'}</td>
                           <td class="p-2.5 text-right font-mono text-[10px] text-stone-500 align-top whitespace-nowrap">
-                            <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">${p.status || 'Compliant'}</span>
-                            <span class="block text-[9px] text-stone-400 mt-0.5">${p.standard_code}</span>
+                            <span class="px-1.5 py-0.5 rounded font-bold border ${p.status && /Compliant|Met|Circular|Diverted|Verified|Reduced|Offset|High/i.test(p.status) ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : p.status && /Deficit|Missing|Not/i.test(p.status) ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-amber-100 text-amber-800 border-amber-200'}">${p.status || 'Compliant'}</span>
+                            <span class="block text-[9px] text-stone-400 mt-0.5">${p.standard_code || ''}</span>
                           </td>
                         </tr>
                       `).join('')}

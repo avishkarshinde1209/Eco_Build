@@ -255,7 +255,7 @@ window.HistoryManager = {
     }
     let eia = calcs?.eia_results;
     if (!eia && window.EnvironmentalCalculator) {
-      eia = window.EnvironmentalCalculator.generateAppropriateEIAResults(target, calcs || {}, window.App?.environmentalData);
+      eia = window.EnvironmentalCalculator.generateEIAResults(target, calcs || {}, window.App?.environmentalData);
     }
 
     const score = eia?.screening?.composite_score || calcs?.score?.composite_score || target.summary_score || 85;
@@ -343,7 +343,7 @@ window.HistoryManager = {
                   <div class="space-y-1 text-[11px]">
                     <div class="flex items-start justify-between gap-1 text-stone-500">
                       <span class="shrink-0 font-medium">⏮️ 1. Before:</span>
-                      <span class="font-mono text-right text-stone-700 truncate">${k.before_construction || k.prev_condition || 'Baseline'}</span>
+                      <span class="font-mono text-right text-stone-700 truncate">${k.before || k.before_construction || k.prev_condition || 'Baseline'}</span>
                     </div>
                     <div class="flex items-start justify-between gap-1 text-amber-900">
                       <span class="shrink-0 font-medium">🏗️ 2. After Const:</span>
@@ -351,7 +351,7 @@ window.HistoryManager = {
                     </div>
                     <div class="flex items-start justify-between gap-1 text-emerald-900 font-bold">
                       <span class="shrink-0">✅ 3. After Assess:</span>
-                      <span class="font-mono text-right text-emerald-950 truncate">${k.after_assessment || k.subtext}</span>
+                      <span class="font-mono text-right text-emerald-950 truncate">${k.after_assessment || k.subtext || 'Mitigated'}</span>
                     </div>
                   </div>
                   <div class="pt-1 border-t border-stone-200 flex justify-between items-center text-[10px]">
@@ -384,7 +384,7 @@ window.HistoryManager = {
                       <tr class="hover:bg-stone-50">
                         <td class="p-2.5 pl-3 font-bold text-stone-800">${d.domain_name}</td>
                         <td class="p-2.5 text-stone-500 font-mono text-[11px]">${d.standard_ref}</td>
-                        <td class="p-2.5 text-emerald-800 font-medium">${d.parameters[d.parameters.length - 1]?.name}: ${d.parameters[d.parameters.length - 1]?.mitigated}</td>
+                        <td class="p-2.5 text-emerald-800 font-medium">${d.parameters[d.parameters.length - 1]?.name}: ${d.parameters[d.parameters.length - 1]?.after_assessment || d.parameters[d.parameters.length - 1]?.net_result || d.parameters[d.parameters.length - 1]?.mitigated || '—'}</td>
                         <td class="p-2.5 pr-3 text-right">
                           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                             ${d.parameters[0]?.status || 'Compliant'}
