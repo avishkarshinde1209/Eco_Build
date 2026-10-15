@@ -654,30 +654,56 @@
       </div>
 
       <div class="p-6 space-y-3.5 overflow-y-auto max-h-[60vh] text-xs">
-        <p class="text-slate-500 text-xs">Switching projects immediately recalculates all 8 environmental domains using authentic location and cadastre data.</p>
+        <p class="text-slate-500 text-xs">Switch between calibrated real-world conditions to evaluate statutory EIA compliance across diverse climates and typologies:</p>
         
-        <!-- Project 1: Kolhapur Campus -->
+        <!-- Project 1: Kolhapur Campus (Sub-tropical Institutional) -->
         <div onclick="window.App.switchProject('kolhapur_academic')" class="p-4 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 hover:bg-emerald-50 cursor-pointer transition flex items-center justify-between">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-slate-900 text-sm">Kolhapur Engineering Campus Expansion</span>
-              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">ACTIVE</span>
+              <span class="font-bold text-slate-900 text-sm">Kolhapur Green Engineering Campus</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">PRIMARY BENCHMARK</span>
             </div>
-            <div class="text-slate-500 text-[11px]">Kolhapur, Maharashtra • 5,000 m² Plot • Institutional</div>
-            <div class="text-emerald-700 font-bold font-mono text-[11px]">Recovery Score: 86 / 100 • 30 Trees Mitigated</div>
+            <div class="text-slate-500 text-[11px]">Kolhapur, Maharashtra • 24,000 m² Plot • 24,000 m² BUA (MoEFCC Cat. 8a)</div>
+            <div class="text-emerald-700 font-bold font-mono text-[11px]">100% ZLD STP (95 KLD) • 450 kWp Solar • 4:1 Tree Replenishment • 1.4-yr Payback</div>
           </div>
-          <span class="text-emerald-600 text-lg">✓</span>
+          <span class="text-emerald-600 text-lg font-bold">✓</span>
         </div>
 
-        <!-- Project 2: Pune Tech Park -->
-        <div onclick="window.App.switchProject('pune_tech_park')" class="p-4 rounded-2xl border border-slate-200 hover:border-slate-400 bg-white cursor-pointer transition flex items-center justify-between">
+        <!-- Project 2: Pune Cyberpark (High-Density Commercial) -->
+        <div onclick="window.App.switchProject('pune_tech_park')" class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-400 bg-white cursor-pointer transition flex items-center justify-between">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-slate-900 text-sm">Pune IT Innovation Park</span>
-              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600">COMMERCIAL</span>
+              <span class="font-bold text-slate-900 text-sm">Pune Hinjawadi Cyberpark Phase 2</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-800">COMMERCIAL IT</span>
             </div>
-            <div class="text-slate-500 text-[11px]">Hinjawadi, Pune • 8,000 m² Plot • Commercial Campus</div>
-            <div class="text-blue-700 font-bold font-mono text-[11px]">Recovery Score: 78 / 100 • 45 Trees Mitigated</div>
+            <div class="text-slate-500 text-[11px]">Hinjawadi, Pune • 28,000 m² Plot • 48,000 m² BUA (Major Cat. 8a)</div>
+            <div class="text-blue-700 font-bold font-mono text-[11px]">2,400 Occupants • 760 kWp Rooftop Array • 75% C&D Waste Diversion</div>
+          </div>
+          <span class="text-slate-400 text-xs font-semibold">Load &rarr;</span>
+        </div>
+
+        <!-- Project 3: Mumbai Coastal Sponge Housing (Heavy Monsoon) -->
+        <div onclick="window.App.switchProject('mumbai_residential')" class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-400 bg-white cursor-pointer transition flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">Mumbai Coastal Sponge Housing</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-800">COASTAL HIGH-RAIN</span>
+            </div>
+            <div class="text-slate-500 text-[11px]">Thane/Mumbai • 16,000 m² Plot • 36,000 m² BUA • 2,420 mm Rain/yr</div>
+            <div class="text-cyan-800 font-bold font-mono text-[11px]">350 kL Monsoon RWH Buffer • -75% Peak Flood Attenuation • Dual Plumbing</div>
+          </div>
+          <span class="text-slate-400 text-xs font-semibold">Load &rarr;</span>
+        </div>
+
+        <!-- Project 4: Jodhpur Arid Solar Campus (Desert Drought & High Solar) -->
+        <div onclick="window.App.switchProject('jodhpur_arid')" class="p-4 rounded-2xl border border-slate-200 hover:border-emerald-400 bg-white cursor-pointer transition flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">Jodhpur Sun City Arid Resilience Campus</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">ARID / SOLAR</span>
+            </div>
+            <div class="text-slate-500 text-[11px]">Jodhpur, Rajasthan • 22,000 m² Plot • 22,000 m² BUA • 380 mm Rain/yr</div>
+            <div class="text-amber-800 font-bold font-mono text-[11px]">630 kWp PV (>1,050 MWh/yr Yield) • Khejri Xeriscaping • Cool Roof UHI Offset</div>
           </div>
           <span class="text-slate-400 text-xs font-semibold">Load &rarr;</span>
         </div>

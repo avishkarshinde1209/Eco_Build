@@ -23,7 +23,13 @@ window.App = {
     const saved = localStorage.getItem("ecobuild_current_project");
     if (saved) {
       try {
-        this.currentProject = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.id === "proj_kolhapur_demo" && (!parsed.site?.total_floor_area || parsed.site.total_floor_area < 20000)) {
+          this.currentProject = JSON.parse(JSON.stringify(window.ECO_SAMPLE_PROJECTS.kolhapur_academic));
+          localStorage.setItem("ecobuild_current_project", JSON.stringify(this.currentProject));
+        } else {
+          this.currentProject = parsed;
+        }
       } catch (e) {
         this.currentProject = JSON.parse(JSON.stringify(window.ECO_SAMPLE_PROJECTS.kolhapur_academic));
       }
